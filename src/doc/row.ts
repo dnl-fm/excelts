@@ -1,15 +1,46 @@
 
-
-/**
- * Row models a worksheet row with cell accessors and formatting helpers.
- */
 import _ from '../utils/under-dash.ts';
 import Enums from './enums.ts';
 import colCache from '../utils/col-cache.ts';
 import Cell from './cell.ts';
+import type Worksheet from './worksheet.ts';
 
+/**
+ * Represents a row in a worksheet.
+ *
+ * Rows provide access to cells and row-level formatting like height,
+ * visibility, and outline levels.
+ *
+ * @example
+ * ```ts
+ * const row = sheet.getRow(1);
+ *
+ * // Set values
+ * row.values = ['Name', 'Age', 'Email'];
+ * row.values = { name: 'Alice', age: 30 };
+ *
+ * // Access cells
+ * row.getCell(1).value = 'Hello';
+ * row.getCell('A').value = 'Hello';
+ *
+ * // Style the row
+ * row.height = 20;
+ * row.font = { bold: true };
+ * row.hidden = true;
+ * ```
+ */
 class Row {
-  constructor(worksheet, number) {
+  /** Row height in points */
+  height?: number;
+  /** Row-level style applied to all cells */
+  style: Record<string, unknown>;
+
+  _worksheet: Worksheet;
+  _number: number;
+  _cells: (Cell | undefined)[];
+  outlineLevel: number;
+
+  constructor(worksheet: Worksheet, number: number) {
     this._worksheet = worksheet;
     this._number = number;
     this._cells = [];
@@ -17,34 +48,43 @@ class Row {
     this.outlineLevel = 0;
   }
 
-  // return the row number
-  get number() {
+  /** Row number (1-based) */
+  get number(): number {
     return this._number;
   }
 
-  get worksheet() {
+  /** The parent worksheet */
+  get worksheet(): Worksheet {
     return this._worksheet;
   }
 
-  // Inform Streaming Writer that this row (and all rows before it) are complete
-  // and ready to write. Has no effect on Worksheet document
-  commit() {
+  /**
+   * Commits the row for streaming writes.
+   * Informs the streaming writer that this row is complete.
+   * Has no effect on regular Worksheet operations.
+   */
+  commit(): void {
     this._worksheet._commitRow(this); // eslint-disable-line no-underscore-dangle
   }
 
-  // helps GC by breaking cyclic references
-  destroy() {
+  /** @internal */
+  destroy(): void {
     delete this._worksheet;
     delete this._cells;
     delete this.style;
   }
 
-  findCell(colNumber) {
+  /**
+   * Finds a cell by column number. Returns undefined if the cell doesn't exist.
+   *
+   * @param colNumber - Column number (1-based)
+   */
+  findCell(colNumber: number): Cell | undefined {
     return this._cells[colNumber - 1];
   }
 
-  // given {address, row, col}, find or create new cell
-  getCellEx(address) {
+  /** @internal */
+  getCellEx(address: {col: number; row: number}): Cell {
     let cell = this._cells[address.col - 1];
     if (!cell) {
       const column = this._worksheet.getColumn(address.col);
@@ -54,29 +94,42 @@ class Row {
     return cell;
   }
 
-  // get cell by key, letter or column number
-  getCell(col) {
+  /**
+   * Gets a cell by column number, letter, or key. Creates the cell if needed.
+   *
+   * @param col - Column number (1-based), letter ('A', 'B'), or key name
+   * @returns The cell
+   *
+   * @example
+   * ```ts
+   * row.getCell(1).value = 'First';
+   * row.getCell('B').value = 'Second';
+   * row.getCell('name').value = 'Alice'; // requires column key
+   * ```
+   */
+  getCell(col: number | string): Cell {
+    let colNum = col as number;
     if (typeof col === 'string') {
       // is it a key?
       const column = this._worksheet.getColumnKey(col);
       if (column) {
-        col = column.number;
+        colNum = column.number;
       } else {
-        col = colCache.l2n(col);
+        colNum = colCache.l2n(col);
       }
     }
     return (
-      this._cells[col - 1] ||
+      this._cells[colNum - 1] ||
       this.getCellEx({
-        address: colCache.encodeAddress(this._number, col),
+        address: colCache.encodeAddress(this._number, colNum),
         row: this._number,
-        col,
+        col: colNum,
       })
     );
   }
 
   // remove cell(s) and shift all higher cells down by count
-  splice(start, count, ...inserts) {
+  splice(start: number, count: number, ...inserts: unknown[]): void {
     const nKeep = start + count;
     const nExpand = inserts.length - count;
     const nEnd = this._cells.length;
@@ -128,21 +181,43 @@ class Row {
     }
   }
 
-  // Iterate over all non-null cells in this row
-  eachCell(options, iteratee) {
-    if (!iteratee) {
-      iteratee = options;
-      options = null;
+  /**
+   * Iterates over cells in this row.
+   *
+   * @param options - Options with `includeEmpty: boolean`, or the iteratee
+   * @param iteratee - Callback receiving (cell, colNumber)
+   *
+   * @example
+   * ```ts
+   * // Only cells with values
+   * row.eachCell((cell, colNumber) => {
+   *   console.log(`Column ${colNumber}: ${cell.value}`);
+   * });
+   *
+   * // Include empty cells
+   * row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+   *   console.log(`Column ${colNumber}`);
+   * });
+   * ```
+   */
+  eachCell(options: Record<string, unknown> | ((cell: Cell, colNum: number) => void), iteratee?: (cell: Cell, colNum: number) => void): void {
+    let iter: ((cell: Cell, colNum: number) => void) | undefined = iteratee;
+    let opts: Record<string, unknown> | null = null;
+    if (typeof options === 'function') {
+      iter = options;
+      opts = null;
+    } else {
+      opts = options;
     }
-    if (options && options.includeEmpty) {
+    if (opts && opts.includeEmpty) {
       const n = this._cells.length;
       for (let i = 1; i <= n; i++) {
-        iteratee(this.getCell(i), i);
+        (iter as Function)(this.getCell(i), i);
       }
     } else {
       this._cells.forEach((cell, index) => {
         if (cell && cell.type !== Enums.ValueType.Null) {
-          iteratee(cell, index + 1);
+          (iter as Function)(cell, index + 1);
         }
       });
     }
@@ -150,11 +225,18 @@ class Row {
 
   // ===========================================================================
   // Page Breaks
-  addPageBreak(lft, rght) {
+
+  /**
+   * Adds a page break after this row.
+   *
+   * @param lft - Left column boundary
+   * @param rght - Right column boundary
+   */
+  addPageBreak(lft: number, rght: number): void {
     const ws = this._worksheet;
     const left = Math.max(0, lft - 1) || 0;
     const right = Math.max(0, rght - 1) || 16838;
-    const pb = {
+    const pb: Record<string, number> = {
       id: this._number,
       max: right,
       man: 1,
@@ -164,9 +246,17 @@ class Row {
     ws.rowBreaks.push(pb);
   }
 
-  // return a sparse array of cell values
-  get values() {
-    const values = [];
+  /**
+   * Cell values as a sparse array (index = column number).
+   *
+   * @example
+   * ```ts
+   * const vals = row.values;
+   * // vals[1] = 'A1 value', vals[2] = 'B1 value', etc.
+   * ```
+   */
+  get values(): unknown[] {
+    const values: unknown[] = [];
     this._cells.forEach(cell => {
       if (cell && cell.type !== Enums.ValueType.Null) {
         values[cell.col] = cell.value;
@@ -175,8 +265,22 @@ class Row {
     return values;
   }
 
-  // set the values by contiguous or sparse array, or by key'd object literal
-  set values(value) {
+  /**
+   * Sets cell values from an array or object.
+   *
+   * @example
+   * ```ts
+   * // Contiguous array (starting at column A)
+   * row.values = ['Alice', 30, 'alice@example.com'];
+   *
+   * // Sparse array (index = column number)
+   * row.values = [, 'A1', , 'C1']; // columns A and C
+   *
+   * // Object with column keys
+   * row.values = { name: 'Alice', age: 30 };
+   * ```
+   */
+  set values(value: unknown[] | Record<string, unknown> | undefined) {
     // this operation is not additive - any prior cells are removed
     this._cells = [];
     if (!value) {
@@ -210,16 +314,18 @@ class Row {
     }
   }
 
-  // returns true if the row includes at least one cell with a value
-  get hasValues() {
+  /** Whether this row has any cells with values */
+  get hasValues(): boolean {
     return _.some(this._cells, cell => cell && cell.type !== Enums.ValueType.Null);
   }
 
-  get cellCount() {
+  /** Total number of cells in this row (including empty) */
+  get cellCount(): number {
     return this._cells.length;
   }
 
-  get actualCellCount() {
+  /** Number of cells with actual values */
+  get actualCellCount(): number {
     let count = 0;
     this.eachCell(() => {
       count++;
@@ -227,8 +333,11 @@ class Row {
     return count;
   }
 
-  // get the min and max column number for the non-null cells in this row or null
-  get dimensions() {
+  /**
+   * The column range of cells with values.
+   * Returns `{ min, max }` or null if row is empty.
+   */
+  get dimensions(): { min: number; max: number } | null {
     let min = 0;
     let max = 0;
     this._cells.forEach(cell => {
@@ -250,8 +359,10 @@ class Row {
   }
 
   // =========================================================================
-  // styles
-  _applyStyle(name, value) {
+  // Styles
+
+  /** @internal */
+  _applyStyle(name: string, value: unknown): unknown {
     this.style[name] = value;
     this._cells.forEach(cell => {
       if (cell) {
@@ -261,79 +372,88 @@ class Row {
     return value;
   }
 
-  get numFmt() {
+  /** Number format applied to all cells in this row */
+  get numFmt(): unknown {
     return this.style.numFmt;
   }
 
-  set numFmt(value) {
+  set numFmt(value: unknown) {
     this._applyStyle('numFmt', value);
   }
 
-  get font() {
+  /** Font style applied to all cells in this row */
+  get font(): unknown {
     return this.style.font;
   }
 
-  set font(value) {
+  set font(value: unknown) {
     this._applyStyle('font', value);
   }
 
-  get alignment() {
+  /** Alignment applied to all cells in this row */
+  get alignment(): unknown {
     return this.style.alignment;
   }
 
-  set alignment(value) {
+  set alignment(value: unknown) {
     this._applyStyle('alignment', value);
   }
 
-  get protection() {
+  /** Protection settings applied to all cells in this row */
+  get protection(): unknown {
     return this.style.protection;
   }
 
-  set protection(value) {
+  set protection(value: unknown) {
     this._applyStyle('protection', value);
   }
 
-  get border() {
+  /** Border style applied to all cells in this row */
+  get border(): unknown {
     return this.style.border;
   }
 
-  set border(value) {
+  set border(value: unknown) {
     this._applyStyle('border', value);
   }
 
-  get fill() {
+  /** Fill style applied to all cells in this row */
+  get fill(): unknown {
     return this.style.fill;
   }
 
-  set fill(value) {
+  set fill(value: unknown) {
     this._applyStyle('fill', value);
   }
 
-  get hidden() {
+  /** Whether this row is hidden */
+  get hidden(): boolean {
     return !!this._hidden;
   }
 
-  set hidden(value) {
+  set hidden(value: boolean) {
     this._hidden = value;
   }
 
-  get outlineLevel() {
+  /** Outline/grouping level (0-7) */
+  get outlineLevel(): number {
     return this._outlineLevel || 0;
   }
 
-  set outlineLevel(value) {
+  set outlineLevel(value: number) {
     this._outlineLevel = value;
   }
 
-  get collapsed() {
+  /** Whether this row is collapsed in outline */
+  get collapsed(): boolean {
     return !!(
       this._outlineLevel && this._outlineLevel >= this._worksheet.properties.outlineLevelRow
     );
   }
 
   // =========================================================================
-  get model() {
-    const cells = [];
+  get model(): Record<string, unknown> | null {
+    const cells: unknown[] = [];
     let min = 0;
     let max = 0;
     this._cells.forEach(cell => {
@@ -366,13 +486,13 @@ class Row {
       : null;
   }
 
-  set model(value) {
-    if (value.number !== this._number) {
+  set model(value: Record<string, unknown>) {
+    if ((value as any).number !== this._number) {
       throw new Error('Invalid row number in model');
     }
     this._cells = [];
-    let previousAddress;
-    value.cells.forEach(cellModel => {
+    let previousAddress: Record<string, unknown> | null = null;
+    ((value as any).cells as unknown[]).forEach((cellModel: unknown) => {
       switch (cellModel.type) {
         case Cell.Types.Merge:
           // special case - don't add this types

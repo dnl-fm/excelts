@@ -1,9 +1,9 @@
 
-
 /**
  * WorkbookWriter streams XLSX output with optional shared strings and styles.
  */
 import fs from 'fs';
+import { Writable } from 'stream';
 import Archiver from 'archiver';
 import StreamBuf from '../../utils/stream-buf.ts';
 import RelType from '../../xlsx/rel-type.ts';
@@ -19,8 +19,60 @@ import SharedStringsXform from '../../xlsx/xform/strings/shared-strings-xform.ts
 import WorksheetWriter from './worksheet-writer.ts';
 import theme1Xml from '../../xlsx/xml/theme1.ts';
 
+/** Options for WorkbookWriter */
+export interface WorkbookWriterOptions {
+  stream?: Writable;
+  filename?: string;
+  useSharedStrings?: boolean;
+  useStyles?: boolean;
+  zip?: Record<string, unknown>;
+  created?: Date;
+  modified?: Date;
+  creator?: string;
+  lastModifiedBy?: string;
+  lastPrinted?: Date;
+}
+
+/** Options for adding a worksheet */
+export interface WorksheetWriterOptions {
+  useSharedStrings?: boolean;
+  properties?: Record<string, unknown>;
+  state?: 'visible' | 'hidden' | 'veryHidden';
+  pageSetup?: Record<string, unknown>;
+  views?: unknown[];
+  autoFilter?: unknown;
+  headerFooter?: Record<string, unknown>;
+  tabColor?: unknown;
+}
+
+/** Image data for WorkbookWriter */
+export interface WorkbookWriterImage {
+  buffer?: Buffer | ArrayBuffer;
+  base64?: string;
+  filename?: string;
+  extension: string;
+}
+
 class WorkbookWriter {
-  constructor(options) {
+  created: Date;
+  modified: Date;
+  creator: string;
+  lastModifiedBy: string;
+  lastPrinted?: Date;
+  useSharedStrings: boolean;
+  sharedStrings: SharedStrings;
+  styles: StylesXform;
+  views: unknown[];
+  media: unknown[];
+  commentRefs: unknown[];
+  zip: Archiver.Archiver;
+  stream: Writable | StreamBuf;
+  promise: Promise<unknown[]>;
+  zipOptions?: Record<string, unknown>;
+  private _definedNames: DefinedNames;
+  private _worksheets: WorksheetWriter[];
+
+  constructor(options?: WorkbookWriterOptions) {
     options = options || {};
 
     this.created = options.created || new Date();
@@ -61,11 +113,11 @@ class WorkbookWriter {
     this.promise = Promise.all([this.addThemes(), this.addOfficeRels()]);
   }
 
-  get definedNames() {
+  get definedNames(): DefinedNames {
     return this._definedNames;
   }
 
-  _openStream(path) {
+  private _openStream(path: string): StreamBuf {
     const stream = new StreamBuf({bufSize: 65536, batch: true});
     this.zip.append(stream, {name: path});
     stream.on('finish', () => {
@@ -74,8 +126,8 @@ class WorkbookWriter {
     return stream;
   }
 
-  _commitWorksheets() {
-    const commitWorksheet = function(worksheet) {
+  private _commitWorksheets(): Promise<void[]> | Promise<void> {
+    const commitWorksheet = function(worksheet: WorksheetWriter): Promise<void> {
       if (!worksheet.committed) {
         return new Promise(resolve => {
           worksheet.stream.on('zipped', () => {
@@ -94,7 +146,7 @@ class WorkbookWriter {
     return Promise.resolve();
   }
 
-  async commit() {
+  async commit(): Promise<WorkbookWriter> {
     // commit all worksheets, then add suplimentary files
     await this.promise;
     await this.addMedia();
@@ -111,7 +163,7 @@ class WorkbookWriter {
     return this._finalize();
   }
 
-  get nextId() {
+  get nextId(): number {
     // find the next unique spot to add worksheet
     let i;
     for (i = 1; i < this._worksheets.length; i++) {
@@ -122,18 +174,18 @@ class WorkbookWriter {
     return this._worksheets.length || 1;
   }
 
-  addImage(image) {
+  addImage(image: WorkbookWriterImage): number {
     const id = this.media.length;
     const medium = Object.assign({}, image, {type: 'image', name: `image${id}.${image.extension}`});
     this.media.push(medium);
     return id;
   }
 
-  getImage(id) {
+  getImage(id: number): unknown {
     return this.media[id];
   }
 
-  addWorksheet(name, options) {
+  addWorksheet(name?: string, options?: WorksheetWriterOptions): WorksheetWriter {
     // it's possible to add a worksheet with different than default
     // shared string handling
     // in fact, it's even possible to switch it mid-sheet
@@ -172,7 +224,7 @@ class WorkbookWriter {
     return worksheet;
   }
 
-  getWorksheet(id) {
+  getWorksheet(id?: number | string): WorksheetWriter | undefined {
     if (id === undefined) {
       return this._worksheets.find(() => true);
     }
@@ -185,21 +237,21 @@ class WorkbookWriter {
     return undefined;
   }
 
-  addStyles() {
+  private addStyles(): Promise<void> {
     return new Promise(resolve => {
       this.zip.append(this.styles.xml, {name: 'xl/styles.xml'});
       resolve();
     });
   }
 
-  addThemes() {
+  private addThemes(): Promise<void> {
     return new Promise(resolve => {
       this.zip.append(theme1Xml, {name: 'xl/theme/theme1.xml'});
       resolve();
     });
   }
 
-  addOfficeRels() {
+  private addOfficeRels(): Promise<void> {
     return new Promise(resolve => {
       const xform = new RelationshipsXform();
       const xml = xform.toXml([
@@ -212,7 +264,7 @@ class WorkbookWriter {
     });
   }
 
-  addContentTypes() {
+  private addContentTypes(): Promise<void> {
     return new Promise(resolve => {
       const model = {
         worksheets: this._worksheets.filter(Boolean),
@@ -227,9 +279,9 @@ class WorkbookWriter {
     });
   }
 
-  addMedia() {
+  private addMedia(): Promise<unknown[]> {
     return Promise.all(
-      this.media.map(medium => {
+      (this.media as Array<{ type: string; name: string; filename?: string; buffer?: Buffer; base64?: string }>).map(medium => {
         if (medium.type === 'image') {
           const filename = `xl/media/${medium.name}`;
           if (medium.filename) {
@@ -249,7 +301,7 @@ class WorkbookWriter {
     );
   }
 
-  addApp() {
+  private addApp(): Promise<void> {
     return new Promise(resolve => {
       const model = {
         worksheets: this._worksheets.filter(Boolean),
@@ -261,7 +313,7 @@ class WorkbookWriter {
     });
   }
 
-  addCore() {
+  private addCore(): Promise<void> {
     return new Promise(resolve => {
       const coreXform = new CoreXform();
       const xml = coreXform.toXml(this);
@@ -270,7 +322,7 @@ class WorkbookWriter {
     });
   }
 
-  addSharedStrings() {
+  private addSharedStrings(): Promise<void> {
     if (this.sharedStrings.count) {
       return new Promise(resolve => {
         const sharedStringsXform = new SharedStringsXform();
@@ -282,7 +334,7 @@ class WorkbookWriter {
     return Promise.resolve();
   }
 
-  addWorkbookRels() {
+  private addWorkbookRels(): Promise<void> {
     let count = 1;
     const relationships = [
       {Id: `rId${count++}`, Type: RelType.Styles, Target: 'styles.xml'},
@@ -313,7 +365,7 @@ class WorkbookWriter {
     });
   }
 
-  addWorkbook() {
+  private addWorkbook(): Promise<void> {
     const {zip} = this;
     const model = {
       worksheets: this._worksheets.filter(Boolean),
@@ -331,7 +383,7 @@ class WorkbookWriter {
     });
   }
 
-  _finalize() {
+  private _finalize(): Promise<WorkbookWriter> {
     return new Promise((resolve, reject) => {
       this.stream.on('error', reject);
       this.stream.on('finish', () => {

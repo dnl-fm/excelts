@@ -162,7 +162,7 @@ class StylesXform extends BaseXform {
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: any): boolean {
     if (this.parser) {
       this.parser.parseOpen(node);
       return true;
@@ -180,13 +180,13 @@ class StylesXform extends BaseXform {
     }
   }
 
-  parseText(text) {
+  parseText(text: string): void {
     if (this.parser) {
       this.parser.parseText(text);
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string): boolean {
     if (this.parser) {
       if (!this.parser.parseClose(name)) {
         this.parser = undefined;
@@ -196,7 +196,7 @@ class StylesXform extends BaseXform {
     switch (name) {
       case 'styleSheet': {
         this.model = {};
-        const add = (propName, xform) => {
+        const add = (propName: string, xform: any) => {
           if (xform.model && xform.model.length) {
             this.model[propName] = xform.model;
           }
@@ -215,7 +215,7 @@ class StylesXform extends BaseXform {
         };
         if (this.model.numFmts) {
           const numFmtIndex = this.index.numFmt;
-          this.model.numFmts.forEach(numFmt => {
+          this.model.numFmts.forEach((numFmt: any) => {
             numFmtIndex[numFmt.id] = numFmt.formatCode;
           });
         }
@@ -231,7 +231,7 @@ class StylesXform extends BaseXform {
   // add a cell's style model to the collection
   // each style property is processed and cross-referenced, etc.
   // the styleId is returned. Note: cellType is used when numFmt not defined
-  addStyleModel(model, cellType) {
+  addStyleModel(model: any, cellType?: any): number {
     if (!model) {
       return 0;
     }
@@ -294,7 +294,7 @@ class StylesXform extends BaseXform {
 
   // given a styleId (i.e. s="n"), get the cell's style model
   // objects are shared where possible.
-  getStyleModel(id) {
+  getStyleModel(id: number): any {
     // if the style doesn't exist return null
     const style = this.model.styles[id];
     if (!style) return null;
@@ -315,7 +315,7 @@ class StylesXform extends BaseXform {
       }
     }
 
-    function addStyle(name, group, styleId) {
+    function addStyle(name: string, group: any, styleId: number | undefined) {
       if (styleId || styleId === 0) {
         const part = group[styleId];
         if (part) {
@@ -343,7 +343,7 @@ class StylesXform extends BaseXform {
     return model;
   }
 
-  addDxfStyle(style) {
+  addDxfStyle(style: any): number {
     if (style.numFmt) {
       // register numFmtId to use it during dxf-xform rendering
       style.numFmtId = this._addNumFmtStr(style.numFmt);
@@ -353,13 +353,13 @@ class StylesXform extends BaseXform {
     return this.model.dxfs.length - 1;
   }
 
-  getDxfStyle(id) {
+  getDxfStyle(id: number): any {
     return this.model.dxfs[id];
   }
 
   // =========================================================================
   // Private Interface
-  _addStyle(style) {
+  _addStyle(style: any): number {
     const xml = this.map.style.toXml(style);
     let index = this.index.style[xml];
     if (index === undefined) {
@@ -371,7 +371,7 @@ class StylesXform extends BaseXform {
 
   // =========================================================================
   // Number Formats
-  _addNumFmtStr(formatCode) {
+  _addNumFmtStr(formatCode: string): number {
     // check if default format
     let index = NumFmtXform.getDefaultFmtId(formatCode);
     if (index !== undefined) return index;
@@ -388,7 +388,7 @@ class StylesXform extends BaseXform {
 
   // =========================================================================
   // Fonts
-  _addFont(font) {
+  _addFont(font: any): number {
     const xml = this.map.font.toXml(font);
     let index = this.index.font[xml];
     if (index === undefined) {
@@ -400,7 +400,7 @@ class StylesXform extends BaseXform {
 
   // =========================================================================
   // Borders
-  _addBorder(border) {
+  _addBorder(border: any): number {
     const xml = this.map.border.toXml(border);
     let index = this.index.border[xml];
     if (index === undefined) {
@@ -412,7 +412,7 @@ class StylesXform extends BaseXform {
 
   // =========================================================================
   // Fills
-  _addFill(fill) {
+  _addFill(fill: any): number {
     const xml = this.map.fill.toXml(fill);
     let index = this.index.fill[xml];
     if (index === undefined) {

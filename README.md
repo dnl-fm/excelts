@@ -22,10 +22,10 @@ bun add excelts
 ## Quick Start
 
 ```typescript
-import ExcelJS from 'excelts';
+import ExcelTS from 'excelts';
 
 // Create a workbook
-const workbook = new ExcelJS.Workbook();
+const workbook = new ExcelTS.Workbook();
 const sheet = workbook.addWorksheet('Sheet1');
 
 // Add data
@@ -44,7 +44,7 @@ await workbook.xlsx.writeFile('output.xlsx');
 ## Reading Files
 
 ```typescript
-const workbook = new ExcelJS.Workbook();
+const workbook = new ExcelTS.Workbook();
 await workbook.xlsx.readFile('input.xlsx');
 
 workbook.eachSheet((sheet, id) => {
@@ -58,7 +58,7 @@ workbook.eachSheet((sheet, id) => {
 
 ```typescript
 // Writing
-const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
+const workbook = new ExcelTS.stream.xlsx.WorkbookWriter({
   filename: 'large.xlsx',
 });
 const sheet = workbook.addWorksheet('Data');
@@ -68,7 +68,7 @@ for (let i = 0; i < 1000000; i++) {
 await workbook.commit();
 
 // Reading
-const workbook = new ExcelJS.stream.xlsx.WorkbookReader('large.xlsx');
+const workbook = new ExcelTS.stream.xlsx.WorkbookReader('large.xlsx');
 for await (const sheet of workbook) {
   for await (const row of sheet) {
     console.log(row.values);

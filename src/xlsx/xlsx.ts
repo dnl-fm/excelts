@@ -25,8 +25,17 @@ import theme1Xml from './xml/theme1.ts';
 import { PassThrough } from 'readable-stream';
 import { bufferToString } from '../utils/browser-buffer-decode.ts';
 import _RelType from './rel-type.ts';
+import type {
+  ReadableStream,
+  XlsxReadOptions,
+  XlsxWriteOptions,
+  FsReadFileOptions,
+  XlsxModel,
+  ZipEntry,
+  ZipWriter,
+} from '../types/index.ts';
 
-function fsReadFileAsync(filename, options) {
+function fsReadFileAsync(filename: string, options?: FsReadFileOptions): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     fs.readFile(filename, options, (error, data) => {
       if (error) {
@@ -42,7 +51,9 @@ function fsReadFileAsync(filename, options) {
  * XLSX handles reading and writing XLSX containers for a workbook instance.
  */
 class XLSX {
-  constructor(workbook) {
+  workbook: unknown;
+
+  constructor(workbook: unknown) {
     this.workbook = workbook;
   }
 
@@ -51,7 +62,7 @@ class XLSX {
   // =========================================================================
   // Read
 
-  async readFile(filename, options) {
+  async readFile(filename: string, options?: XlsxReadOptions): Promise<unknown> {
     if (!(await utils.fs.exists(filename))) {
       throw new Error(`File not found: ${filename}`);
     }
@@ -66,22 +77,22 @@ class XLSX {
     }
   }
 
-  parseRels(stream) {
+  parseRels(stream: ReadableStream): Promise<unknown> {
     const xform = new RelationshipsXform();
     return xform.parseStream(stream);
   }
 
-  parseWorkbook(stream) {
+  parseWorkbook(stream: ReadableStream): Promise<unknown> {
     const xform = new WorkbookXform();
     return xform.parseStream(stream);
   }
 
-  parseSharedStrings(stream) {
+  parseSharedStrings(stream: ReadableStream): Promise<unknown> {
     const xform = new SharedStringsXform();
     return xform.parseStream(stream);
   }
 
-  reconcile(model, options) {
+  reconcile(model: XlsxModel, options?: XlsxReadOptions): void {
     const workbookXform = new WorkbookXform();
     const worksheetXform = new WorksheetXform(options);
     const drawingXform = new DrawingXform();
@@ -90,7 +101,7 @@ class XLSX {
     workbookXform.reconcile(model);
 
     // reconcile drawings with their rels
-    const drawingOptions = {
+    const drawingOptions: Record<string, unknown> = {
       media: model.media,
       mediaIndex: model.mediaIndex,
     };
@@ -98,14 +109,14 @@ class XLSX {
       const drawing = model.drawings[name];
       const drawingRel = model.drawingRels[name];
       if (drawingRel) {
-        drawingOptions.rels = drawingRel.reduce((o, rel) => {
+        drawingOptions.rels = drawingRel.reduce((o: Record<string, unknown>, rel) => {
           o[rel.Id] = rel;
           return o;
         }, {});
         (drawing.anchors || []).forEach(anchor => {
           const hyperlinks = anchor.picture && anchor.picture.hyperlinks;
-          if (hyperlinks && drawingOptions.rels[hyperlinks.rId]) {
-            hyperlinks.hyperlink = drawingOptions.rels[hyperlinks.rId].Target;
+          if (hyperlinks && (drawingOptions.rels as Record<string, unknown>)[hyperlinks.rId!]) {
+            hyperlinks.hyperlink = ((drawingOptions.rels as Record<string, unknown>)[hyperlinks.rId!] as Record<string, unknown>).Target;
             delete hyperlinks.rId;
           }
         });
@@ -114,26 +125,26 @@ class XLSX {
     });
 
     // reconcile tables with the default styles
-    const tableOptions = {
+    const tableOptions: Record<string, unknown> = {
       styles: model.styles,
     };
     Object.values(model.tables).forEach(table => {
       tableXform.reconcile(table, tableOptions);
     });
 
-    const sheetOptions = {
+    const sheetOptions: Record<string, unknown> = {
       styles: model.styles,
       sharedStrings: model.sharedStrings,
       media: model.media,
       mediaIndex: model.mediaIndex,
-      date1904: model.properties && model.properties.date1904,
+      date1904: model.properties && (model.properties as Record<string, unknown>).date1904,
       drawings: model.drawings,
       comments: model.comments,
       tables: model.tables,
       vmlDrawings: model.vmlDrawings,
     };
     model.worksheets.forEach(worksheet => {
-      worksheet.relationships = model.worksheetRels[worksheet.sheetNo];
+      worksheet.relationships = model.worksheetRels[worksheet.sheetNo!];
       worksheetXform.reconcile(worksheet, sheetOptions);
     });
 
@@ -143,7 +154,6 @@ class XLSX {
     delete model.globalRels;
     delete model.sharedStrings;
     delete model.workbookRels;
-    delete model.sheetDefs;
     delete model.styles;
     delete model.mediaIndex;
     delete model.drawings;
@@ -151,39 +161,41 @@ class XLSX {
     delete model.vmlDrawings;
   }
 
-  async _processWorksheetEntry(stream, model, sheetNo, options, path) {
+  async _processWorksheetEntry(stream: ReadableStream, model: XlsxModel, sheetNo: number, options?: XlsxReadOptions, path?: string): Promise<void> {
     const xform = new WorksheetXform(options);
     const worksheet = await xform.parseStream(stream);
-    worksheet.sheetNo = sheetNo;
-    model.worksheetHash[path] = worksheet;
-    model.worksheets.push(worksheet);
+    (worksheet as Record<string, unknown>).sheetNo = sheetNo;
+    if (path) {
+      model.worksheetHash[path] = worksheet as any;
+    }
+    model.worksheets.push(worksheet as any);
   }
 
-  async _processCommentEntry(stream, model, name) {
+  async _processCommentEntry(stream: ReadableStream, model: XlsxModel, name: string): Promise<void> {
     const xform = new CommentsXform();
     const comments = await xform.parseStream(stream);
-    model.comments[`../${name}.xml`] = comments;
+    model.comments[`../${name}.xml`] = comments as any;
   }
 
-  async _processTableEntry(stream, model, name) {
+  async _processTableEntry(stream: ReadableStream, model: XlsxModel, name: string): Promise<void> {
     const xform = new TableXform();
     const table = await xform.parseStream(stream);
-    model.tables[`../tables/${name}.xml`] = table;
+    model.tables[`../tables/${name}.xml`] = table as any;
   }
 
-  async _processWorksheetRelsEntry(stream, model, sheetNo) {
+  async _processWorksheetRelsEntry(stream: ReadableStream, model: XlsxModel, sheetNo: number): Promise<void> {
     const xform = new RelationshipsXform();
     const relationships = await xform.parseStream(stream);
-    model.worksheetRels[sheetNo] = relationships;
+    model.worksheetRels[sheetNo] = relationships as any;
   }
 
-  async _processMediaEntry(entry, model, filename) {
+  async _processMediaEntry(entry: ZipEntry, model: XlsxModel, filename: string): Promise<void> {
     const lastDot = filename.lastIndexOf('.');
     // if we can't determine extension, ignore it
     if (lastDot >= 1) {
       const extension = filename.substr(lastDot + 1);
       const name = filename.substr(0, lastDot);
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const streamBuf = new StreamBuf();
         streamBuf.on('finish', () => {
           model.mediaIndex[filename] = model.media.length;
@@ -197,56 +209,56 @@ class XLSX {
           model.media.push(medium);
           resolve();
         });
-        entry.on('error', error => {
+        (entry as any).on('error', (error: Error) => {
           reject(error);
         });
-        entry.pipe(streamBuf);
+        (entry as any).pipe(streamBuf);
       });
     }
   }
 
-  async _processDrawingEntry(entry, model, name) {
+  async _processDrawingEntry(entry: ZipEntry, model: XlsxModel, name: string): Promise<void> {
     const xform = new DrawingXform();
-    const drawing = await xform.parseStream(entry);
-    model.drawings[name] = drawing;
+    const drawing = await xform.parseStream(entry as any);
+    model.drawings[name] = drawing as any;
   }
 
-  async _processDrawingRelsEntry(entry, model, name) {
+  async _processDrawingRelsEntry(entry: ZipEntry, model: XlsxModel, name: string): Promise<void> {
     const xform = new RelationshipsXform();
-    const relationships = await xform.parseStream(entry);
-    model.drawingRels[name] = relationships;
+    const relationships = await xform.parseStream(entry as any);
+    model.drawingRels[name] = relationships as any;
   }
 
-  async _processVmlDrawingEntry(entry, model, name) {
+  async _processVmlDrawingEntry(entry: ZipEntry, model: XlsxModel, name: string): Promise<void> {
     const xform = new VmlNotesXform();
-    const vmlDrawing = await xform.parseStream(entry);
-    model.vmlDrawings[`../drawings/${name}.vml`] = vmlDrawing;
+    const vmlDrawing = await xform.parseStream(entry as any);
+    model.vmlDrawings[`../drawings/${name}.vml`] = vmlDrawing as any;
   }
 
-  async _processThemeEntry(entry, model, name) {
-    await new Promise((resolve, reject) => {
+  async _processThemeEntry(entry: ZipEntry, model: XlsxModel, name: string): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
       // TODO: stream entry into buffer and store the xml in the model.themes[]
       const stream = new StreamBuf();
-      entry.on('error', reject);
+      (entry as any).on('error', reject);
       stream.on('error', reject);
       stream.on('finish', () => {
         model.themes[name] = stream.read().toString();
         resolve();
       });
-      entry.pipe(stream);
+      (entry as any).pipe(stream);
     });
   }
 
-  async _processRawXmlEntry(entry, bucket, name) {
-    await new Promise((resolve, reject) => {
+  async _processRawXmlEntry(entry: ZipEntry, bucket: Record<string, string>, name: string): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
       const stream = new StreamBuf();
-      entry.on('error', reject);
+      (entry as any).on('error', reject);
       stream.on('error', reject);
       stream.on('finish', () => {
         bucket[name] = stream.read().toString();
         resolve();
       });
-      entry.pipe(stream);
+      (entry as any).pipe(stream);
     });
   }
 
@@ -259,31 +271,32 @@ class XLSX {
     );
   }
 
-  async read(stream, options) {
+  async read(stream: ReadableStream, options?: XlsxReadOptions): Promise<unknown> {
     // TODO: Remove once node v8 is deprecated
     // Detect and upgrade old streams
-    if (!stream[Symbol.asyncIterator] && stream.pipe) {
-      stream = stream.pipe(new PassThrough());
+    let readStream = stream;
+    if (typeof (stream as any)[Symbol.asyncIterator] !== 'function' && typeof (stream as any).pipe === 'function') {
+      readStream = (stream as any).pipe(new PassThrough());
     }
-    const chunks = [];
-    for await (const chunk of stream) {
-      chunks.push(chunk);
+    const chunks: Buffer[] = [];
+    for await (const chunk of readStream) {
+      chunks.push(chunk as Buffer);
     }
     return this.load(Buffer.concat(chunks), options);
   }
 
-  async load(data, options) {
-    let buffer;
+  async load(data: Buffer, options?: XlsxReadOptions): Promise<unknown> {
+    let buffer: Buffer;
     if (options && options.base64) {
       buffer = Buffer.from(data.toString(), 'base64');
     } else {
       buffer = data;
     }
 
-    const model = {
+    const model: XlsxModel = {
       worksheets: [],
       worksheetHash: {},
-      worksheetRels: [],
+      worksheetRels: {},
       themes: {},
       media: [],
       mediaIndex: {},
@@ -305,27 +318,22 @@ class XLSX {
         if (entryName[0] === '/') {
           entryName = entryName.substr(1);
         }
-        let stream;
+        let stream: PassThrough;
         if (
           entryName.match(/xl\/media\//) ||
-          // themes are not parsed as stream
           entryName.match(/xl\/theme\/([a-zA-Z0-9]+)[.]xml/)
         ) {
           stream = new PassThrough();
           stream.write(await entry.async('nodebuffer'));
         } else {
-          // use object mode to avoid buffer-string convention
           stream = new PassThrough({
             writableObjectMode: true,
             readableObjectMode: true,
           });
-          let content;
-          // https://www.npmjs.com/package/process
-          if (process.browser) {
-            // running in browser, use TextDecoder if possible
+          let content: string;
+          if ((process as any).browser) {
             content = bufferToString(await entry.async('nodebuffer'));
           } else {
-            // running in node.js
             content = await entry.async('string');
           }
           const chunkSize = 16 * 1024;
@@ -341,11 +349,11 @@ class XLSX {
 
           case 'xl/workbook.xml': {
             const workbook = await this.parseWorkbook(stream);
-            model.sheets = workbook.sheets;
-            model.definedNames = workbook.definedNames;
-            model.views = workbook.views;
-            model.properties = workbook.properties;
-            model.calcProperties = workbook.calcProperties;
+            model.sheets = (workbook as Record<string, unknown>).sheets as any;
+            model.definedNames = (workbook as Record<string, unknown>).definedNames;
+            model.views = (workbook as Record<string, unknown>).views as any;
+            model.properties = (workbook as Record<string, unknown>).properties as any;
+            model.calcProperties = (workbook as Record<string, unknown>).calcProperties;
             break;
           }
 
@@ -366,8 +374,8 @@ class XLSX {
           case 'docProps/app.xml': {
             const appXform = new AppXform();
             const appProperties = await appXform.parseStream(stream);
-            model.company = appProperties.company;
-            model.manager = appProperties.manager;
+            model.company = (appProperties as Record<string, unknown>).company as any;
+            model.manager = (appProperties as Record<string, unknown>).manager as any;
             break;
           }
 
@@ -381,27 +389,27 @@ class XLSX {
           default: {
             let match = entryName.match(/xl\/worksheets\/sheet(\d+)[.]xml/);
             if (match) {
-              await this._processWorksheetEntry(stream, model, match[1], options, entryName);
+              await this._processWorksheetEntry(stream, model, parseInt(match[1]), options, entryName);
               break;
             }
             match = entryName.match(/xl\/worksheets\/_rels\/sheet(\d+)[.]xml.rels/);
             if (match) {
-              await this._processWorksheetRelsEntry(stream, model, match[1]);
+              await this._processWorksheetRelsEntry(stream, model, parseInt(match[1]));
               break;
             }
             match = entryName.match(/xl\/theme\/([a-zA-Z0-9]+)[.]xml/);
             if (match) {
-              await this._processThemeEntry(stream, model, match[1]);
+              await this._processThemeEntry(entry as any, model, match[1]);
               break;
             }
             match = entryName.match(/xl\/media\/([a-zA-Z0-9]+[.][a-zA-Z0-9]{3,4})$/);
             if (match) {
-              await this._processMediaEntry(stream, model, match[1]);
+              await this._processMediaEntry(entry as any, model, match[1]);
               break;
             }
             match = entryName.match(/xl\/drawings\/([a-zA-Z0-9]+)[.]xml/);
             if (match) {
-              await this._processDrawingEntry(stream, model, match[1]);
+              await this._processDrawingEntry(entry as any, model, match[1]);
               break;
             }
             match = entryName.match(/xl\/(comments\d+)[.]xml/);
@@ -416,27 +424,27 @@ class XLSX {
             }
             match = entryName.match(/xl\/pivotTables\/(pivotTable\d+)[.]xml/);
             if (match) {
-              await this._processRawXmlEntry(stream, model.pivotTablesRaw, match[1]);
+              await this._processRawXmlEntry(entry as any, model.pivotTablesRaw, match[1]);
               break;
             }
             match = entryName.match(/xl\/pivotCache\/(pivotCacheDefinition\d+)[.]xml/);
             if (match) {
-              await this._processRawXmlEntry(stream, model.pivotCacheDefinitionsRaw, match[1]);
+              await this._processRawXmlEntry(entry as any, model.pivotCacheDefinitionsRaw, match[1]);
               break;
             }
             match = entryName.match(/xl\/pivotCache\/(pivotCacheRecords\d+)[.]xml/);
             if (match) {
-              await this._processRawXmlEntry(stream, model.pivotCacheRecordsRaw, match[1]);
+              await this._processRawXmlEntry(entry as any, model.pivotCacheRecordsRaw, match[1]);
               break;
             }
             match = entryName.match(/xl\/drawings\/_rels\/([a-zA-Z0-9]+)[.]xml[.]rels/);
             if (match) {
-              await this._processDrawingRelsEntry(stream, model, match[1]);
+              await this._processDrawingRelsEntry(entry as any, model, match[1]);
               break;
             }
             match = entryName.match(/xl\/drawings\/(vmlDrawing\d+)[.]vml/);
             if (match) {
-              await this._processVmlDrawingEntry(stream, model, match[1]);
+              await this._processVmlDrawingEntry(entry as any, model, match[1]);
               break;
             }
           }
@@ -447,14 +455,14 @@ class XLSX {
     this.reconcile(model, options);
 
     // apply model
-    this.workbook.model = model;
+    (this.workbook as any).model = model;
     return this.workbook;
   }
 
   // =========================================================================
   // Write
 
-  async addMedia(zip, model) {
+  async addMedia(zip: ZipWriter, model: XlsxModel): Promise<void> {
     await Promise.all(
       model.media.map(async medium => {
         if (medium.type === 'image') {
@@ -477,38 +485,38 @@ class XLSX {
     );
   }
 
-  addDrawings(zip, model) {
+  addDrawings(zip: ZipWriter, model: XlsxModel): void {
     const drawingXform = new DrawingXform();
     const relsXform = new RelationshipsXform();
 
     model.worksheets.forEach(worksheet => {
-      const {drawing} = worksheet;
+      const drawing = (worksheet as Record<string, unknown>).drawing;
       if (drawing) {
         drawingXform.prepare(drawing, {});
         let xml = drawingXform.toXml(drawing);
-        zip.append(xml, {name: `xl/drawings/${drawing.name}.xml`});
+        zip.append(xml, {name: `xl/drawings/${(drawing as Record<string, unknown>).name}.xml`});
 
-        xml = relsXform.toXml(drawing.rels);
-        zip.append(xml, {name: `xl/drawings/_rels/${drawing.name}.xml.rels`});
+        xml = relsXform.toXml((drawing as Record<string, unknown>).rels);
+        zip.append(xml, {name: `xl/drawings/_rels/${(drawing as Record<string, unknown>).name}.xml.rels`});
       }
     });
   }
 
-  addTables(zip, model) {
+  addTables(zip: ZipWriter, model: XlsxModel): void {
     const tableXform = new TableXform();
 
     model.worksheets.forEach(worksheet => {
-      const {tables} = worksheet;
-      tables.forEach(table => {
+      const tables = (worksheet as Record<string, unknown>).tables as any[];
+      tables?.forEach(table => {
         tableXform.prepare(table, {});
         const tableXml = tableXform.toXml(table);
-        zip.append(tableXml, {name: `xl/tables/${table.target}`});
+        zip.append(tableXml, {name: `xl/tables/${(table as Record<string, unknown>).target}`});
       });
     });
   }
 
-  addPivotTables(zip, model) {
-    if (!model.pivotTables.length) return;
+  addPivotTables(zip: ZipWriter, model: XlsxModel): void {
+    if (!(model.pivotTables?.length)) return;
 
     const pivotTable = model.pivotTables[0];
 
@@ -517,26 +525,8 @@ class XLSX {
     const pivotTableXform = new PivotTableXform();
     const relsXform = new RelationshipsXform();
 
-    // pivot cache records
-    // --------------------------------------------------
-    // copy of the source data.
-    //
-    // Note: cells in the columns of the source data which are part
-    // of the "rows" or "columns" of the pivot table configuration are
-    // replaced by references to their __cache field__ identifiers.
-    // See "pivot cache definition" below.
-
     let xml = pivotCacheRecordsXform.toXml(pivotTable);
     zip.append(xml, {name: 'xl/pivotCache/pivotCacheRecords1.xml'});
-
-    // pivot cache definition
-    // --------------------------------------------------
-    // cache source (source data):
-    //    ref="A1:E7" on sheet="Sheet1"
-    // cache fields:
-    //    - 0: "A" (a1, a2, a3)
-    //    - 1: "B" (b1, b2)
-    //    - ...
 
     xml = pivotCacheDefinitionXform.toXml(pivotTable);
     zip.append(xml, {name: 'xl/pivotCache/pivotCacheDefinition1.xml'});
@@ -544,20 +534,11 @@ class XLSX {
     xml = relsXform.toXml([
       {
         Id: 'rId1',
-        Type: XLSX.RelType.PivotCacheRecords,
+        Type: (XLSX as any).RelType.PivotCacheRecords,
         Target: 'pivotCacheRecords1.xml',
       },
     ]);
     zip.append(xml, {name: 'xl/pivotCache/_rels/pivotCacheDefinition1.xml.rels'});
-
-    // pivot tables (on destination worksheet)
-    // --------------------------------------------------
-    // location: ref="A3:E15"
-    // pivotFields
-    // rowFields and rowItems
-    // colFields and colItems
-    // dataFields
-    // pivotTableStyleInfo
 
     xml = pivotTableXform.toXml(pivotTable);
     zip.append(xml, {name: 'xl/pivotTables/pivotTable1.xml'});
@@ -565,31 +546,31 @@ class XLSX {
     xml = relsXform.toXml([
       {
         Id: 'rId1',
-        Type: XLSX.RelType.PivotCacheDefinition,
+        Type: (XLSX as any).RelType.PivotCacheDefinition,
         Target: '../pivotCache/pivotCacheDefinition1.xml',
       },
     ]);
     zip.append(xml, {name: 'xl/pivotTables/_rels/pivotTable1.xml.rels'});
   }
 
-  async addContentTypes(zip, model) {
+  async addContentTypes(zip: ZipWriter, model: XlsxModel): Promise<void> {
     const xform = new ContentTypesXform();
     const xml = xform.toXml(model);
     zip.append(xml, {name: '[Content_Types].xml'});
   }
 
-  async addApp(zip, model) {
+  async addApp(zip: ZipWriter, model: XlsxModel): Promise<void> {
     const xform = new AppXform();
     const xml = xform.toXml(model);
     zip.append(xml, {name: 'docProps/app.xml'});
   }
 
-  async addCore(zip, model) {
+  async addCore(zip: ZipWriter, model: XlsxModel): Promise<void> {
     const coreXform = new CoreXform();
     zip.append(coreXform.toXml(model), {name: 'docProps/core.xml'});
   }
 
-  async addThemes(zip, model) {
+  async addThemes(zip: ZipWriter, model: XlsxModel): Promise<void> {
     const themes = model.themes || {theme1: theme1Xml};
     Object.keys(themes).forEach(name => {
       const xml = themes[name];
@@ -598,44 +579,44 @@ class XLSX {
     });
   }
 
-  async addOfficeRels(zip) {
+  async addOfficeRels(zip: ZipWriter): Promise<void> {
     const xform = new RelationshipsXform();
     const xml = xform.toXml([
-      {Id: 'rId1', Type: XLSX.RelType.OfficeDocument, Target: 'xl/workbook.xml'},
-      {Id: 'rId2', Type: XLSX.RelType.CoreProperties, Target: 'docProps/core.xml'},
-      {Id: 'rId3', Type: XLSX.RelType.ExtenderProperties, Target: 'docProps/app.xml'},
+      {Id: 'rId1', Type: (XLSX as any).RelType.OfficeDocument, Target: 'xl/workbook.xml'},
+      {Id: 'rId2', Type: (XLSX as any).RelType.CoreProperties, Target: 'docProps/core.xml'},
+      {Id: 'rId3', Type: (XLSX as any).RelType.ExtenderProperties, Target: 'docProps/app.xml'},
     ]);
     zip.append(xml, {name: '_rels/.rels'});
   }
 
-  async addWorkbookRels(zip, model) {
+  async addWorkbookRels(zip: ZipWriter, model: XlsxModel): Promise<void> {
     let count = 1;
-    const relationships = [
-      {Id: `rId${count++}`, Type: XLSX.RelType.Styles, Target: 'styles.xml'},
-      {Id: `rId${count++}`, Type: XLSX.RelType.Theme, Target: 'theme/theme1.xml'},
+    const relationships: Record<string, unknown>[] = [
+      {Id: `rId${count++}`, Type: (XLSX as any).RelType.Styles, Target: 'styles.xml'},
+      {Id: `rId${count++}`, Type: (XLSX as any).RelType.Theme, Target: 'theme/theme1.xml'},
     ];
-    if (model.sharedStrings.count) {
+    if ((model.sharedStrings as Record<string, unknown>)?.count) {
       relationships.push({
         Id: `rId${count++}`,
-        Type: XLSX.RelType.SharedStrings,
+        Type: (XLSX as any).RelType.SharedStrings,
         Target: 'sharedStrings.xml',
       });
     }
     if ((model.pivotTables || []).length) {
       const pivotTable = model.pivotTables[0];
-      pivotTable.rId = `rId${count++}`;
+      (pivotTable as Record<string, unknown>).rId = `rId${count++}`;
       relationships.push({
-        Id: pivotTable.rId,
-        Type: XLSX.RelType.PivotCacheDefinition,
+        Id: (pivotTable as Record<string, unknown>).rId,
+        Type: (XLSX as any).RelType.PivotCacheDefinition,
         Target: 'pivotCache/pivotCacheDefinition1.xml',
       });
     }
     model.worksheets.forEach(worksheet => {
-      worksheet.rId = `rId${count++}`;
+      (worksheet as Record<string, unknown>).rId = `rId${count++}`;
       relationships.push({
-        Id: worksheet.rId,
-        Type: XLSX.RelType.Worksheet,
-        Target: `worksheets/sheet${worksheet.id}.xml`,
+        Id: (worksheet as Record<string, unknown>).rId,
+        Type: (XLSX as any).RelType.Worksheet,
+        Target: `worksheets/sheet${(worksheet as Record<string, unknown>).id}.xml`,
       });
     });
     const xform = new RelationshipsXform();
@@ -643,67 +624,68 @@ class XLSX {
     zip.append(xml, {name: 'xl/_rels/workbook.xml.rels'});
   }
 
-  async addSharedStrings(zip, model) {
-    if (model.sharedStrings && model.sharedStrings.count) {
-      zip.append(model.sharedStrings.xml, {name: 'xl/sharedStrings.xml'});
+  async addSharedStrings(zip: ZipWriter, model: XlsxModel): Promise<void> {
+    if (model.sharedStrings && (model.sharedStrings as Record<string, unknown>).count) {
+      zip.append((model.sharedStrings as Record<string, unknown>).xml as string, {name: 'xl/sharedStrings.xml'});
     }
   }
 
-  async addStyles(zip, model) {
-    const {xml} = model.styles;
+  async addStyles(zip: ZipWriter, model: XlsxModel): Promise<void> {
+    const xml = (model.styles as Record<string, unknown>)?.xml;
     if (xml) {
-      zip.append(xml, {name: 'xl/styles.xml'});
+      zip.append(xml as string, {name: 'xl/styles.xml'});
     }
   }
 
-  async addWorkbook(zip, model) {
+  async addWorkbook(zip: ZipWriter, model: XlsxModel): Promise<void> {
     const xform = new WorkbookXform();
     zip.append(xform.toXml(model), {name: 'xl/workbook.xml'});
   }
 
-  async addWorksheets(zip, model) {
-    // preparation phase
+  async addWorksheets(zip: ZipWriter, model: XlsxModel): Promise<void> {
     const worksheetXform = new WorksheetXform();
     const relationshipsXform = new RelationshipsXform();
     const commentsXform = new CommentsXform();
     const vmlNotesXform = new VmlNotesXform();
 
-    // write sheets
     model.worksheets.forEach(worksheet => {
       let xmlStream = new XmlStream();
       worksheetXform.render(xmlStream, worksheet);
-      zip.append(xmlStream.xml, {name: `xl/worksheets/sheet${worksheet.id}.xml`});
+      zip.append(xmlStream.xml, {name: `xl/worksheets/sheet${(worksheet as Record<string, unknown>).id}.xml`});
 
-      if (worksheet.rels && worksheet.rels.length) {
+      const rels = (worksheet as Record<string, unknown>).rels as any[];
+      if (rels && rels.length) {
         xmlStream = new XmlStream();
-        relationshipsXform.render(xmlStream, worksheet.rels);
-        zip.append(xmlStream.xml, {name: `xl/worksheets/_rels/sheet${worksheet.id}.xml.rels`});
+        relationshipsXform.render(xmlStream, rels);
+        zip.append(xmlStream.xml, {name: `xl/worksheets/_rels/sheet${(worksheet as Record<string, unknown>).id}.xml.rels`});
       }
 
-      if (worksheet.comments.length > 0) {
+      const comments = (worksheet as Record<string, unknown>).comments as any[];
+      if (comments && comments.length > 0) {
         xmlStream = new XmlStream();
         commentsXform.render(xmlStream, worksheet);
-        zip.append(xmlStream.xml, {name: `xl/comments${worksheet.id}.xml`});
+        zip.append(xmlStream.xml, {name: `xl/comments${(worksheet as Record<string, unknown>).id}.xml`});
 
         xmlStream = new XmlStream();
         vmlNotesXform.render(xmlStream, worksheet);
-        zip.append(xmlStream.xml, {name: `xl/drawings/vmlDrawing${worksheet.id}.vml`});
+        zip.append(xmlStream.xml, {name: `xl/drawings/vmlDrawing${(worksheet as Record<string, unknown>).id}.vml`});
       }
     });
   }
 
-  _finalize(zip) {
+  _finalize(zip: ZipWriter): Promise<XLSX> {
     return new Promise((resolve, reject) => {
       zip.on('finish', () => {
         resolve(this);
       });
-      zip.on('error', reject);
+      zip.on('error', (error: Error) => {
+        reject(error);
+      });
       zip.finalize();
     });
   }
 
-  prepareModel(model, options) {
-    // ensure following properties have sane values
+  prepareModel(model: XlsxModel, options: XlsxWriteOptions): void {
     model.creator = model.creator || 'ExcelJS';
     model.lastModifiedBy = model.lastModifiedBy || 'ExcelJS';
     model.created = model.created || new Date();
@@ -712,58 +694,49 @@ class XLSX {
     model.useSharedStrings = options.useSharedStrings !== undefined ? options.useSharedStrings : true;
     model.useStyles = options.useStyles !== undefined ? options.useStyles : true;
 
-    // Manage the shared strings
     model.sharedStrings = new SharedStringsXform();
+    model.styles = model.useStyles ? new StylesXform(true) : (new StylesXform as any).Mock();
 
-    // add a style manager to handle cell formats, fonts, etc.
-    model.styles = model.useStyles ? new StylesXform(true) : new StylesXform.Mock();
-
-    // prepare all of the things before the render
     const workbookXform = new WorkbookXform();
     const worksheetXform = new WorksheetXform();
 
     workbookXform.prepare(model);
 
-    const worksheetOptions = {
+    const worksheetOptions: Record<string, unknown> = {
       sharedStrings: model.sharedStrings,
       styles: model.styles,
-      date1904: model.properties.date1904,
+      date1904: (model.properties as Record<string, unknown>)?.date1904,
       drawingsCount: 0,
       media: model.media,
     };
-    worksheetOptions.drawings = model.drawings = [];
+    worksheetOptions.drawings = model.drawings = {};
     worksheetOptions.commentRefs = model.commentRefs = [];
     let tableCount = 0;
-    model.tables = [];
-    model.worksheets.forEach(worksheet => {
-      // assign unique filenames to tables
-      worksheet.tables.forEach(table => {
+    model.tables = {};
+    model.worksheets.forEach((worksheet: any) => {
+      (worksheet.tables || []).forEach((table: any) => {
         tableCount++;
         table.target = `table${tableCount}.xml`;
         table.id = tableCount;
-        model.tables.push(table);
       });
 
       worksheetXform.prepare(worksheet, worksheetOptions);
     });
-
-    // TODO: workbook drawing list
   }
 
-  async write(stream, options) {
-    options = options || {};
-    const {model} = this.workbook;
-    const zip = new ZipStream.ZipWriter(options.zip);
+  async write(stream: WritableStream, options?: XlsxWriteOptions): Promise<XLSX> {
+    const opts = options || {};
+    const model = ((this.workbook as any).model || {}) as XlsxModel;
+    const zip = new (ZipStream as any).ZipWriter(opts.zip);
     zip.pipe(stream);
 
-    this.prepareModel(model, options);
+    this.prepareModel(model, opts);
 
-    // render
     await this.addContentTypes(zip, model);
-    await this.addOfficeRels(zip, model);
+    await this.addOfficeRels(zip);
     await this.addWorkbookRels(zip, model);
     await this.addWorksheets(zip, model);
-    await this.addSharedStrings(zip, model); // always after worksheets
+    await this.addSharedStrings(zip, model);
     await this.addDrawings(zip, model);
     await this.addTables(zip, model);
     await this.addPivotTables(zip, model);
@@ -774,14 +747,14 @@ class XLSX {
     return this._finalize(zip);
   }
 
-  writeFile(filename, options) {
+  writeFile(filename: string, options?: XlsxWriteOptions): Promise<void> {
     const stream = fs.createWriteStream(filename);
 
     return new Promise((resolve, reject) => {
       stream.on('finish', () => {
         resolve();
       });
-      stream.on('error', error => {
+      stream.on('error', (error: Error) => {
         reject(error);
       });
 
@@ -789,15 +762,15 @@ class XLSX {
         .then(() => {
           stream.end();
         })
-        .catch(err => {
+        .catch((err: Error) => {
           reject(err);
         });
     });
   }
 
-  async writeBuffer(options) {
+  async writeBuffer(options?: XlsxWriteOptions): Promise<Buffer> {
     const stream = new StreamBuf();
-    await this.write(stream, options);
+    await this.write(stream as any, options);
     return stream.read();
   }
 }

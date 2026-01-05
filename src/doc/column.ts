@@ -1,41 +1,72 @@
 
-
 import _ from '../utils/under-dash.ts';
 import Enums from './enums.ts';
 import colCache from '../utils/col-cache.ts';
+import type Worksheet from './worksheet.ts';
 
 const DEFAULT_COLUMN_WIDTH = 9;
 
 /**
- * Column defines column properties like headers, width, and styles.
+ * Represents a column in a worksheet.
+ *
+ * Columns define properties like width, header text, and styles that
+ * apply to all cells in the column.
+ *
+ * @example
+ * ```ts
+ * const col = sheet.getColumn('A');
+ *
+ * // Set properties
+ * col.width = 20;
+ * col.hidden = true;
+ * col.header = 'Name';
+ * col.key = 'name';
+ *
+ * // Apply styles to entire column
+ * col.font = { bold: true };
+ * col.alignment = { horizontal: 'center' };
+ * ```
  */
 class Column {
-  constructor(worksheet, number, defn) {
+  /** Column width in characters */
+  width?: number;
+  /** Column-level style applied to all cells */
+  style: Record<string, unknown>;
+  
+  /** @internal */
+  _worksheet: Worksheet;
+  /** @internal */
+  _number: number;
+
+  constructor(worksheet: Worksheet, number: number, defn?: Record<string, unknown>) {
     this._worksheet = worksheet;
     this._number = number;
     if (defn !== false) {
-      // sometimes defn will follow
       this.defn = defn;
     }
   }
 
-  get number() {
+  get number(): number {
     return this._number;
   }
-
-  get worksheet() {
+  get worksheet(): Worksheet {
     return this._worksheet;
   }
 
-  get letter() {
+  /** Column letter ('A', 'B', 'AA', etc.) */
+  get letter(): string {
     return colCache.n2l(this._number);
   }
 
-  get isCustomWidth() {
+  /** Whether this column has a custom width (not default 9) */
+  get isCustomWidth(): boolean {
     return this.width !== undefined && this.width !== DEFAULT_COLUMN_WIDTH;
   }
 
-  get defn() {
+  /**
+   * Column definition object with all properties.
+   */
+  get defn(): Record<string, unknown> {
     return {
       header: this._header,
       key: this.key,
@@ -46,12 +77,12 @@ class Column {
     };
   }
 
-  set defn(value) {
+  set defn(value: Record<string, unknown> | undefined): void {
     if (value) {
-      this.key = value.key;
-      this.width = value.width !== undefined ? value.width : DEFAULT_COLUMN_WIDTH;
-      this.outlineLevel = value.outlineLevel;
-      if (value.style) {
+      this.key = (value as any).key;
+      this.width = (value as any).width !== undefined ? (value as any).width : DEFAULT_COLUMN_WIDTH;
+      this.outlineLevel = (value as any).outlineLevel;
+      if ((value as any).style) {
         this.style = value.style;
       } else {
         this.style = {};
@@ -69,15 +100,26 @@ class Column {
     }
   }
 
-  get headers() {
+  /** Header values as an array (for multi-row headers) */
+  get headers(): unknown[] {
     return this._header && this._header instanceof Array ? this._header : [this._header];
   }
 
-  get header() {
+  /**
+   * Column header text.
+   * Can be a single value or array for multi-row headers.
+   *
+   * @example
+   * ```ts
+   * col.header = 'Name';
+   * col.header = ['First Name', 'Given Name']; // multi-row
+   * ```
+   */
+  get header(): unknown {
     return this._header;
   }
 
-  set header(value) {
+  set header(value: unknown): void {
     if (value !== undefined) {
       this._header = value;
       this.headers.forEach((text, index) => {
@@ -88,11 +130,21 @@ class Column {
     }
   }
 
-  get key() {
+  /**
+   * Column key for use with object-based row values.
+   *
+   * @example
+   * ```ts
+   * col.key = 'name';
+   * // Now can use: row.values = { name: 'Alice' };
+   * // Or: row.getCell('name').value = 'Alice';
+   * ```
+   */
+  get key(): string | number | undefined {
     return this._key;
   }
 
-  set key(value) {
+  set key(value: string | number | undefined): void {
     const column = this._key && this._worksheet.getColumnKey(this._key);
     if (column === this) {
       this._worksheet.deleteColumnKey(this._key);
@@ -104,29 +156,32 @@ class Column {
     }
   }
 
-  get hidden() {
+  /** Whether this column is hidden */
+  get hidden(): boolean {
     return !!this._hidden;
   }
 
-  set hidden(value) {
+  set hidden(value: boolean): void {
     this._hidden = value;
   }
 
-  get outlineLevel() {
+  /** Outline/grouping level (0-7) */
+  get outlineLevel(): number {
     return this._outlineLevel || 0;
   }
 
-  set outlineLevel(value) {
+  set outlineLevel(value: number): void {
     this._outlineLevel = value;
   }
 
-  get collapsed() {
+  /** Whether this column is collapsed in outline */
+  get collapsed(): boolean {
     return !!(
       this._outlineLevel && this._outlineLevel >= this._worksheet.properties.outlineLevelCol
     );
   }
 
-  toString() {
+  toString(): string {
     return JSON.stringify({
       key: this.key,
       width: this.width,
@@ -134,7 +189,7 @@ class Column {
     });
   }
 
-  equivalentTo(other) {
+  equivalentTo(other: Column): boolean {
     return (
       this.width === other.width &&
       this.hidden === other.hidden &&
@@ -143,7 +198,7 @@ class Column {
     );
   }
 
-  get isDefault() {
+  get isDefault(): boolean {
     if (this.isCustomWidth) {
       return false;
     }
@@ -160,23 +215,43 @@ class Column {
     return true;
   }
 
-  get headerCount() {
+  /** Number of header rows */
+  get headerCount(): number {
     return this.headers.length;
   }
 
-  eachCell(options, iteratee) {
+  /**
+   * Iterates over cells in this column.
+   *
+   * @param options - Options with `includeEmpty: boolean`, or the iteratee
+   * @param iteratee - Callback receiving (cell, rowNumber)
+   *
+   * @example
+   * ```ts
+   * column.eachCell((cell, rowNumber) => {
+   *   console.log(`Row ${rowNumber}: ${cell.value}`);
+   * });
+   * ```
+   */
+  eachCell(options?: Record<string, unknown> | ((cell: unknown, rowNum: number) => void), iteratee?: (cell: unknown, rowNum: number) => void): void {
+    let iter = iteratee;
+    let opts: Record<string, unknown> | undefined = undefined;
     const colNumber = this.number;
-    if (!iteratee) {
-      iteratee = options;
-      options = null;
+    if (!iter && typeof options === 'function') {
+      iter = options;
+    } else {
+      opts = options as Record<string, unknown>;
     }
-    this._worksheet.eachRow(options, (row, rowNumber) => {
-      iteratee(row.getCell(colNumber), rowNumber);
+    (this._worksheet as any).eachRow(opts, (row: any, rowNumber: number) => {
+      (iter as Function)(row.getCell(colNumber), rowNumber);
     });
   }
 
-  get values() {
-    const v = [];
+  /**
+   * Cell values as a sparse array (index = row number).
+   */
+  get values(): unknown[] {
+    const v: unknown[] = [];
     this.eachCell((cell, rowNumber) => {
       if (cell && cell.type !== Enums.ValueType.Null) {
         v[rowNumber] = cell.value;
@@ -185,7 +260,19 @@ class Column {
     return v;
   }
 
-  set values(v) {
+  /**
+   * Sets cell values for the entire column.
+   *
+   * @example
+   * ```ts
+   * // Contiguous array (starting at row 1)
+   * column.values = ['Header', 'Value1', 'Value2'];
+   *
+   * // Sparse array (index = row number)
+   * column.values = [, 'Row1', , 'Row3'];
+   * ```
+   */
+  set values(v: unknown[]): void {
     if (!v) {
       return;
     }
@@ -201,8 +288,10 @@ class Column {
   }
 
   // =========================================================================
-  // styles
-  _applyStyle(name, value) {
+  // Styles
+
+  /** @internal */
+  _applyStyle(name: string, value: unknown): unknown {
     this.style[name] = value;
     this.eachCell(cell => {
       cell[name] = value;
@@ -210,68 +299,74 @@ class Column {
     return value;
   }
 
-  get numFmt() {
+  /** Number format applied to all cells in this column */
+  get numFmt(): unknown {
     return this.style.numFmt;
   }
 
-  set numFmt(value) {
+  set numFmt(value: unknown) {
     this._applyStyle('numFmt', value);
   }
 
-  get font() {
+  /** Font style applied to all cells in this column */
+  get font(): unknown {
     return this.style.font;
   }
 
-  set font(value) {
+  set font(value: unknown) {
     this._applyStyle('font', value);
   }
 
-  get alignment() {
+  /** Alignment applied to all cells in this column */
+  get alignment(): unknown {
     return this.style.alignment;
   }
 
-  set alignment(value) {
+  set alignment(value: unknown) {
     this._applyStyle('alignment', value);
   }
 
-  get protection() {
+  /** Protection settings applied to all cells in this column */
+  get protection(): unknown {
     return this.style.protection;
   }
 
-  set protection(value) {
+  set protection(value: unknown) {
     this._applyStyle('protection', value);
   }
 
-  get border() {
+  /** Border style applied to all cells in this column */
+  get border(): unknown {
     return this.style.border;
   }
 
-  set border(value) {
+  set border(value: unknown) {
     this._applyStyle('border', value);
   }
 
-  get fill() {
+  /** Fill style applied to all cells in this column */
+  get fill(): unknown {
     return this.style.fill;
   }
 
-  set fill(value) {
+  set fill(value: unknown) {
     this._applyStyle('fill', value);
   }
 
   // =============================================================================
   // static functions
 
-  static toModel(columns) {
+  static toModel(columns: Column[] | undefined): Record<string, unknown>[] | undefined {
     // Convert array of Column into compressed list cols
-    const cols = [];
-    let col = null;
+    const cols: Record<string, unknown>[] = [];
+    let col: Record<string, unknown> | null = null;
     if (columns) {
       columns.forEach((column, index) => {
         if (column.isDefault) {
           if (col) {
             col = null;
           }
-        } else if (!col || !column.equivalentTo(col)) {
+        } else if (!col || !column.equivalentTo(col as Column)) {
           col = {
             min: index + 1,
             max: index + 1,
@@ -291,7 +386,7 @@ class Column {
     return cols.length ? cols : undefined;
   }
 
-  static fromModel(worksheet, cols) {
+  static fromModel(worksheet: Worksheet, cols: unknown[] | undefined): Column[] | null {
     cols = cols || [];
     const columns = [];
     let count = 1;

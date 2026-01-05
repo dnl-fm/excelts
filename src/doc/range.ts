@@ -9,7 +9,7 @@ class Range {
     this.decode(arguments);
   }
 
-  setTLBR(t, l, b, r, s) {
+  setTLBR(t: any, l: any, b?: any, r?: any, s?: string): void {
     if (arguments.length < 4) {
       // setTLBR(tl, br, s)
       const tl = colCache.decodeAddress(t);
@@ -35,7 +35,7 @@ class Range {
     }
   }
 
-  decode(argv) {
+  decode(argv: IArguments): void {
     switch (argv.length) {
       case 5: // [t,l,b,r,s]
         this.setTLBR(argv[0], argv[1], argv[2], argv[3], argv[4]);
@@ -112,47 +112,47 @@ class Range {
     }
   }
 
-  get top() {
+  get top(): number {
     return this.model.top || 1;
   }
 
-  set top(value) {
+  set top(value: number) {
     this.model.top = value;
   }
 
-  get left() {
+  get left(): number {
     return this.model.left || 1;
   }
 
-  set left(value) {
+  set left(value: number) {
     this.model.left = value;
   }
 
-  get bottom() {
+  get bottom(): number {
     return this.model.bottom || 1;
   }
 
-  set bottom(value) {
+  set bottom(value: number) {
     this.model.bottom = value;
   }
 
-  get right() {
+  get right(): number {
     return this.model.right || 1;
   }
 
-  set right(value) {
+  set right(value: number) {
     this.model.right = value;
   }
 
-  get sheetName() {
+  get sheetName(): string | undefined {
     return this.model.sheetName;
   }
 
-  set sheetName(value) {
+  set sheetName(value: string | undefined) {
     this.model.sheetName = value;
   }
 
-  get _serialisedSheetName() {
+  get _serialisedSheetName(): string {
     const {sheetName} = this.model;
     if (sheetName) {
       if (/^[a-zA-Z0-9]*$/.test(sheetName)) {
@@ -163,14 +163,14 @@ class Range {
     return '';
   }
 
-  expand(top, left, bottom, right) {
+  expand(top: number, left: number, bottom: number, right: number): void {
     if (!this.model.top || top < this.top) this.top = top;
     if (!this.model.left || left < this.left) this.left = left;
     if (!this.model.bottom || bottom > this.bottom) this.bottom = bottom;
     if (!this.model.right || right > this.right) this.right = right;
   }
 
-  expandRow(row) {
+  expandRow(row: any): void {
     if (row) {
       const {dimensions, number} = row;
       if (dimensions) {
@@ -179,52 +179,52 @@ class Range {
     }
   }
 
-  expandToAddress(addressStr) {
+  expandToAddress(addressStr: string): void {
     const address = colCache.decodeEx(addressStr);
     this.expand(address.row, address.col, address.row, address.col);
   }
 
-  get tl() {
+  get tl(): string {
     return colCache.n2l(this.left) + this.top;
   }
 
-  get $t$l() {
+  get $t$l(): string {
     return `$${colCache.n2l(this.left)}$${this.top}`;
   }
 
-  get br() {
+  get br(): string {
     return colCache.n2l(this.right) + this.bottom;
   }
 
-  get $b$r() {
+  get $b$r(): string {
     return `$${colCache.n2l(this.right)}$${this.bottom}`;
   }
 
-  get range() {
+  get range(): string {
     return `${this._serialisedSheetName + this.tl}:${this.br}`;
   }
 
-  get $range() {
+  get $range(): string {
     return `${this._serialisedSheetName + this.$t$l}:${this.$b$r}`;
   }
 
-  get shortRange() {
+  get shortRange(): string {
     return this.count > 1 ? this.range : this._serialisedSheetName + this.tl;
   }
 
-  get $shortRange() {
+  get $shortRange(): string {
     return this.count > 1 ? this.$range : this._serialisedSheetName + this.$t$l;
   }
 
-  get count() {
+  get count(): number {
     return (1 + this.bottom - this.top) * (1 + this.right - this.left);
   }
 
-  toString() {
+  toString(): string {
     return this.range;
   }
 
-  intersects(other) {
+  intersects(other: Range): boolean {
     if (other.sheetName && this.sheetName && other.sheetName !== this.sheetName) return false;
     if (other.bottom < this.top) return false;
     if (other.top > this.bottom) return false;
@@ -233,12 +233,12 @@ class Range {
     return true;
   }
 
-  contains(addressStr) {
+  contains(addressStr: string): boolean {
     const address = colCache.decodeEx(addressStr);
     return this.containsEx(address);
   }
 
-  containsEx(address) {
+  containsEx(address: any): boolean {
     if (address.sheetName && this.sheetName && address.sheetName !== this.sheetName) return false;
     return (
       address.row >= this.top &&
@@ -248,7 +248,7 @@ class Range {
     );
   }
 
-  forEachAddress(cb) {
+  forEachAddress(cb: (address: string, row: number, col: number) => void): void {
     for (let col = this.left; col <= this.right; col++) {
       for (let row = this.top; row <= this.bottom; row++) {
         cb(colCache.encodeAddress(row, col), row, col);

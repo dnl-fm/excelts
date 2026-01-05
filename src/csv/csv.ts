@@ -26,41 +26,62 @@ const SpecialValues = {
 };
 /* eslint-ensable quote-props */
 
+interface CSVReadOptions {
+  sheetName?: string;
+  dateFormats?: string[];
+  map?: (datum: unknown) => unknown;
+  parserOptions?: any;
+}
+
+interface CSVWriteOptions {
+  sheetName?: string;
+  sheetId?: number;
+  dateFormat?: string;
+  dateUTC?: boolean;
+  map?: (value: unknown) => unknown;
+  includeEmptyRows?: boolean;
+  formatterOptions?: any;
+}
+
+interface CSVFileWriteOptions extends CSVWriteOptions {
+  encoding?: string;
+}
+
 /**
  * CSV handles reading and writing worksheets to CSV streams and files.
  */
 class CSV {
-  constructor(workbook) {
+  constructor(workbook: any) {
     this.workbook = workbook;
     this.worksheet = null;
   }
 
-  async readFile(filename, options) {
-    options = options || {};
+  async readFile(filename: string, options?: CSVReadOptions): Promise<any> {
+    const opts = options || {};
     if (!(await exists(filename))) {
       throw new Error(`File not found: ${filename}`);
     }
     const stream = fs.createReadStream(filename);
-    const worksheet = await this.read(stream, options);
+    const worksheet = await this.read(stream, opts);
     stream.close();
     return worksheet;
   }
 
-  read(stream, options) {
-    options = options || {};
+  read(stream: any, options?: CSVReadOptions): Promise<any> {
+    const opts = options || {};
 
     return new Promise((resolve, reject) => {
-      const worksheet = this.workbook.addWorksheet(options.sheetName);
+      const worksheet = this.workbook.addWorksheet(opts.sheetName);
 
-      const dateFormats = options.dateFormats || [
+      const dateFormats = opts.dateFormats || [
         'YYYY-MM-DD[T]HH:mm:ssZ',
         'YYYY-MM-DD[T]HH:mm:ss',
         'MM-DD-YYYY',
         'YYYY-MM-DD',
       ];
       const map =
-        options.map ||
-        function(datum) {
+        opts.map ||
+        function(datum: unknown) {
           if (datum === '') {
             return null;
           }
@@ -89,8 +110,8 @@ class CSV {
         };
 
       const csvStream = fastCsv
-        .parse(options.parserOptions)
-        .on('data', data => {
+        .parse(opts.parserOptions)
+        .on('data', (data: unknown[]) => {
           worksheet.addRow(data.map(map));
         })
         .on('end', () => {
@@ -106,32 +127,32 @@ class CSV {
   /**
    * @deprecated since version 4.0. You should use `CSV#read` instead. Please follow upgrade instruction: https://github.com/exceljs/exceljs/blob/master/UPGRADE-4.0.md
    */
-  createInputStream() {
+  createInputStream(): never {
     throw new Error(
       '`CSV#createInputStream` is deprecated. You should use `CSV#read` instead. This method will be removed in version 5.0. Please follow upgrade instruction: https://github.com/exceljs/exceljs/blob/master/UPGRADE-4.0.md'
     );
   }
 
-  write(stream, options) {
+  write(stream: any, options?: CSVWriteOptions): Promise<void> {
     return new Promise((resolve, reject) => {
-      options = options || {};
-      // const encoding = options.encoding || 'utf8';
-      // const separator = options.separator || ',';
-      // const quoteChar = options.quoteChar || '\'';
+      const opts = options || {};
+      // const encoding = opts.encoding || 'utf8';
+      // const separator = opts.separator || ',';
+      // const quoteChar = opts.quoteChar || '\'';
 
-      const worksheet = this.workbook.getWorksheet(options.sheetName || options.sheetId);
+      const worksheet = this.workbook.getWorksheet(opts.sheetName || opts.sheetId);
 
-      const csvStream = fastCsv.format(options.formatterOptions);
+      const csvStream = fastCsv.format(opts.formatterOptions);
       stream.on('finish', () => {
         resolve();
       });
       csvStream.on('error', reject);
       csvStream.pipe(stream);
 
-      const {dateFormat, dateUTC} = options;
+      const {dateFormat, dateUTC} = opts;
       const map =
-        options.map ||
-        (value => {
+        opts.map ||
+        ((value: unknown) => {
           if (value) {
             if (value.text || value.hyperlink) {
               return value.hyperlink || value.text || '';
@@ -157,10 +178,10 @@ class CSV {
           return value;
         });
 
-      const includeEmptyRows = options.includeEmptyRows === undefined || options.includeEmptyRows;
+      const includeEmptyRows = opts.includeEmptyRows === undefined || opts.includeEmptyRows;
       let lastRow = 1;
       if (worksheet) {
-        worksheet.eachRow((row, rowNumber) => {
+        worksheet.eachRow((row: any, rowNumber: number) => {
           if (includeEmptyRows) {
             while (lastRow++ < rowNumber - 1) {
               csvStream.write([]);
@@ -176,18 +197,18 @@ class CSV {
     });
   }
 
-  writeFile(filename, options) {
-    options = options || {};
+  writeFile(filename: string, options?: CSVFileWriteOptions): Promise<void> {
+    const opts = options || {};
 
     const streamOptions = {
-      encoding: options.encoding || 'utf8',
+      encoding: opts.encoding || 'utf8',
     };
     const stream = fs.createWriteStream(filename, streamOptions);
 
-    return this.write(stream, options);
+    return this.write(stream, opts);
   }
 
-  async writeBuffer(options) {
+  async writeBuffer(options?: CSVWriteOptions): Promise<Buffer> {
     const stream = new StreamBuf();
     await this.write(stream, options);
     return stream.read();

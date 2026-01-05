@@ -1,15 +1,52 @@
 /* eslint-disable max-classes-per-file */
-/**
- * Cell stores values, styles, and formula metadata within a worksheet row.
- */
 import colCache from '../utils/col-cache.ts';
 import _ from '../utils/under-dash.ts';
 import Enums from './enums.ts';
 import Note from './note.ts';
 import { slideFormula } from '../utils/shared-formula.ts';
+import type Row from './row.ts';
+import type Column from './column.ts';
+import type Worksheet from './worksheet.ts';
+import type Workbook from './workbook.ts';
 
+/**
+ * Represents a single cell in a worksheet.
+ *
+ * Cells store values, formulas, and styles. Values can be numbers, strings,
+ * dates, booleans, rich text, hyperlinks, or formulas.
+ *
+ * @example
+ * ```ts
+ * const cell = sheet.getCell('A1');
+ *
+ * // Set value
+ * cell.value = 'Hello';
+ * cell.value = 42;
+ * cell.value = new Date();
+ * cell.value = { formula: 'SUM(B1:B10)' };
+ *
+ * // Set style
+ * cell.font = { bold: true, size: 14 };
+ * cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } };
+ * cell.border = { top: { style: 'thin' } };
+ * cell.alignment = { horizontal: 'center' };
+ * ```
+ */
 class Cell {
-  constructor(row, column, address) {
+  /** @internal */
+  _row: Row;
+  /** @internal */
+  _column: Column;
+  /** @internal */
+  _address: string;
+  /** @internal */
+  _value: unknown;
+  /** @internal */
+  style: Record<string, unknown>;
+  /** @internal */
+  _mergeCount: number;
+
+  constructor(row: Row, column: Column, address: string) {
     if (!row || !column) {
       throw new Error('A Cell needs a Row');
     }
@@ -20,24 +57,21 @@ class Cell {
     colCache.validateAddress(address);
     this._address = address;
 
-    // TODO: lazy evaluation of this._value
     this._value = Value.create(Cell.Types.Null, this);
-
-    this.style = this._mergeStyle(row.style, column.style, {});
-
+    this.style = this._mergeStyle((row as any).style, (column as any).style, {});
     this._mergeCount = 0;
   }
 
-  get worksheet() {
-    return this._row.worksheet;
+  get worksheet(): Worksheet {
+    return (this._row as any).worksheet;
   }
 
-  get workbook() {
-    return this._row.worksheet.workbook;
+  get workbook(): Workbook {
+    return (this._row as any).worksheet.workbook;
   }
 
   // help GC by removing cyclic (and other) references
-  destroy() {
+  destroy(): void {
     delete this.style;
     delete this._value;
     delete this._row;
@@ -46,56 +80,140 @@ class Cell {
   }
 
   // =========================================================================
-  // Styles stuff
-  get numFmt() {
+  // Styles
+
+  /**
+   * Number format string (e.g., '0.00', '#,##0', 'yyyy-mm-dd').
+   *
+   * @example
+   * ```ts
+   * cell.numFmt = '0.00%';      // percentage
+   * cell.numFmt = '$#,##0.00';  // currency
+   * cell.numFmt = 'yyyy-mm-dd'; // date
+   * ```
+   */
+  get numFmt(): unknown {
     return this.style.numFmt;
   }
 
-  set numFmt(value) {
+  set numFmt(value: unknown) {
     this.style.numFmt = value;
   }
 
-  get font() {
+  /**
+   * Font styling for the cell.
+   *
+   * @example
+   * ```ts
+   * cell.font = {
+   *   name: 'Arial',
+   *   size: 12,
+   *   bold: true,
+   *   italic: false,
+   *   underline: true,
+   *   color: { argb: 'FF0000FF' },
+   * };
+   * ```
+   */
+  get font(): unknown {
     return this.style.font;
   }
 
-  set font(value) {
+  set font(value: unknown) {
     this.style.font = value;
   }
 
-  get alignment() {
+  /**
+   * Text alignment within the cell.
+   *
+   * @example
+   * ```ts
+   * cell.alignment = {
+   *   horizontal: 'center',  // left, center, right, fill, justify
+   *   vertical: 'middle',    // top, middle, bottom
+   *   wrapText: true,
+   *   textRotation: 45,
+   * };
+   * ```
+   */
+  get alignment(): unknown {
     return this.style.alignment;
   }
 
-  set alignment(value) {
+  set alignment(value: unknown) {
     this.style.alignment = value;
   }
 
-  get border() {
+  /**
+   * Cell border styling.
+   *
+   * @example
+   * ```ts
+   * cell.border = {
+   *   top: { style: 'thin', color: { argb: 'FF000000' } },
+   *   left: { style: 'thin' },
+   *   bottom: { style: 'double' },
+   *   right: { style: 'thin' },
+   * };
+   * ```
+   */
+  get border(): unknown {
     return this.style.border;
   }
 
-  set border(value) {
+  set border(value: unknown) {
     this.style.border = value;
   }
 
-  get fill() {
+  /**
+   * Cell fill (background) styling.
+   *
+   * @example
+   * ```ts
+   * // Solid fill
+   * cell.fill = {
+   *   type: 'pattern',
+   *   pattern: 'solid',
+   *   fgColor: { argb: 'FFFFFF00' },
+   * };
+   *
+   * // Gradient fill
+   * cell.fill = {
+   *   type: 'gradient',
+   *   gradient: 'angle',
+   *   degree: 90,
+   *   stops: [
+   *     { position: 0, color: { argb: 'FF0000FF' } },
+   *     { position: 1, color: { argb: 'FF00FF00' } },
+   *   ],
+   * };
+   * ```
+   */
+  get fill(): unknown {
     return this.style.fill;
   }
 
-  set fill(value) {
+  set fill(value: unknown) {
     this.style.fill = value;
   }
 
-  get protection() {
+  /**
+   * Cell protection settings (used with sheet protection).
+   *
+   * @example
+   * ```ts
+   * cell.protection = { locked: false };
+   * ```
+   */
+  get protection(): unknown {
     return this.style.protection;
   }
 
-  set protection(value) {
+  set protection(value: unknown) {
     this.style.protection = value;
   }
 
-  _mergeStyle(rowStyle, colStyle, style) {
+  _mergeStyle(rowStyle: Record<string, unknown>, colStyle: Record<string, unknown>, style: Record<string, unknown>): Record<string, unknown> {
     const numFmt = (rowStyle && rowStyle.numFmt) || (colStyle && colStyle.numFmt);
     if (numFmt) style.numFmt = numFmt;
 
@@ -118,54 +236,69 @@ class Cell {
   }
 
   // =========================================================================
-  // return the address for this cell
-  get address() {
+  // Address
+
+  /** Cell address (e.g., 'A1', 'B2') */
+  get address(): string {
     return this._address;
   }
 
-  get row() {
+  /** Row number (1-based) */
+  get row(): number {
     return this._row.number;
   }
 
-  get col() {
+  /** Column number (1-based) */
+  get col(): number {
     return this._column.number;
   }
 
-  get $col$row() {
+  /** Absolute address (e.g., '$A$1') */
+  get $col$row(): string {
     return `$${this._column.letter}$${this.row}`;
   }
 
   // =========================================================================
-  // Value stuff
+  // Value
 
-  get type() {
+  /**
+   * The cell's value type (Null, Number, String, Date, etc.).
+   * See ValueType enum for all types.
+   */
+  get type(): string {
     return this._value.type;
   }
 
-  get effectiveType() {
+  /**
+   * The effective value type (resolves formula results).
+   */
+  get effectiveType(): string {
     return this._value.effectiveType;
   }
 
-  toCsvString() {
+  /**
+   * Returns the cell value formatted for CSV export.
+   */
+  toCsvString(): string {
     return this._value.toCsvString();
   }
 
   // =========================================================================
   // Merge stuff
 
-  addMergeRef() {
+  addMergeRef(): void {
     this._mergeCount++;
   }
 
-  releaseMergeRef() {
+  releaseMergeRef(): void {
     this._mergeCount--;
   }
 
-  get isMerged() {
+  get isMerged(): boolean {
     return this._mergeCount > 0 || this.type === Cell.Types.Merge;
   }
 
-  merge(master, ignoreStyle) {
+  merge(master: Cell, ignoreStyle?: boolean): void {
     this._value.release();
     this._value = Value.create(Cell.Types.Merge, this, master);
     if (!ignoreStyle) {
@@ -173,7 +306,7 @@ class Cell {
     }
   }
 
-  unmerge() {
+  unmerge(): void {
     if (this.type === Cell.Types.Merge) {
       this._value.release();
       this._value = Value.create(Cell.Types.Null, this);
@@ -181,33 +314,65 @@ class Cell {
     }
   }
 
-  isMergedTo(master) {
+  isMergedTo(master: Cell): boolean {
     if (this._value.type !== Cell.Types.Merge) return false;
     return this._value.isMergedTo(master);
   }
 
-  get master() {
+  /**
+   * For merged cells, returns the master cell. Unmerged cells return themselves.
+   */
+  get master(): Cell {
     if (this.type === Cell.Types.Merge) {
       return this._value.master;
     }
     return this; // an unmerged cell is its own master
   }
 
-  get isHyperlink() {
+  /** Whether this cell contains a hyperlink */
+  get isHyperlink(): boolean {
     return this._value.type === Cell.Types.Hyperlink;
   }
 
-  get hyperlink() {
+  /** The hyperlink URL (if cell is a hyperlink) */
+  get hyperlink(): unknown {
     return this._value.hyperlink;
   }
 
-  // return the value
-  get value() {
+  /**
+   * The cell's value.
+   *
+   * @example
+   * ```ts
+   * // Get value
+   * const val = cell.value;
+   *
+   * // Set simple values
+   * cell.value = 'Hello';
+   * cell.value = 42;
+   * cell.value = new Date();
+   * cell.value = true;
+   *
+   * // Set formula
+   * cell.value = { formula: 'SUM(A1:A10)', result: 55 };
+   *
+   * // Set hyperlink
+   * cell.value = { text: 'Click here', hyperlink: 'https://example.com' };
+   *
+   * // Set rich text
+   * cell.value = {
+   *   richText: [
+   *     { text: 'Bold ', font: { bold: true } },
+   *     { text: 'Normal' },
+   *   ],
+   * };
+   * ```
+   */
+  get value(): unknown {
     return this._value.value;
   }
 
-  // set the value - can be number, string or raw
-  set value(v) {
+  set value(v: unknown) {
     // special case - merge cells set their master's value
     if (this.type === Cell.Types.Merge) {
       this._value.master.value = v;
@@ -220,27 +385,41 @@ class Cell {
     this._value = Value.create(Value.getType(v), this, v);
   }
 
-  get note() {
+  /**
+   * Cell comment/note.
+   *
+   * @example
+   * ```ts
+   * cell.note = 'This is a comment';
+   * cell.note = {
+   *   texts: [{ text: 'Comment text' }],
+   *   margins: { left: 0.1, right: 0.1, top: 0.1, bottom: 0.1 },
+   * };
+   * ```
+   */
+  get note(): unknown {
     return this._comment && this._comment.note;
   }
 
-  set note(note) {
+  set note(note: unknown) {
     this._comment = new Note(note);
   }
 
-  get text() {
+  /** The cell value as a plain text string */
+  get text(): string {
     return this._value.toString();
   }
 
-  get html() {
+  /** The cell value as HTML-escaped text */
+  get html(): string {
     return _.escapeHtml(this.text);
   }
 
-  toString() {
+  toString(): string {
     return this.text;
   }
 
-  _upgradeToHyperlink(hyperlink) {
+  _upgradeToHyperlink(hyperlink: string): void {
     // if this cell is a string, turn it into a Hyperlink
     if (this.type === Cell.Types.String) {
       this._value = Value.create(Cell.Types.Hyperlink, this, {
@@ -251,22 +430,34 @@ class Cell {
   }
 
   // =========================================================================
-  // Formula stuff
-  get formula() {
+  // Formula
+
+  /**
+   * The cell's formula (without the leading '=').
+   * Returns undefined for non-formula cells.
+   */
+  get formula(): string | undefined {
     return this._value.formula;
   }
 
-  get result() {
+  /**
+   * The calculated result of the formula.
+   * Returns undefined for non-formula cells.
+   */
+  get result(): unknown {
     return this._value.result;
   }
 
-  get formulaType() {
+  /**
+   * The formula type: Master, Shared, or None.
+   */
+  get formulaType(): string | undefined {
     return this._value.formulaType;
   }
 
   // =========================================================================
   // Name stuff
-  get fullAddress() {
+  get fullAddress(): Record<string, unknown> {
     const {worksheet} = this._row;
     return {
       sheetName: worksheet.name,
@@ -276,56 +467,56 @@ class Cell {
     };
   }
 
-  get name() {
+  get name(): unknown {
     return this.names[0];
   }
 
-  set name(value) {
+  set name(value: unknown) {
     this.names = [value];
   }
 
-  get names() {
+  get names(): unknown[] {
     return this.workbook.definedNames.getNamesEx(this.fullAddress);
   }
 
-  set names(value) {
+  set names(value: unknown[]) {
     const {definedNames} = this.workbook;
     definedNames.removeAllNames(this.fullAddress);
-    value.forEach(name => {
+    value.forEach((name: unknown) => {
       definedNames.addEx(this.fullAddress, name);
     });
   }
 
-  addName(name) {
+  addName(name: unknown): void {
     this.workbook.definedNames.addEx(this.fullAddress, name);
   }
 
-  removeName(name) {
+  removeName(name: unknown): void {
     this.workbook.definedNames.removeEx(this.fullAddress, name);
   }
 
-  removeAllNames() {
+  removeAllNames(): void {
     this.workbook.definedNames.removeAllNames(this.fullAddress);
   }
 
   // =========================================================================
   // Data Validation stuff
-  get _dataValidations() {
-    return this.worksheet.dataValidations;
+  get _dataValidations(): unknown {
+    return (this.worksheet as any).dataValidations;
   }
 
-  get dataValidation() {
-    return this._dataValidations.find(this.address);
+  get dataValidation(): unknown {
+    return (this._dataValidations as any).find(this.address);
   }
 
-  set dataValidation(value) {
-    this._dataValidations.add(this.address, value);
+  set dataValidation(value: unknown) {
+    (this._dataValidations as any).add(this.address, value);
   }
 
   // =========================================================================
   // Model stuff
 
-  get model() {
+  get model(): Record<string, unknown> {
     const {model} = this._value;
     model.style = this.style;
     if (this._comment) {
@@ -334,12 +525,12 @@ class Cell {
     return model;
   }
 
-  set model(value) {
-    this._value.release();
-    this._value = Value.create(value.type, this);
-    this._value.model = value;
+  set model(value: Record<string, unknown>) {
+    (this._value as any).release();
+    this._value = Value.create((value as any).type, this);
+    (this._value as any).model = value;
 
-    if (value.comment) {
+    if ((value as any).comment) {
       switch (value.comment.type) {
         case 'note':
           this._comment = Note.fromModel(value.comment);

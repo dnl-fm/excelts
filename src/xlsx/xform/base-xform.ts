@@ -11,38 +11,38 @@ class BaseXform {
 
   // ============================================================
   // Virtual Interface
-  prepare(/* model, options */) {
+  prepare(/* model, options */): void {
     // optional preparation (mutation) of model so it is ready for write
   }
 
-  render(/* xmlStream, model */) {
+  render(/* xmlStream, model */): void {
     // convert model to xml
   }
 
-  parseOpen(_node) {
+  parseOpen(_node: any): void {
     // XML node opened
   }
 
-  parseText(_text) {
+  parseText(_text: string): void {
     // chunk of text encountered for current node
   }
 
-  parseClose(_name) {
+  parseClose(_name: string): boolean | undefined {
     // XML node closed
   }
 
-  reconcile(_model, _options) {
+  reconcile(_model: any, _options: any): void {
     // optional post-parse step (opposite to prepare)
   }
 
   // ============================================================
-  reset() {
+  reset(): void {
     // to make sure parses don't bleed to next iteration
     this.model = null;
 
     // if we have a map - reset them too
     if (this.map) {
-      Object.values(this.map).forEach(xform => {
+      Object.values(this.map).forEach((xform: any) => {
         if (xform instanceof BaseXform) {
           xform.reset();
         } else if (xform.xform) {
@@ -52,12 +52,12 @@ class BaseXform {
     }
   }
 
-  mergeModel(obj) {
+  mergeModel(obj: any): void {
     // set obj's props to this.model
     this.model = Object.assign(this.model || {}, obj);
   }
 
-  async parse(saxParser) {
+  async parse(saxParser: any): Promise<unknown> {
     for await (const events of saxParser) {
       for (const {eventType, value} of events) {
         if (eventType === 'opentag') {
@@ -74,17 +74,17 @@ class BaseXform {
     return this.model;
   }
 
-  async parseStream(stream) {
+  async parseStream(stream: any): Promise<unknown> {
     return this.parse(parseSax(stream));
   }
 
-  get xml() {
+  get xml(): string {
     // convenience function to get the xml of this.model
     // useful for manager types that are built during the prepare phase
     return this.toXml(this.model);
   }
 
-  toXml(model) {
+  toXml(model: any): string {
     const xmlStream = new XmlStream();
     this.render(xmlStream, model);
     return xmlStream.xml;
@@ -92,29 +92,29 @@ class BaseXform {
 
   // ============================================================
   // Useful Utilities
-  static toAttribute(value, dflt, always = false) {
+  static toAttribute(value: unknown, dflt?: unknown, always = false): string | undefined {
     if (value === undefined) {
       if (always) {
-        return dflt;
+        return dflt as string | undefined;
       }
     } else if (always || value !== dflt) {
-      return value.toString();
+      return (value as any).toString();
     }
     return undefined;
   }
 
-  static toStringAttribute(value, dflt, always = false) {
+  static toStringAttribute(value: unknown, dflt?: unknown, always = false): string | undefined {
     return BaseXform.toAttribute(value, dflt, always);
   }
 
-  static toStringValue(attr, dflt) {
+  static toStringValue(attr: string | undefined, dflt: unknown): unknown {
     return attr === undefined ? dflt : attr;
   }
 
-  static toBoolAttribute(value, dflt, always = false) {
+  static toBoolAttribute(value: unknown, dflt?: unknown, always = false): string | undefined {
     if (value === undefined) {
       if (always) {
-        return dflt;
+        return dflt as string | undefined;
       }
     } else if (always || value !== dflt) {
       return value ? '1' : '0';
@@ -122,23 +122,23 @@ class BaseXform {
     return undefined;
   }
 
-  static toBoolValue(attr, dflt) {
+  static toBoolValue(attr: string | undefined, dflt: boolean): boolean {
     return attr === undefined ? dflt : attr === '1';
   }
 
-  static toIntAttribute(value, dflt, always = false) {
+  static toIntAttribute(value: unknown, dflt?: unknown, always = false): string | undefined {
     return BaseXform.toAttribute(value, dflt, always);
   }
 
-  static toIntValue(attr, dflt) {
+  static toIntValue(attr: string | undefined, dflt: number): number {
     return attr === undefined ? dflt : parseInt(attr, 10);
   }
 
-  static toFloatAttribute(value, dflt, always = false) {
+  static toFloatAttribute(value: unknown, dflt?: unknown, always = false): string | undefined {
     return BaseXform.toAttribute(value, dflt, always);
   }
 
-  static toFloatValue(attr, dflt) {
+  static toFloatValue(attr: string | undefined, dflt: number): number {
     return attr === undefined ? dflt : parseFloat(attr);
   }
 }

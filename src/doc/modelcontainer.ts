@@ -1,15 +1,17 @@
-
 /**
  * ModelContainer wraps a workbook-like model for XLSX IO.
  */
 import XLSX from '../xlsx/xlsx.ts';
 
 class ModelContainer {
-  constructor(model) {
+  model: unknown;
+  private _xlsx?: XLSX;
+
+  constructor(model: unknown) {
     this.model = model;
   }
 
-  get xlsx() {
+  get xlsx(): XLSX {
     if (!this._xlsx) {
       this._xlsx = new XLSX(this);
     }

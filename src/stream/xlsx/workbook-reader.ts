@@ -1,5 +1,4 @@
 
-
 import fs from 'fs';
 import nodeStream from 'stream';
 import unzip from 'unzipper';
@@ -16,11 +15,35 @@ import { PassThrough, Readable } from 'readable-stream';
 
 tmp.setGracefulCleanup();
 
+/** Options for WorkbookReader */
+export interface WorkbookReaderOptions {
+  worksheets?: 'emit' | 'ignore';
+  sharedStrings?: 'cache' | 'emit' | 'ignore';
+  hyperlinks?: 'cache' | 'emit' | 'ignore';
+  styles?: 'cache' | 'ignore';
+  entries?: 'emit' | 'ignore';
+}
+
+/** Event yielded during parsing */
+export interface WorkbookReaderEvent {
+  eventType: string;
+  value: unknown;
+}
+
 /**
  * WorkbookReader streams XLSX contents and emits worksheet data.
  */
 class WorkbookReader extends EventEmitter {
-  constructor(input, options = {}) {
+  input: unknown;
+  options: WorkbookReaderOptions;
+  styles: StyleManager;
+  sharedStrings?: unknown[];
+  workbookRels?: unknown[];
+  properties?: unknown;
+  model?: unknown;
+  stream?: nodeStream.Readable | Readable;
+
+  constructor(input: unknown, options: WorkbookReaderOptions = {}) {
     super();
 
     this.input = input;
@@ -38,7 +61,7 @@ class WorkbookReader extends EventEmitter {
     this.styles.init();
   }
 
-  _getStream(input) {
+  private _getStream(input: unknown): nodeStream.Readable | Readable {
     if (input instanceof nodeStream.Readable || input instanceof Readable) {
       return input;
     }
@@ -48,7 +71,7 @@ class WorkbookReader extends EventEmitter {
     throw new Error(`Could not recognise input: ${input}`);
   }
 
-  async read(input, options) {
+  async read(input?: unknown, options?: WorkbookReaderOptions): Promise<void> {
     try {
       for await (const {eventType, value} of this.parse(input, options)) {
         switch (eventType) {
@@ -57,7 +80,7 @@ class WorkbookReader extends EventEmitter {
             break;
           case 'worksheet':
             this.emit(eventType, value);
-            await value.read();
+            await (value as WorksheetReader).read();
             break;
           case 'hyperlinks':
             this.emit(eventType, value);
@@ -71,7 +94,7 @@ class WorkbookReader extends EventEmitter {
     }
   }
 
-  async *[Symbol.asyncIterator]() {
+  async *[Symbol.asyncIterator](): AsyncGenerator<unknown> {
     for await (const {eventType, value} of this.parse()) {
       if (eventType === 'worksheet') {
         yield value;
@@ -79,7 +102,7 @@ class WorkbookReader extends EventEmitter {
     }
   }
 
-  async *parse(input, options) {
+  async *parse(input?: unknown, options?: WorkbookReaderOptions): AsyncGenerator<WorkbookReaderEvent> {
     if (options) this.options = options;
     const stream = (this.stream = this._getStream(input || this.input));
     const zip = unzip.Parse({forceStream: true});
@@ -152,18 +175,18 @@ class WorkbookReader extends EventEmitter {
     }
   }
 
-  _emitEntry(payload) {
+  private _emitEntry(payload: { type: string; id?: string }): void {
     if (this.options.entries === 'emit') {
       this.emit('entry', payload);
     }
   }
 
-  async _parseRels(entry) {
+  private async _parseRels(entry: unknown): Promise<void> {
     const xform = new RelationshipsXform();
     this.workbookRels = await xform.parseStream(iterateStream(entry));
   }
 
-  async _parseWorkbook(entry) {
+  private async _parseWorkbook(entry: unknown): Promise<void> {
     this._emitEntry({type: 'workbook'});
 
     const workbook = new WorkbookXform();
@@ -173,7 +196,7 @@ class WorkbookReader extends EventEmitter {
     this.model = workbook.model;
   }
 
-  async *_parseSharedStrings(entry) {
+  private async *_parseSharedStrings(entry: unknown): AsyncGenerator<WorkbookReaderEvent> {
     this._emitEntry({type: 'shared-strings'});
     switch (this.options.sharedStrings) {
       case 'cache':
@@ -285,7 +308,7 @@ class WorkbookReader extends EventEmitter {
     }
   }
 
-  async _parseStyles(entry) {
+  private async _parseStyles(entry: unknown): Promise<void> {
     this._emitEntry({type: 'styles'});
     if (this.options.styles === 'cache') {
       this.styles = new StyleManager();
@@ -293,7 +316,7 @@ class WorkbookReader extends EventEmitter {
     }
   }
 
-  *_parseWorksheet(iterator, sheetNo) {
+  private *_parseWorksheet(iterator: unknown, sheetNo: string): Generator<WorkbookReaderEvent> {
     this._emitEntry({type: 'worksheet', id: sheetNo});
     const worksheetReader = new WorksheetReader({
       workbook: this,
@@ -302,8 +325,8 @@ class WorkbookReader extends EventEmitter {
       options: this.options,
     });
 
-    const matchingRel = (this.workbookRels || []).find(rel => rel.Target === `worksheets/sheet${sheetNo}.xml`);
-    const matchingSheet = matchingRel && (this.model.sheets || []).find(sheet => sheet.rId === matchingRel.Id);
+    const matchingRel = (this.workbookRels as Array<{ Target: string; Id: string }> || []).find(rel => rel.Target === `worksheets/sheet${sheetNo}.xml`);
+    const matchingSheet = matchingRel && ((this.model as { sheets?: Array<{ rId: string; id: number; name: string; state: string }> })?.sheets || []).find(sheet => sheet.rId === matchingRel.Id);
     if (matchingSheet) {
       worksheetReader.id = matchingSheet.id;
       worksheetReader.name = matchingSheet.name;
@@ -314,7 +337,7 @@ class WorkbookReader extends EventEmitter {
     }
   }
 
-  *_parseHyperlinks(iterator, sheetNo) {
+  private *_parseHyperlinks(iterator: unknown, sheetNo: string): Generator<WorkbookReaderEvent> {
     this._emitEntry({type: 'hyperlinks', id: sheetNo});
     const hyperlinksReader = new HyperlinkReader({
       workbook: this,
