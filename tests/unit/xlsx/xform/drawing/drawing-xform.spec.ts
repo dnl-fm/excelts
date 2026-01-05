@@ -7,8 +7,7 @@ import _preparedModel from './data/drawing.1.1.ts';
 import _parsedModel from './data/drawing.1.3.ts';
 import _reconciledModel from './data/drawing.1.4.ts';
 
-const DrawingXform = verquire('xlsx/xform/drawing/drawing-xform');
-
+import DrawingXform from '../../../../../src/xlsx/xform/drawing/drawing-xform.ts';
 const options = {
   rels: {
     rId1: {Target: '../media/image1.jpg'},

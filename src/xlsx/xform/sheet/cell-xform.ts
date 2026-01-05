@@ -442,7 +442,7 @@ class CellXform extends BaseXform {
             model.value = options.sharedStrings.getString(model.value);
           }
         }
-        if (model.value.richText) {
+        if (model.value && model.value.richText) {
           model.type = Enums.ValueType.RichText;
         }
         break;

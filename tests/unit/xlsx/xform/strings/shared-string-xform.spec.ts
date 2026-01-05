@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const SharedStringXform = verquire('xlsx/xform/strings/shared-string-xform');
-
+import SharedStringXform from '../../../../../src/xlsx/xform/strings/shared-string-xform.ts';
 const expectations = [
   {
     title: 'text',

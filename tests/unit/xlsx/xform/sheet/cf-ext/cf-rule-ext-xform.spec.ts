@@ -1,8 +1,7 @@
 
 import testXformHelper from '../../test-xform-helper.ts';
 
-const CfRuleExtXform = verquire('xlsx/xform/sheet/cf-ext/cf-rule-ext-xform');
-
+import CfRuleExtXform from '../../../../../../src/xlsx/xform/sheet/cf-ext/cf-rule-ext-xform.ts';
 const expectations = [
   {
     title: 'Icon Set',

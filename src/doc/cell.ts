@@ -58,16 +58,16 @@ class Cell {
     this._address = address;
 
     this._value = Value.create(Cell.Types.Null, this);
-    this.style = this._mergeStyle((row as any).style, (column as any).style, {});
+    this.style = this._mergeStyle(row.style, column.style, {});
     this._mergeCount = 0;
   }
 
   get worksheet(): Worksheet {
-    return (this._row as any).worksheet;
+    return this._row.worksheet;
   }
 
   get workbook(): Workbook {
-    return (this._row as any).worksheet.workbook;
+    return this._row.worksheet.workbook;
   }
 
   // help GC by removing cyclic (and other) references
@@ -502,15 +502,17 @@ class Cell {
   // =========================================================================
   // Data Validation stuff
   get _dataValidations(): unknown {
-    return (this.worksheet as any).dataValidations;
+    return (this.worksheet as Record<string, unknown>).dataValidations;
   }
 
   get dataValidation(): unknown {
-    return (this._dataValidations as any).find(this.address);
+    const dv = this._dataValidations as Record<string, unknown>;
+    return (dv.find as Function)(this.address);
   }
 
   set dataValidation(value: unknown) {
-    (this._dataValidations as any).add(this.address, value);
+    const dv = this._dataValidations as Record<string, unknown>;
+    (dv.add as Function)(this.address, value);
   }
 
   // =========================================================================
@@ -526,14 +528,19 @@ class Cell {
   }
 
   set model(value: Record<string, unknown>) {
-    (this._value as any).release();
-    this._value = Value.create((value as any).type, this);
-    (this._value as any).model = value;
+    const oldValue = this._value as Record<string, unknown>;
+    oldValue.release?.();
+    // Use Cell.Types.Null (0) as default when type is null/undefined
+    const cellType = value.type ?? Cell.Types.Null;
+    this._value = Value.create(cellType, this);
+    const newValue = this._value as Record<string, unknown>;
+    newValue.model = value;
 
-    if ((value as any).comment) {
-      switch (value.comment.type) {
+    if (value.comment) {
+      const comment = value.comment as Record<string, unknown>;
+      switch (comment.type) {
         case 'note':
-          this._comment = Note.fromModel(value.comment);
+          this._comment = Note.fromModel(comment);
           break;
       }
     }

@@ -1,9 +1,8 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const SheetViewXform = verquire('xlsx/xform/sheet/sheet-view-xform');
-const ListXform = verquire('xlsx/xform/list-xform');
-
+import SheetViewXform from '../../../../../src/xlsx/xform/sheet/sheet-view-xform.ts';
+import ListXform from '../../../../../src/xlsx/xform/list-xform.ts';
 const expectations = [
   {
     title: 'Normal',

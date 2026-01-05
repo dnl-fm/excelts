@@ -1,8 +1,8 @@
-const ExcelJS = verquire('exceljs');
+import ExcelTS from '../../../src/index.ts';
 
 describe('github issues', () => {
   it('pull request 1262 - protect should work with streaming workbook writer', async () => {
-    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
+    const workbook = new ExcelTS.stream.xlsx.WorkbookWriter({
       filename: './test.xlsx',
     });
 
@@ -21,7 +21,7 @@ describe('github issues', () => {
     await workbook.commit();
 
     // read in file and ensure sheetProtection is there:
-    const checkBook = new ExcelJS.Workbook();
+    const checkBook = new ExcelTS.Workbook();
     await checkBook.xlsx.readFile('./test.xlsx');
 
     const checkSheet = checkBook.getWorksheet('data');

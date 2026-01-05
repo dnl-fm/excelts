@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const BlipFillXform = verquire('xlsx/xform/drawing/blip-fill-xform');
-
+import BlipFillXform from '../../../../../src/xlsx/xform/drawing/blip-fill-xform.ts';
 const expectations = [
   {
     title: 'normal',

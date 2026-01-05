@@ -1,7 +1,6 @@
 import util from 'util';
 
-const _ = verquire('utils/under-dash');
-
+import _ from '../../../src/utils/under-dash.ts';
 describe('under-dash', () => {
   describe('isEqual', () => {
     const values = [

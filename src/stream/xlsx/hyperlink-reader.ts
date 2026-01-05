@@ -3,9 +3,9 @@
 import parseSax from '../../utils/parse-sax.ts';
 import Enums from '../../doc/enums.ts';
 import RelType from '../../xlsx/rel-type.ts';
-import { EventEmitter } from 'events';
+import SimpleEventEmitter from '../../utils/event-emitter.ts';
 
-class HyperlinkReader extends EventEmitter {
+class HyperlinkReader extends SimpleEventEmitter {
   constructor({workbook, id, iterator, options}) {
     super();
 

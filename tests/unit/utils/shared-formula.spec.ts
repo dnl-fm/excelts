@@ -1,4 +1,4 @@
-const {slideFormula} = verquire('utils/shared-formula');
+import { slideFormula } from '../../../src/utils/shared-formula.ts';
 
 describe('shared-formula', () => {
   describe('slideFormula', () => {

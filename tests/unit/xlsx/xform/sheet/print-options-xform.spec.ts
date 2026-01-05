@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const PrintOptionsXform = verquire('xlsx/xform/sheet/print-options-xform');
-
+import PrintOptionsXform from '../../../../../src/xlsx/xform/sheet/print-options-xform.ts';
 const expectations = [
   {
     title: 'empty',

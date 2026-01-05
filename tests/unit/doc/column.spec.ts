@@ -1,8 +1,7 @@
 
 import { createSheetMock } from '../../utils/index.ts';
 
-const Column = verquire('doc/column');
-
+import Column from '../../../src/doc/column.ts';
 describe('Column', () => {
   it('creates by defn', () => {
     const sheet = createSheetMock();

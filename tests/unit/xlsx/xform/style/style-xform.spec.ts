@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const StyleXform = verquire('xlsx/xform/style/style-xform');
-
+import StyleXform from '../../../../../src/xlsx/xform/style/style-xform.ts';
 const expectations = [
   {
     title: 'Default',

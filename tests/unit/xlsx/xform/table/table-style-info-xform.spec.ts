@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const TableStyleInfoXform = verquire('xlsx/xform/table/table-style-info-xform');
-
+import TableStyleInfoXform from '../../../../../src/xlsx/xform/table/table-style-info-xform.ts';
 const expectations = [
   {
     title: 'row',

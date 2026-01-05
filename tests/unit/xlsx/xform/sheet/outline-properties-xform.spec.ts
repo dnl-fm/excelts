@@ -1,10 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const OutlinePropertiesXform = verquire(
-  'xlsx/xform/sheet/outline-properties-xform'
-);
-
+import OutlinePropertiesXform from '../../../../../src/xlsx/xform/sheet/outline-properties-xform.ts';
 const expectations = [
   {
     title: 'empty',

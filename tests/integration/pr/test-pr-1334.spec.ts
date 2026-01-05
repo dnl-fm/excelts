@@ -1,11 +1,11 @@
-const ExcelJS = verquire('exceljs');
+import ExcelTS from '../../../src/index.ts';
 
 const TEST_XLSX_FILE_NAME = './tests/out/wb.test.xlsx';
 
 describe('github issues', () => {
   it('pull request 1334 - Fix the error that comment does not delete at spliceColumn', async () => {
     (async () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('testSheet');
 
       ws.addRow([

@@ -1,19 +1,26 @@
 
-import fs from 'fs';
-import nodeStream from 'stream';
-import unzip from 'unzipper';
-import tmp from 'tmp';
-import iterateStream from '../../utils/iterate-stream.ts';
+import { unzipSync, strFromU8 } from 'fflate';
 import parseSax from '../../utils/parse-sax.ts';
 import StyleManager from '../../xlsx/xform/style/styles-xform.ts';
 import WorkbookXform from '../../xlsx/xform/book/workbook-xform.ts';
 import RelationshipsXform from '../../xlsx/xform/core/relationships-xform.ts';
 import WorksheetReader from './worksheet-reader.ts';
 import HyperlinkReader from './hyperlink-reader.ts';
-import { EventEmitter } from 'events';
-import { PassThrough, Readable } from 'readable-stream';
+import SimpleEventEmitter from '../../utils/event-emitter.ts';
 
-tmp.setGracefulCleanup();
+/**
+ * Create async iterable from string content
+ */
+function createAsyncIterable(content: string): AsyncIterable<string> {
+  return {
+    async *[Symbol.asyncIterator]() {
+      const chunkSize = 64 * 1024;
+      for (let i = 0; i < content.length; i += chunkSize) {
+        yield content.substring(i, i + chunkSize);
+      }
+    }
+  };
+}
 
 /** Options for WorkbookReader */
 export interface WorkbookReaderOptions {
@@ -30,10 +37,14 @@ export interface WorkbookReaderEvent {
   value: unknown;
 }
 
+/** Unzipped files from fflate */
+type UnzippedFiles = Record<string, Uint8Array>;
+
 /**
  * WorkbookReader streams XLSX contents and emits worksheet data.
+ * Uses fflate for ZIP handling (Bun-native, no Node streams).
  */
-class WorkbookReader extends EventEmitter {
+class WorkbookReader extends SimpleEventEmitter {
   input: unknown;
   options: WorkbookReaderOptions;
   styles: StyleManager;
@@ -41,7 +52,7 @@ class WorkbookReader extends EventEmitter {
   workbookRels?: unknown[];
   properties?: unknown;
   model?: unknown;
-  stream?: nodeStream.Readable | Readable;
+  private files?: UnzippedFiles;
 
   constructor(input: unknown, options: WorkbookReaderOptions = {}) {
     super();
@@ -61,14 +72,31 @@ class WorkbookReader extends EventEmitter {
     this.styles.init();
   }
 
-  private _getStream(input: unknown): nodeStream.Readable | Readable {
-    if (input instanceof nodeStream.Readable || input instanceof Readable) {
-      return input;
-    }
+  private async _loadZip(input: unknown): Promise<UnzippedFiles> {
+    let buffer: Uint8Array;
+    
     if (typeof input === 'string') {
-      return fs.createReadStream(input);
+      // Filename - read with Bun
+      const arrayBuffer = await Bun.file(input).arrayBuffer();
+      buffer = new Uint8Array(arrayBuffer);
+    } else if (input instanceof ArrayBuffer) {
+      buffer = new Uint8Array(input);
+    } else if (input instanceof Uint8Array) {
+      buffer = input;
+    } else if (Buffer.isBuffer(input)) {
+      buffer = new Uint8Array(input);
+    } else if (input && typeof (input as AsyncIterable<Buffer>)[Symbol.asyncIterator] === 'function') {
+      // Async iterable - collect chunks
+      const chunks: Buffer[] = [];
+      for await (const chunk of input as AsyncIterable<Buffer>) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      }
+      buffer = new Uint8Array(Buffer.concat(chunks));
+    } else {
+      throw new Error(`Could not recognise input: ${input}`);
     }
-    throw new Error(`Could not recognise input: ${input}`);
+
+    return unzipSync(buffer);
   }
 
   async read(input?: unknown, options?: WorkbookReaderOptions): Promise<void> {
@@ -104,74 +132,65 @@ class WorkbookReader extends EventEmitter {
 
   async *parse(input?: unknown, options?: WorkbookReaderOptions): AsyncGenerator<WorkbookReaderEvent> {
     if (options) this.options = options;
-    const stream = (this.stream = this._getStream(input || this.input));
-    const zip = unzip.Parse({forceStream: true});
-    stream.pipe(zip);
-
-    // worksheets, deferred for parsing after shared strings reading
-    const waitingWorkSheets = [];
-
-    for await (const entry of iterateStream(zip)) {
-      let match;
-      let sheetNo;
-      switch (entry.path) {
-        case '_rels/.rels':
-          break;
-        case 'xl/_rels/workbook.xml.rels':
-          await this._parseRels(entry);
-          break;
-        case 'xl/workbook.xml':
-          await this._parseWorkbook(entry);
-          break;
-        case 'xl/sharedStrings.xml':
-          yield* this._parseSharedStrings(entry);
-          break;
-        case 'xl/styles.xml':
-          await this._parseStyles(entry);
-          break;
-        default:
-          if (entry.path.match(/xl\/worksheets\/sheet\d+[.]xml/)) {
-            match = entry.path.match(/xl\/worksheets\/sheet(\d+)[.]xml/);
-            sheetNo = match[1];
-            if (this.sharedStrings && this.workbookRels) {
-              yield* this._parseWorksheet(iterateStream(entry), sheetNo);
-            } else {
-              // create temp file for each worksheet
-              await new Promise((resolve, reject) => {
-                tmp.file((err, path, fd, tempFileCleanupCallback) => {
-                  if (err) {
-                    return reject(err);
-                  }
-                  waitingWorkSheets.push({sheetNo, path, tempFileCleanupCallback});
-
-                  const tempStream = fs.createWriteStream(path);
-                  tempStream.on('error', reject);
-                  entry.pipe(tempStream);
-                  return tempStream.on('finish', () => {
-                    return resolve();
-                  });
-                });
-              });
-            }
-          } else if (entry.path.match(/xl\/worksheets\/_rels\/sheet\d+[.]xml.rels/)) {
-            match = entry.path.match(/xl\/worksheets\/_rels\/sheet(\d+)[.]xml.rels/);
-            sheetNo = match[1];
-            yield* this._parseHyperlinks(iterateStream(entry), sheetNo);
-          }
-          break;
-      }
-      entry.autodrain();
+    
+    // Load ZIP with fflate
+    this.files = await this._loadZip(input || this.input);
+    
+    // Parse workbook relationships first
+    const relsData = this.files['xl/_rels/workbook.xml.rels'];
+    if (relsData) {
+      const content = strFromU8(relsData);
+      await this._parseRels(createAsyncIterable(content));
     }
 
-    for (const {sheetNo, path, tempFileCleanupCallback} of waitingWorkSheets) {
-      let fileStream = fs.createReadStream(path);
-      // TODO: Remove once node v8 is deprecated
-      // Detect and upgrade old fileStreams
-      if (!fileStream[Symbol.asyncIterator]) {
-        fileStream = fileStream.pipe(new PassThrough());
+    // Parse workbook
+    const workbookData = this.files['xl/workbook.xml'];
+    if (workbookData) {
+      const content = strFromU8(workbookData);
+      await this._parseWorkbook(createAsyncIterable(content));
+    }
+
+    // Parse shared strings
+    const sharedStringsData = this.files['xl/sharedStrings.xml'];
+    if (sharedStringsData) {
+      const content = strFromU8(sharedStringsData);
+      yield* this._parseSharedStrings(createAsyncIterable(content));
+    }
+
+    // Parse styles
+    const stylesData = this.files['xl/styles.xml'];
+    if (stylesData) {
+      const content = strFromU8(stylesData);
+      await this._parseStyles(createAsyncIterable(content));
+    }
+
+    // Find and parse worksheets
+    const worksheetFiles = Object.keys(this.files)
+      .filter(name => name.match(/xl\/worksheets\/sheet\d+\.xml$/))
+      .sort((a, b) => {
+        const numA = parseInt(a.match(/sheet(\d+)\.xml$/)?.[1] || '0');
+        const numB = parseInt(b.match(/sheet(\d+)\.xml$/)?.[1] || '0');
+        return numA - numB;
+      });
+
+    for (const path of worksheetFiles) {
+      const match = path.match(/sheet(\d+)\.xml$/);
+      if (match) {
+        const sheetNo = match[1];
+        const fileData = this.files[path];
+        if (fileData) {
+          const content = strFromU8(fileData);
+          yield* this._parseWorksheet(createAsyncIterable(content), sheetNo);
+        }
+
+        // Check for hyperlinks
+        const relsPath = `xl/worksheets/_rels/sheet${sheetNo}.xml.rels`;
+        const relsData = this.files[relsPath];
+        if (relsData) {
+          const relsContent = strFromU8(relsData);
+          yield* this._parseHyperlinks(createAsyncIterable(relsContent), sheetNo);
+        }
       }
-      yield* this._parseWorksheet(fileStream, sheetNo);
-      tempFileCleanupCallback();
     }
   }
 
@@ -181,22 +200,22 @@ class WorkbookReader extends EventEmitter {
     }
   }
 
-  private async _parseRels(entry: unknown): Promise<void> {
+  private async _parseRels(stream: AsyncIterable<string>): Promise<void> {
     const xform = new RelationshipsXform();
-    this.workbookRels = await xform.parseStream(iterateStream(entry));
+    this.workbookRels = await xform.parseStream(stream);
   }
 
-  private async _parseWorkbook(entry: unknown): Promise<void> {
+  private async _parseWorkbook(stream: AsyncIterable<string>): Promise<void> {
     this._emitEntry({type: 'workbook'});
 
     const workbook = new WorkbookXform();
-    await workbook.parseStream(iterateStream(entry));
+    await workbook.parseStream(stream);
 
     this.properties = workbook.map.workbookPr;
     this.model = workbook.model;
   }
 
-  private async *_parseSharedStrings(entry: unknown): AsyncGenerator<WorkbookReaderEvent> {
+  private async *_parseSharedStrings(stream: AsyncIterable<string>): AsyncGenerator<WorkbookReaderEvent> {
     this._emitEntry({type: 'shared-strings'});
     switch (this.options.sharedStrings) {
       case 'cache':
@@ -208,14 +227,15 @@ class WorkbookReader extends EventEmitter {
         return;
     }
 
-    let text = null;
-    let richText = [];
+    let text: string | null = null;
+    let richText: Array<{font: unknown; text: string | null}> = [];
     let index = 0;
-    let font = null;
-    for await (const events of parseSax(iterateStream(entry))) {
-      for (const {eventType, value} of events) {
+    let font: Record<string, unknown> | null = null;
+
+    for await (const events of parseSax(stream)) {
+      for (const {eventType, value} of events as Array<{eventType: string; value: unknown}>) {
         if (eventType === 'opentag') {
-          const node = value;
+          const node = value as {name: string; attributes: Record<string, string>};
           switch (node.name) {
             case 'b':
               font = font || {};
@@ -229,13 +249,13 @@ class WorkbookReader extends EventEmitter {
               font = font || {};
               font.color = {};
               if (node.attributes.rgb) {
-                font.color.argb = node.attributes.argb;
+                (font.color as Record<string, unknown>).argb = node.attributes.rgb;
               }
               if (node.attributes.val) {
-                font.color.argb = node.attributes.val;
+                (font.color as Record<string, unknown>).argb = node.attributes.val;
               }
               if (node.attributes.theme) {
-                font.color.theme = node.attributes.theme;
+                (font.color as Record<string, unknown>).theme = node.attributes.theme;
               }
               break;
             case 'family':
@@ -252,7 +272,7 @@ class WorkbookReader extends EventEmitter {
               break;
             case 'rFont':
               font = font || {};
-              font.name = node.value;
+              font.name = node.attributes.val;
               break;
             case 'si':
               font = null;
@@ -278,26 +298,24 @@ class WorkbookReader extends EventEmitter {
               break;
           }
         } else if (eventType === 'text') {
-          text = text ? text + value : value;
+          text = text ? text + (value as string) : (value as string);
         } else if (eventType === 'closetag') {
-          const node = value;
+          const node = value as {name: string};
           switch (node.name) {
             case 'r':
               richText.push({
                 font,
                 text,
               });
-
               font = null;
               text = null;
               break;
             case 'si':
               if (this.options.sharedStrings === 'cache') {
-                this.sharedStrings.push(richText.length ? {richText} : text);
+                this.sharedStrings!.push(richText.length ? {richText} : text);
               } else if (this.options.sharedStrings === 'emit') {
-                yield {index: index++, text: richText.length ? {richText} : text};
+                yield {eventType: 'shared-string', value: {index: index++, text: richText.length ? {richText} : text}};
               }
-
               richText = [];
               font = null;
               text = null;
@@ -308,41 +326,46 @@ class WorkbookReader extends EventEmitter {
     }
   }
 
-  private async _parseStyles(entry: unknown): Promise<void> {
+  private async _parseStyles(stream: AsyncIterable<string>): Promise<void> {
     this._emitEntry({type: 'styles'});
     if (this.options.styles === 'cache') {
       this.styles = new StyleManager();
-      await this.styles.parseStream(iterateStream(entry));
+      await this.styles.parseStream(stream);
     }
   }
 
-  private *_parseWorksheet(iterator: unknown, sheetNo: string): Generator<WorkbookReaderEvent> {
+  private *_parseWorksheet(stream: AsyncIterable<string>, sheetNo: string): Generator<WorkbookReaderEvent> {
     this._emitEntry({type: 'worksheet', id: sheetNo});
     const worksheetReader = new WorksheetReader({
       workbook: this,
       id: sheetNo,
-      iterator,
+      iterator: stream,
       options: this.options,
     });
 
-    const matchingRel = (this.workbookRels as Array<{ Target: string; Id: string }> || []).find(rel => rel.Target === `worksheets/sheet${sheetNo}.xml`);
-    const matchingSheet = matchingRel && ((this.model as { sheets?: Array<{ rId: string; id: number; name: string; state: string }> })?.sheets || []).find(sheet => sheet.rId === matchingRel.Id);
+    const matchingRel = (this.workbookRels as Array<{ Target: string; Id: string }> || [])
+      .find(rel => rel.Target === `worksheets/sheet${sheetNo}.xml`);
+    const matchingSheet = matchingRel && 
+      ((this.model as { sheets?: Array<{ rId: string; id: number; name: string; state: string }> })?.sheets || [])
+      .find(sheet => sheet.rId === matchingRel.Id);
+    
     if (matchingSheet) {
       worksheetReader.id = matchingSheet.id;
       worksheetReader.name = matchingSheet.name;
       worksheetReader.state = matchingSheet.state;
     }
+    
     if (this.options.worksheets === 'emit') {
       yield {eventType: 'worksheet', value: worksheetReader};
     }
   }
 
-  private *_parseHyperlinks(iterator: unknown, sheetNo: string): Generator<WorkbookReaderEvent> {
+  private *_parseHyperlinks(stream: AsyncIterable<string>, sheetNo: string): Generator<WorkbookReaderEvent> {
     this._emitEntry({type: 'hyperlinks', id: sheetNo});
     const hyperlinksReader = new HyperlinkReader({
       workbook: this,
       id: sheetNo,
-      iterator,
+      iterator: stream,
       options: this.options,
     });
     if (this.options.hyperlinks === 'emit') {

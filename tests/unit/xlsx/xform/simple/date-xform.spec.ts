@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const DateXform = verquire('xlsx/xform/simple/date-xform');
-
+import DateXform from '../../../../../src/xlsx/xform/simple/date-xform.ts';
 const expectations = [
   {
     title: 'date',

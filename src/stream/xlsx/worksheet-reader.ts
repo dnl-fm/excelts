@@ -7,9 +7,9 @@ import colCache from '../../utils/col-cache.ts';
 import Dimensions from '../../doc/range.ts';
 import Row from '../../doc/row.ts';
 import Column from '../../doc/column.ts';
-import { EventEmitter } from 'events';
+import SimpleEventEmitter from '../../utils/event-emitter.ts';
 
-class WorksheetReader extends EventEmitter {
+class WorksheetReader extends SimpleEventEmitter {
   constructor({workbook, id, iterator, options}) {
     super();
 

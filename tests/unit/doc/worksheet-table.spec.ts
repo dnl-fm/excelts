@@ -1,8 +1,7 @@
 import {expect, describe, it} from 'bun:test';
 
-const colCache = verquire('utils/col-cache');
-const Excel = verquire('exceljs');
-
+import colCache from '../../../src/utils/col-cache.ts';
+import Excel from '../../../src/index.ts';
 /**
  * Compare dates ignoring milliseconds
  */

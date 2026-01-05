@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const PageBreaksXform = verquire('xlsx/xform/sheet/page-breaks-xform');
-
+import PageBreaksXform from '../../../../../src/xlsx/xform/sheet/page-breaks-xform.ts';
 const expectations = [
   {
     title: 'one page break',

@@ -1,8 +1,8 @@
-const ExcelJS = verquire('exceljs');
+import ExcelTS from '../../../src/index.ts';
 
 describe('github issues', () => {
   it('issue 2125 - spliceRows remove last row', () => {
-    const wb = new ExcelJS.Workbook();
+    const wb = new ExcelTS.Workbook();
     const ws = wb.addWorksheet();
     ws.addRows([['1st'], ['2nd'], ['3rd']]);
 

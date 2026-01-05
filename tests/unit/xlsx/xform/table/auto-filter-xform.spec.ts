@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const AutoFilterXform = verquire('xlsx/xform/table/auto-filter-xform');
-
+import AutoFilterXform from '../../../../../src/xlsx/xform/table/auto-filter-xform.ts';
 const expectations = [
   {
     title: 'showing filter',

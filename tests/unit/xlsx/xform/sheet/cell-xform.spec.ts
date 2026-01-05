@@ -1,10 +1,9 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const CellXform = verquire('xlsx/xform/sheet/cell-xform');
-const SharedStringsXform = verquire('xlsx/xform/strings/shared-strings-xform');
-const Enums = verquire('doc/enums');
-
+import CellXform from '../../../../../src/xlsx/xform/sheet/cell-xform.ts';
+import SharedStringsXform from '../../../../../src/xlsx/xform/strings/shared-strings-xform.ts';
+import Enums from '../../../../../src/doc/enums.ts';
 const fakeStyles = {
   addStyleModel(style, effectiveType) {
     if (effectiveType === Enums.ValueType.Date) {

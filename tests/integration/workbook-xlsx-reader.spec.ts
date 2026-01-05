@@ -3,8 +3,7 @@
 import fs from 'fs';
 import testutils from '../utils/index.ts';
 
-const ExcelJS = verquire('exceljs');
-
+import ExcelTS from '../../src/index.ts';
 const TEST_FILE_NAME = './tests/out/wb.test.xlsx';
 
 // need some architectural changes to make stream read work properly
@@ -13,7 +12,7 @@ describe('WorkbookReader', () => {
   describe('Serialise', () => {
     it('xlsx file', () => {
       
-      const wb = testutils.createTestBook(new ExcelJS.Workbook(), 'xlsx');
+      const wb = testutils.createTestBook(new ExcelTS.Workbook(), 'xlsx');
 
       return wb.xlsx
         .writeFile(TEST_FILE_NAME)
@@ -24,7 +23,7 @@ describe('WorkbookReader', () => {
   describe('#readFile', () => {
     describe('Row limit', () => {
       it('should bail out if the file contains more rows than the limit', () => {
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelTS.Workbook();
         // The Fibonacci sheet has 19 rows
         return workbook.xlsx
           .readFile('./tests/integration/data/fibonacci.xlsx', {maxRows: 10})
@@ -40,7 +39,7 @@ describe('WorkbookReader', () => {
 
       it('should fail fast on a huge file', () => {
         
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelTS.Workbook();
         return workbook.xlsx
           .readFile('./tests/integration/data/huge.xlsx', {maxRows: 100})
           .then(
@@ -54,7 +53,7 @@ describe('WorkbookReader', () => {
       });
 
       it('should parse fine if the limit is not exceeded', () => {
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelTS.Workbook();
         return workbook.xlsx.readFile(
           './tests/integration/data/fibonacci.xlsx',
           {maxRows: 20}
@@ -64,7 +63,7 @@ describe('WorkbookReader', () => {
 
     describe('Column limit', () => {
       it('should bail out if the file contains more cells than the limit', () => {
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelTS.Workbook();
         // The many-columns sheet has 20 columns in row 2
         return workbook.xlsx
           .readFile('./tests/integration/data/many-columns.xlsx', {
@@ -82,7 +81,7 @@ describe('WorkbookReader', () => {
 
       it('should fail fast on a huge file', () => {
         
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelTS.Workbook();
         return workbook.xlsx
           .readFile('./tests/integration/data/huge.xlsx', {maxCols: 10})
           .then(
@@ -96,7 +95,7 @@ describe('WorkbookReader', () => {
       });
 
       it('should parse fine if the limit is not exceeded', () => {
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelTS.Workbook();
         return workbook.xlsx.readFile(
           './tests/integration/data/many-columns.xlsx',
           {maxCols: 40}
@@ -108,7 +107,7 @@ describe('WorkbookReader', () => {
   describe('#read', () => {
     describe('Row limit', () => {
       it('should bail out if the file contains more rows than the limit', () => {
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelTS.Workbook();
         // The Fibonacci sheet has 19 rows
         return workbook.xlsx
           .read(fs.createReadStream('./tests/integration/data/fibonacci.xlsx'), {
@@ -125,7 +124,7 @@ describe('WorkbookReader', () => {
       });
 
       it('should parse fine if the limit is not exceeded', () => {
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelTS.Workbook();
         return workbook.xlsx.read(
           fs.createReadStream('./tests/integration/data/fibonacci.xlsx'),
           {maxRows: 20}
@@ -135,10 +134,10 @@ describe('WorkbookReader', () => {
   });
 
   describe('edit styles in existing file', () => {
-    let wb: InstanceType<typeof ExcelJS.Workbook>;
+    let wb: InstanceType<typeof ExcelTS.Workbook>;
 
     beforeEach(async () => {
-      wb = new ExcelJS.Workbook();
+      wb = new ExcelTS.Workbook();
       await wb.xlsx.readFile(
         './tests/integration/data/test-row-styles.xlsx'
       );
@@ -181,7 +180,7 @@ describe('WorkbookReader', () => {
     let worksheet: any;
 
     beforeAll(async () => {
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new ExcelTS.Workbook();
       await workbook.xlsx
         .read(fs.createReadStream('./tests/integration/data/formulas.xlsx'));
       worksheet = workbook.getWorksheet();
@@ -195,7 +194,7 @@ describe('WorkbookReader', () => {
       });
 
       it('should be classified as a formula cell', () => {
-        expect(cell.type).toBe(ExcelJS.ValueType.Formula);
+        expect(cell.type).toBe(ExcelTS.ValueType.Formula);
       });
 
       it('should have text corresponding to the evaluated formula result', () => {
@@ -217,7 +216,7 @@ describe('WorkbookReader', () => {
       });
 
       it('should be classified as a formula cell', () => {
-        expect(cell.type).toBe(ExcelJS.ValueType.Hyperlink);
+        expect(cell.type).toBe(ExcelTS.ValueType.Hyperlink);
       });
 
       it('should have text corresponding to the evaluated formula result', () => {
@@ -243,7 +242,7 @@ describe('WorkbookReader', () => {
     let worksheet: any;
 
     beforeAll(async () => {
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new ExcelTS.Workbook();
       await workbook.xlsx
         .read(
           fs.createReadStream(
@@ -272,7 +271,7 @@ describe('WorkbookReader', () => {
     });
 
     it('should reject the promise with the sax error', () => {
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new ExcelTS.Workbook();
       return workbook.xlsx
         .readFile('./tests/integration/data/invalid-xml.xlsx')
         .then(
@@ -295,7 +294,7 @@ describe('WorkbookReader', () => {
 
   describe('with a spreadsheet that is missing some files in the zip container', () => {
     it('should not break', () => {
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new ExcelTS.Workbook();
       return workbook.xlsx.readFile(
         './tests/integration/data/missing-bits.xlsx'
       );
@@ -306,7 +305,7 @@ describe('WorkbookReader', () => {
     let worksheet: any;
 
     beforeAll(async () => {
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new ExcelTS.Workbook();
       await workbook.xlsx
         .read(fs.createReadStream('./tests/integration/data/images.xlsx'));
       worksheet = workbook.getWorksheet();
@@ -408,7 +407,7 @@ describe('WorkbookReader', () => {
   });
   describe('with a spreadsheet containing a defined name that kinda looks like it contains a range', () => {
     it('should not crash', () => {
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new ExcelTS.Workbook();
       return workbook.xlsx.read(
         fs.createReadStream('./tests/integration/data/bogus-defined-name.xlsx')
       );

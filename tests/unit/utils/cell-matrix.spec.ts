@@ -1,4 +1,4 @@
-const CellMatrix = verquire('utils/cell-matrix');
+import CellMatrix from '../../../src/utils/cell-matrix.ts';
 
 describe('CellMatrix', () => {
   it('getCell always returns a cell', () => {

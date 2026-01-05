@@ -1,8 +1,7 @@
 import {expect, describe, it} from 'bun:test';
 
-const WorksheetWriter = verquire('stream/xlsx/worksheet-writer');
-const StreamBuf = verquire('utils/stream-buf');
-
+import WorksheetWriter from '../../../src/stream/xlsx/worksheet-writer.ts';
+import StreamBuf from '../../../src/utils/stream-buf.ts';
 /**
  * Basic XML validity check
  */

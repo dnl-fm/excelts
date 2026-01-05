@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const BorderXform = verquire('xlsx/xform/style/border-xform');
-
+import BorderXform from '../../../../../src/xlsx/xform/style/border-xform.ts';
 const expectations = [
   {
     title: 'Empty',

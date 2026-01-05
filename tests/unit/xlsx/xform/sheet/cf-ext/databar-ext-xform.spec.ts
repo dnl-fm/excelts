@@ -1,8 +1,7 @@
 
 import testXformHelper from '../../test-xform-helper.ts';
 
-const DatabarExtXform = verquire('xlsx/xform/sheet/cf-ext/databar-ext-xform');
-
+import DatabarExtXform from '../../../../../../src/xlsx/xform/sheet/cf-ext/databar-ext-xform.ts';
 const expectations = [
   {
     title: 'Default Set',

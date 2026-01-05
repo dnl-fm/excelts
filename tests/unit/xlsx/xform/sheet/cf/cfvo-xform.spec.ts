@@ -1,8 +1,7 @@
 
 import testXformHelper from '../../test-xform-helper.ts';
 
-const CfvoXform = verquire('xlsx/xform/sheet/cf/cfvo-xform');
-
+import CfvoXform from '../../../../../../src/xlsx/xform/sheet/cf/cfvo-xform.ts';
 const expectations = [
   {
     title: 'min',

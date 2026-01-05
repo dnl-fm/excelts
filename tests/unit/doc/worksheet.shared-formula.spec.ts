@@ -1,4 +1,4 @@
-const Excel = verquire('exceljs');
+import Excel from '../../../src/index.ts';
 
 describe('Worksheet', () => {
   describe('Shared Formulae', () => {

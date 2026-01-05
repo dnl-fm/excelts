@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const UnderlineXform = verquire('xlsx/xform/style/underline-xform');
-
+import UnderlineXform from '../../../../../src/xlsx/xform/style/underline-xform.ts';
 const expectations = [
   {
     title: 'single',

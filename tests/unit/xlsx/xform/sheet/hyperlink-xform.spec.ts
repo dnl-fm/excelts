@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const HyperlinkXform = verquire('xlsx/xform/sheet/hyperlink-xform');
-
+import HyperlinkXform from '../../../../../src/xlsx/xform/sheet/hyperlink-xform.ts';
 const expectations = [
   {
     title: 'Web Link',

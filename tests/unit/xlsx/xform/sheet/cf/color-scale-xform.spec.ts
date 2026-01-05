@@ -1,8 +1,7 @@
 
 import testXformHelper from '../../test-xform-helper.ts';
 
-const ColorScaleXform = verquire('xlsx/xform/sheet/cf/color-scale-xform');
-
+import ColorScaleXform from '../../../../../../src/xlsx/xform/sheet/cf/color-scale-xform.ts';
 const expectations = [
   {
     title: 'Colour Scale',

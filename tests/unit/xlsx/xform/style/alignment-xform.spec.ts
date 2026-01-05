@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const AlignmentXform = verquire('xlsx/xform/style/alignment-xform');
-
+import AlignmentXform from '../../../../../src/xlsx/xform/style/alignment-xform.ts';
 const expectations = [
   {
     title: 'Empty',

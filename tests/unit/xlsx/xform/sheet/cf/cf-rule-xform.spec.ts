@@ -1,8 +1,7 @@
 
 import testXformHelper from '../../test-xform-helper.ts';
 
-const CfRuleXform = verquire('xlsx/xform/sheet/cf/cf-rule-xform');
-
+import CfRuleXform from '../../../../../../src/xlsx/xform/sheet/cf/cf-rule-xform.ts';
 const expectations = [
   {
     title: 'Expression',

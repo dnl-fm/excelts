@@ -1,10 +1,10 @@
 
 
+import { randomUUID } from 'crypto';
 import BaseXform from '../../base-xform.ts';
 import CompositeXform from '../../composite-xform.ts';
 import DatabarExtXform from './databar-ext-xform.ts';
 import IconSetExtXform from './icon-set-ext-xform.ts';
-import { v4 as uuidv4 } from 'uuid';
 
 const extIcons = {
   '3Triangles': true,
@@ -41,7 +41,7 @@ class CfRuleExtXform extends CompositeXform {
 
   prepare(model) {
     if (CfRuleExtXform.isExt(model)) {
-      model.x14Id = `{${uuidv4()}}`.toUpperCase();
+      model.x14Id = `{${randomUUID()}}`.toUpperCase();
     }
   }
 
@@ -75,7 +75,7 @@ class CfRuleExtXform extends CompositeXform {
     xmlStream.openNode(this.tag, {
       type: 'iconSet',
       priority: model.priority,
-      id: model.x14Id || `{${uuidv4()}}`,
+      id: model.x14Id || `{${randomUUID()}}`,
     });
 
     this.iconSetXform.render(xmlStream, model);

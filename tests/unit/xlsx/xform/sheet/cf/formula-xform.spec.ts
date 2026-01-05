@@ -1,8 +1,7 @@
 
 import testXformHelper from '../../test-xform-helper.ts';
 
-const FormulaXform = verquire('xlsx/xform/sheet/cf/formula-xform');
-
+import FormulaXform from '../../../../../../src/xlsx/xform/sheet/cf/formula-xform.ts';
 const expectations = [
   {
     title: 'formula',

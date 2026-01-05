@@ -1,7 +1,6 @@
 import {expect, describe, it, beforeAll} from 'bun:test';
 
-const ExcelJS = verquire('exceljs');
-
+import ExcelTS from '../../src/index.ts';
 /**
  * Compare dates ignoring milliseconds
  */
@@ -19,7 +18,7 @@ describe('Gold Book', () => {
     let wb: any;
 
     beforeAll(async () => {
-      wb = new ExcelJS.Workbook();
+      wb = new ExcelTS.Workbook();
       await wb.xlsx.readFile(`${import.meta.dir}/data/gold.xlsx`);
     });
 

@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const ProtectionXform = verquire('xlsx/xform/style/protection-xform');
-
+import ProtectionXform from '../../../../../src/xlsx/xform/style/protection-xform.ts';
 const expectations = [
   {
     title: 'Empty',

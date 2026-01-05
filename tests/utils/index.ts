@@ -17,9 +17,8 @@ import pageSetupJson from './data/page-setup.json';
 import conditionalFormattingJson from './data/conditional-formatting.json';
 import headerFooterJson from './data/header-footer.json';
 
-const Row = verquire('doc/row');
-const Column = verquire('doc/column');
-
+import Row from '../../src/doc/row.ts';
+import Column from '../../src/doc/column.ts';
 const testSheets = {
   dataValidations: _dataValidations,
   conditionalFormatting: _conditionalFormatting,

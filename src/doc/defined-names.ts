@@ -15,6 +15,7 @@ export interface CellAddress {
   bottom?: number;
   left?: number;
   right?: number;
+  mark?: boolean;
 }
 
 export interface DefinedNameModel {
@@ -45,9 +46,9 @@ class DefinedNames {
 
   addEx(location: CellAddress, name: unknown): void {
     const matrix = this.getMatrix(name as string);
-    if ((location as any).top) {
-      for (let col = (location as any).left; col <= (location as any).right; col++) {
-        for (let row = (location as any).top; row <= (location as any).bottom; row++) {
+    if (location.top) {
+      for (let col = location.left!; col <= location.right!; col++) {
+        for (let row = location.top; row <= location.bottom!; row++) {
           const address: CellAddress = {
             sheetName: location.sheetName,
             address: colCache.n2l(col) + row,
@@ -97,46 +98,46 @@ class DefinedNames {
     );
   }
 
-  _explore(matrix: CellMatrix, cell: Record<string, unknown>): Range {
-    (cell as any).mark = false;
+  _explore(matrix: CellMatrix, cell: CellAddress): Range {
+    cell.mark = false;
     const {sheetName} = cell;
 
-    const range = new Range((cell as any).row, (cell as any).col, (cell as any).row, (cell as any).col, sheetName as string);
+    const range = new Range(cell.row!, cell.col!, cell.row!, cell.col!, sheetName as string);
     let x;
     let y;
 
     // grow vertical - only one col to worry about
     function vGrow(yy: number, edge: string): boolean {
-      const c = matrix.findCellAt(sheetName, yy, cell.col);
+      const c = matrix.findCellAt(sheetName, yy, cell.col!);
       if (!c || !c.mark) {
         return false;
       }
-      range[edge] = yy;
-      c.mark = false;
+      (c as CellAddress).mark = false;
+      range[edge as keyof typeof range] = yy as never;
       return true;
     }
-    for (y = cell.row - 1; vGrow(y, 'top'); y--);
-    for (y = cell.row + 1; vGrow(y, 'bottom'); y++);
+    for (y = cell.row! - 1; vGrow(y, 'top'); y--);
+    for (y = cell.row! + 1; vGrow(y, 'bottom'); y++);
 
     // grow horizontal - ensure all rows can grow
     function hGrow(xx: number, edge: string): boolean {
-      const cells: unknown[] = [];
-      for (y = (range as any).top; y <= (range as any).bottom; y++) {
-        const c = matrix.findCellAt(sheetName as string, y, (cell as any).col);
-        if (c && (c as any).mark) {
-          cells.push(c);
+      const cells: CellAddress[] = [];
+      for (y = range.top!; y <= range.bottom!; y++) {
+        const c = matrix.findCellAt(sheetName as string, y, xx);
+        if (c && (c as CellAddress).mark) {
+          cells.push(c as CellAddress);
         } else {
           return false;
         }
       }
-      (range as any)[edge] = xx;
+      range[edge as keyof typeof range] = xx as never;
       for (let i = 0; i < cells.length; i++) {
-        ((cells[i] as any)).mark = false;
+        cells[i].mark = false;
       }
       return true;
     }
-    for (x = cell.col - 1; hGrow(x, 'left'); x--);
-    for (x = cell.col + 1; hGrow(x, 'right'); x++);
+    for (x = cell.col! - 1; hGrow(x, 'left'); x--);
+    for (x = cell.col! + 1; hGrow(x, 'right'); x++);
 
     return range;
   }
@@ -149,10 +150,13 @@ class DefinedNames {
     }
 
     m.forEach((cell: unknown) => {
-      ((cell as any)).mark = true;
+      (cell as CellAddress).mark = true;
     });
-    const ranges = matrix
-      .map((cell: unknown) => ((cell as any).mark && this._explore(m, cell)))
+    const ranges = m
+      .map((cell: unknown) => {
+        const cellAddr = cell as CellAddress;
+        return cellAddr.mark && this._explore(m, cellAddr);
+      })
       .filter(Boolean)
       .map((range: Range) => range.$shortRange);
 
@@ -165,10 +169,11 @@ class DefinedNames {
   normaliseMatrix(matrix: CellMatrix, sheetName: string): void {
     matrix.forEachInSheet(sheetName, (cell: unknown, row: number, col: number) => {
       if (cell) {
-        if ((cell as any).row !== row || (cell as any).col !== col) {
-          (cell as any).row = row;
-          (cell as any).col = col;
-          (cell as any).address = colCache.n2l(col) + row;
+        const cellAddr = cell as CellAddress;
+        if (cellAddr.row !== row || cellAddr.col !== col) {
+          cellAddr.row = row;
+          cellAddr.col = col;
+          cellAddr.address = colCache.n2l(col) + row;
         }
       }
     });
@@ -191,15 +196,18 @@ class DefinedNames {
   get model(): unknown[] {
     // To get names per cell - just iterate over all names finding cells if they exist
     return _.map(this.matrixMap, (matrix, name) => this.getRanges(name, matrix)).filter(
-      (definedName: unknown) => (definedName as any).ranges?.length
+      (definedName: unknown) => {
+        const model = definedName as DefinedNameModel;
+        return model.ranges?.length;
+      }
     );
   }
 
   set model(value: DefinedNameModel[]) {
     const matrixMap = (this.matrixMap = {});
     value.forEach((definedName: DefinedNameModel) => {
-      const matrix = (matrixMap[(definedName as any).name] = new CellMatrix());
-      ((definedName as any).ranges as string[]).forEach((rangeStr: string) => {
+      const matrix = (matrixMap[definedName.name] = new CellMatrix());
+      (definedName.ranges as string[]).forEach((rangeStr: string) => {
         if (rangeRegexp.test(rangeStr.split('!').pop() || '')) {
           matrix.addCell(rangeStr);
         }

@@ -1,9 +1,9 @@
-const ExcelJS = verquire('exceljs');
+import ExcelTS from '../../../src/index.ts';
 
 describe('pull request  2244', () => {
   it('pull request 2244- Fix xlsx.writeFile() not catching error when error occurs', async () => {
     async function test() {
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new ExcelTS.Workbook();
       const worksheet = workbook.addWorksheet('sheet');
       const imageId1 = workbook.addImage({
         filename: 'path/to/image.jpg', // Non-existent file

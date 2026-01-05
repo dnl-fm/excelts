@@ -1,8 +1,7 @@
 
 import testUtils from '../../utils/index.ts';
 
-const Excel = verquire('exceljs');
-
+import Excel from '../../../src/index.ts';
 describe('Worksheet', () => {
   describe('Styles', () => {
     it('sets row styles', () => {

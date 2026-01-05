@@ -3,8 +3,7 @@ import {PassThrough} from 'readable-stream';
 import express from 'express';
 import testutils from '../utils/index.ts';
 
-const Excel = verquire('exceljs');
-
+import Excel from '../../src/index.ts';
 describe('Express', () => {
   let server: ReturnType<typeof express.application.listen>;
 

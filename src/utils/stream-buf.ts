@@ -2,7 +2,7 @@
 
 // =============================================================================
 // data chunks - encapsulating incoming data
-import Stream from 'readable-stream';
+import Stream from 'stream';
 import utils from './utils.ts';
 import StringBuf from './string-buf.ts';
 

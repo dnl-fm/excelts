@@ -1,10 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const SheetFormatPropertiesXform = verquire(
-  'xlsx/xform/sheet/sheet-format-properties-xform'
-);
-
+import SheetFormatPropertiesXform from '../../../../../src/xlsx/xform/sheet/sheet-format-properties-xform.ts';
 const expectations = [
   {
     title: 'full',

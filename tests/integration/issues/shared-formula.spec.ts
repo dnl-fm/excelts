@@ -1,5 +1,5 @@
-const Enums = verquire('doc/enums');
-const ExcelJS = verquire('exceljs');
+import Enums from '../../../src/doc/enums.ts';
+import ExcelTS from '../../../src/index.ts';
 
 describe('github issues', () => {
   describe('Shared Formulas', () => {
@@ -7,7 +7,7 @@ describe('github issues', () => {
       const explain =
         'this fails, although the cells look the same in excel. Both cells are created by copying A3:B3 to A4:F19. The first row in the new block work as espected, the rest only has values (when seen through exceljs)';
       it('copied cells should have the right formulas', () => {
-        const wb = new ExcelJS.Workbook();
+        const wb = new ExcelTS.Workbook();
         return wb.xlsx
           .readFile('./tests/integration/data/fibonacci.xlsx')
           .then(() => {
@@ -25,7 +25,7 @@ describe('github issues', () => {
           });
       });
       it('copied cells should have the right types', () => {
-        const wb = new ExcelJS.Workbook();
+        const wb = new ExcelTS.Workbook();
         return wb.xlsx
           .readFile('./tests/integration/data/fibonacci.xlsx')
           .then(() => {
@@ -36,7 +36,7 @@ describe('github issues', () => {
       });
       it('copied cells should have the same fields', () => {
         // to see if there are other fields on the object worth comparing
-        const wb = new ExcelJS.Workbook();
+        const wb = new ExcelTS.Workbook();
         return wb.xlsx
           .readFile('./tests/integration/data/fibonacci.xlsx')
           .then(() => {

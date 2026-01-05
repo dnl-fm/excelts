@@ -79,11 +79,11 @@ class Column {
 
   set defn(value: Record<string, unknown> | undefined): void {
     if (value) {
-      this.key = (value as any).key;
-      this.width = (value as any).width !== undefined ? (value as any).width : DEFAULT_COLUMN_WIDTH;
-      this.outlineLevel = (value as any).outlineLevel;
-      if ((value as any).style) {
-        this.style = value.style;
+      this.key = value.key;
+      this.width = value.width !== undefined ? (value.width as number) : DEFAULT_COLUMN_WIDTH;
+      this.outlineLevel = value.outlineLevel as number;
+      if (value.style) {
+        this.style = value.style as Record<string, unknown>;
       } else {
         this.style = {};
       }
@@ -242,8 +242,10 @@ class Column {
     } else {
       opts = options as Record<string, unknown>;
     }
-    (this._worksheet as any).eachRow(opts, (row: unknown, rowNumber: number) => {
-      (iter as Function)(row.getCell(colNumber), rowNumber);
+    const worksheetRecord = this._worksheet as Record<string, unknown>;
+    (worksheetRecord.eachRow as Function)(opts, (row: unknown, rowNumber: number) => {
+      const rowRecord = row as Record<string, unknown>;
+      (iter as Function)((rowRecord.getCell as Function)(colNumber), rowNumber);
     });
   }
 

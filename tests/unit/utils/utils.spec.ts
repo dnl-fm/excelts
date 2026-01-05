@@ -1,4 +1,4 @@
-const utils = verquire('utils/utils');
+import utils from '../../../src/utils/utils.ts';
 
 describe('utils', () => {
   describe('xmlEncode', () => {

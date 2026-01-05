@@ -1,8 +1,8 @@
-const ExcelJS = verquire('exceljs');
+import ExcelTS from '../../../src/index.ts';
 
 describe('github issues', () => {
   it('issue 991 - differentiates between strings with leading numbers and dates when reading csv files', () => {
-    const wb = new ExcelJS.Workbook();
+    const wb = new ExcelTS.Workbook();
     return wb.csv
       .readFile('./tests/integration/data/test-issue-991.csv')
       .then(worksheet => {

@@ -1,9 +1,9 @@
-const ExcelJS = verquire('exceljs');
+import ExcelTS from '../../../src/index.ts';
 
 describe('github issues', () => {
   describe('pull request 1576 - inlineStr cell type support', () => {
     it('Reading test-issue-1575.xlsx', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       return wb.xlsx
         .readFile('./tests/integration/data/test-issue-1575.xlsx')
         .then(() => {

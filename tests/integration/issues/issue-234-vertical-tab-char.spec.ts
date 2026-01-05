@@ -1,11 +1,11 @@
-const ExcelJS = verquire('exceljs');
+import ExcelTS from '../../../src/index.ts';
 
 // this file to contain integration tests created from github issues
 const TEST_XLSX_FILE_NAME = './tests/out/wb.test.xlsx';
 
 describe('github issues', () => {
   it('issue 234 - Broken XLSX because of "vertical tab" ascii character in a cell', () => {
-    const wb = new ExcelJS.Workbook();
+    const wb = new ExcelTS.Workbook();
     const ws = wb.addWorksheet('Sheet1');
 
     // Start of Heading
@@ -17,7 +17,7 @@ describe('github issues', () => {
     return wb.xlsx
       .writeFile(TEST_XLSX_FILE_NAME)
       .then(() => {
-        const wb2 = new ExcelJS.Workbook();
+        const wb2 = new ExcelTS.Workbook();
         return wb2.xlsx.readFile(TEST_XLSX_FILE_NAME);
       })
       .then(wb2 => {

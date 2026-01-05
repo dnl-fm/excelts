@@ -1,8 +1,7 @@
 
 import testXformHelper from '../../test-xform-helper.ts';
 
-const IconSetXform = verquire('xlsx/xform/sheet/cf/icon-set-xform');
-
+import IconSetXform from '../../../../../../src/xlsx/xform/sheet/cf/icon-set-xform.ts';
 const expectations = [
   {
     title: 'Default Set',

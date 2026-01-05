@@ -4,8 +4,7 @@ import testUtils from '../../utils/index.ts';
 import richTextSample from '../data/rich-text-sample.ts';
 import richTextSampleA1 from '../data/rich-text-sample-a1.json';
 
-const ExcelJS = verquire('exceljs');
-
+import ExcelTS from '../../../src/index.ts';
 const TEST_XLSX_FILE_NAME = './tests/out/wb.test.xlsx';
 
 // =============================================================================
@@ -17,7 +16,7 @@ const TEST_XLSX_FILE_NAME = './tests/out/wb.test.xlsx';
 describe('Workbook', () => {
   describe('Styles', () => {
     it('row styles and columns properly', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       ws.columns = [
@@ -45,7 +44,7 @@ describe('Workbook', () => {
       return wb.xlsx
         .writeFile(TEST_XLSX_FILE_NAME)
         .then(() => {
-          const wb2 = new ExcelJS.Workbook();
+          const wb2 = new ExcelTS.Workbook();
           return wb2.xlsx.readFile(TEST_XLSX_FILE_NAME);
         })
         .then(wb2 => {
@@ -101,7 +100,7 @@ describe('Workbook', () => {
       bufferStream.write(testData);
       bufferStream.end();
 
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       return wb.xlsx.read(bufferStream).then(() => {
         const ws = wb.worksheets[0];
         expect(ws.getCell('A1').value).toEqual(richTextSampleA1);
@@ -110,7 +109,7 @@ describe('Workbook', () => {
     });
 
     it('null cells retain style', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       // one value here
@@ -123,7 +122,7 @@ describe('Workbook', () => {
       return wb.xlsx
         .writeFile(TEST_XLSX_FILE_NAME)
         .then(() => {
-          const wb2 = new ExcelJS.Workbook();
+          const wb2 = new ExcelTS.Workbook();
           return wb2.xlsx.readFile(TEST_XLSX_FILE_NAME);
         })
         .then(wb2 => {
@@ -139,7 +138,7 @@ describe('Workbook', () => {
     });
 
     it('sets row styles', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('basket');
 
       ws.getCell('A1').value = 5;
@@ -210,7 +209,7 @@ describe('Workbook', () => {
     });
 
     it('sets col styles', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('basket');
 
       ws.getCell('A1').value = 5;

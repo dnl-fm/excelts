@@ -1,11 +1,11 @@
-const ExcelJS = verquire('exceljs');
+import ExcelTS from '../../../src/index.ts';
 
 // this file to contain integration tests created from github issues
 const TEST_XLSX_FILE_NAME = './tests/out/wb.test.xlsx';
 
 describe('github issues', () => {
   it('issue 1339 - Special cell value results invalid file', async () => {
-    const wb = new ExcelJS.stream.xlsx.WorkbookWriter({
+    const wb = new ExcelTS.stream.xlsx.WorkbookWriter({
       filename: TEST_XLSX_FILE_NAME,
       useStyles: true,
       useSharedStrings: true,
@@ -31,7 +31,7 @@ describe('github issues', () => {
       ws.getCell(`B${i + 1}`).value = value;
     }
     await wb.commit();
-    const wb2 = new ExcelJS.Workbook();
+    const wb2 = new ExcelTS.Workbook();
     await wb2.xlsx.readFile(TEST_XLSX_FILE_NAME);
     const ws2 = wb2.getWorksheet('Sheet1');
     for (let i = 0, len = specialValues.length; i < len; i++) {

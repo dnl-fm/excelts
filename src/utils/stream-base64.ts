@@ -2,7 +2,7 @@
 // =============================================================================
 // StreamBase64 - A utility to convert to/from base64 stream
 // Note: does not buffer data, must be piped
-import Stream from 'readable-stream';
+import Stream from 'stream';
 
 class StreamBase64 extends Stream.Duplex {
   constructor() {

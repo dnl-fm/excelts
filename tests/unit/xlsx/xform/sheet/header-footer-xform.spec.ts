@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const HeaderFooterXform = verquire('xlsx/xform/sheet/header-footer-xform');
-
+import HeaderFooterXform from '../../../../../src/xlsx/xform/sheet/header-footer-xform.ts';
 const expectations = [
   {
     title: 'set oddHeader',

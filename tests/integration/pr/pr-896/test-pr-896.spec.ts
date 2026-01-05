@@ -2,9 +2,8 @@ import tools from '../../../utils/tools.ts';
 import sheetPropertiesJson from '../../../utils/data/sheet-properties.json';
 import pageSetupJson from '../../../utils/data/page-setup.json';
 
+import Excel from '../../../../src/index.ts';
 process.env.EXCEL_NATIVE = 'yes';
-
-const Excel = verquire('exceljs');
 
 const TEST_XLSX_FILE_NAME = './tests/out/wb.test.xlsx';
 const RT_ARR = [

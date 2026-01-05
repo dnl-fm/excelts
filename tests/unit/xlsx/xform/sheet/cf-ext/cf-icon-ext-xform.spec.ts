@@ -1,8 +1,7 @@
 
 import testXformHelper from '../../test-xform-helper.ts';
 
-const CfIconExtXform = verquire('xlsx/xform/sheet/cf-ext/cf-icon-ext-xform');
-
+import CfIconExtXform from '../../../../../../src/xlsx/xform/sheet/cf-ext/cf-icon-ext-xform.ts';
 const expectations = [
   {
     title: 'range',

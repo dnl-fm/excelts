@@ -180,10 +180,11 @@ class Range {
 
   expandRow(row: Record<string, unknown>): void {
     if (row) {
-      const dimensions = (row as any).dimensions;
-      const number = (row as any).number;
+      const rowRecord = row as Record<string, unknown>;
+      const dimensions = rowRecord.dimensions as Record<string, number> | null;
+      const number = rowRecord.number as number;
       if (dimensions) {
-        this.expand(number, (dimensions as any).min, number, (dimensions as any).max);
+        this.expand(number, dimensions.min, number, dimensions.max);
       }
     }
   }
@@ -248,12 +249,13 @@ class Range {
   }
 
   containsEx(address: Record<string, unknown>): boolean {
-    if ((address as any).sheetName && this.sheetName && (address as any).sheetName !== this.sheetName) return false;
+    const addressRecord = address as Record<string, unknown>;
+    if (addressRecord.sheetName && this.sheetName && addressRecord.sheetName !== this.sheetName) return false;
     return (
-      (address as any).row >= this.top &&
-      address.row <= this.bottom &&
-      address.col >= this.left &&
-      address.col <= this.right
+      (addressRecord.row as number) >= this.top &&
+      (addressRecord.row as number) <= this.bottom &&
+      (addressRecord.col as number) >= this.left &&
+      (addressRecord.col as number) <= this.right
     );
   }
 

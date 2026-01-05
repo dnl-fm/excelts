@@ -1,10 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const WorkbookCalcPropertiesXform = verquire(
-  'xlsx/xform/book/workbook-calc-properties-xform'
-);
-
+import WorkbookCalcPropertiesXform from '../../../../../src/xlsx/xform/book/workbook-calc-properties-xform.ts';
 const expectations = [
   {
     title: 'default',

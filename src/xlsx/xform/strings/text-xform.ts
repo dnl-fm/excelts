@@ -4,6 +4,14 @@
 import BaseXform from '../base-xform.ts';
 
 class TextXform extends BaseXform {
+  _text: string[] = [];
+
+  constructor() {
+    super();
+    // Delete inherited instance property so our getter is used
+    delete (this as any).model;
+  }
+
   get tag() {
     return 't';
   }

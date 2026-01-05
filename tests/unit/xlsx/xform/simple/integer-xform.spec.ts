@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const IntegerXform = verquire('xlsx/xform/simple/integer-xform');
-
+import IntegerXform from '../../../../../src/xlsx/xform/simple/integer-xform.ts';
 const expectations = [
   {
     title: 'five',

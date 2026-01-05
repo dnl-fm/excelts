@@ -1,10 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const AppHeadingPairsXform = verquire(
-  'xlsx/xform/core/app-heading-pairs-xform'
-);
-
+import AppHeadingPairsXform from '../../../../../src/xlsx/xform/core/app-heading-pairs-xform.ts';
 const expectations = [
   {
     title: 'app.01',

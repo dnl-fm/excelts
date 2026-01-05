@@ -3,7 +3,7 @@
 import fs from 'fs';
 import express from 'express';
 import path from 'path';
-import ExcelJS from '../../src/excelts.nodejs.ts';
+import ExcelJS from '../../src/index.ts';
 import StreamBuf from '../../src/utils/stream-buf.ts';
 
 console.log('Copying bundle.js to public folder');
@@ -19,7 +19,7 @@ const app = express();
 app.use('/', express.static(path.join(__dirname, 'public')));
 
 app.post('/api/upload', (req, res) => {
-  const wb = new ExcelJS.Workbook();
+  const wb = new ExcelTS.Workbook();
 
   const stream = new StreamBuf();
   stream.on('finish', () => {

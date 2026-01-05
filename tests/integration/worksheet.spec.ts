@@ -3,13 +3,12 @@
 import path from 'path';
 import testutils from '../utils/index.ts';
 
-const ExcelJS = verquire('exceljs');
-const Range = verquire('doc/range');
-
+import ExcelTS from '../../src/index.ts';
+import Range from '../../src/doc/range.ts';
 describe('Worksheet', () => {
   describe('Values', () => {
     it('stores values properly', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       const now = new Date();
@@ -71,7 +70,7 @@ describe('Worksheet', () => {
     });
 
     it('stores shared string values properly', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       ws.getCell('A1').value = 'Hello, World!';
@@ -93,7 +92,7 @@ describe('Worksheet', () => {
     });
 
     it('assigns cell types properly', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       // plain number
@@ -126,19 +125,19 @@ describe('Worksheet', () => {
       // date formula
       ws.getCell('C2').value = {formula: 'D1', result: new Date()};
 
-      expect(ws.getCell('A1').type).toBe(ExcelJS.ValueType.Number);
-      expect(ws.getCell('B1').type).toBe(ExcelJS.ValueType.String);
-      expect(ws.getCell('C1').type).toBe(ExcelJS.ValueType.Number);
-      expect(ws.getCell('D1').type).toBe(ExcelJS.ValueType.Date);
-      expect(ws.getCell('E1').type).toBe(ExcelJS.ValueType.Hyperlink);
+      expect(ws.getCell('A1').type).toBe(ExcelTS.ValueType.Number);
+      expect(ws.getCell('B1').type).toBe(ExcelTS.ValueType.String);
+      expect(ws.getCell('C1').type).toBe(ExcelTS.ValueType.Number);
+      expect(ws.getCell('D1').type).toBe(ExcelTS.ValueType.Date);
+      expect(ws.getCell('E1').type).toBe(ExcelTS.ValueType.Hyperlink);
 
-      expect(ws.getCell('A2').type).toBe(ExcelJS.ValueType.Formula);
-      expect(ws.getCell('B2').type).toBe(ExcelJS.ValueType.Formula);
-      expect(ws.getCell('C2').type).toBe(ExcelJS.ValueType.Formula);
+      expect(ws.getCell('A2').type).toBe(ExcelTS.ValueType.Formula);
+      expect(ws.getCell('B2').type).toBe(ExcelTS.ValueType.Formula);
+      expect(ws.getCell('C2').type).toBe(ExcelTS.ValueType.Formula);
     });
 
     it('adds columns', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       ws.columns = [
@@ -164,7 +163,7 @@ describe('Worksheet', () => {
     });
 
     it('adds column headers', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       ws.columns = [
@@ -179,7 +178,7 @@ describe('Worksheet', () => {
     });
 
     it('adds column headers by number', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       // by defn
@@ -206,7 +205,7 @@ describe('Worksheet', () => {
     });
 
     it('adds column headers by letter', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       // by defn
@@ -233,7 +232,7 @@ describe('Worksheet', () => {
     });
 
     it('adds rows by object', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       // add columns to define column keys
@@ -280,7 +279,7 @@ describe('Worksheet', () => {
     });
 
     it('adds rows by contiguous array', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       const dateValue1 = new Date(1970, 1, 1);
@@ -311,7 +310,7 @@ describe('Worksheet', () => {
     });
 
     it('adds rows by sparse array', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       const dateValue1 = new Date(1970, 1, 1);
@@ -362,7 +361,7 @@ describe('Worksheet', () => {
     });
 
     it('adds rows with style option', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       const dateValue1 = new Date(1970, 1, 1);
@@ -389,7 +388,7 @@ describe('Worksheet', () => {
     });
 
     it('inserts rows by object', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       // add columns to define column keys
@@ -442,7 +441,7 @@ describe('Worksheet', () => {
     });
 
     it('inserts rows by contiguous array', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       const dateValue1 = new Date(1970, 1, 1);
@@ -484,7 +483,7 @@ describe('Worksheet', () => {
     });
 
     it('inserts rows by sparse array', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       const dateValue1 = new Date(1970, 1, 1);
@@ -533,7 +532,7 @@ describe('Worksheet', () => {
     });
 
     it('inserts rows with style option', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       const dateValue1 = new Date(1970, 1, 1);
@@ -599,7 +598,7 @@ describe('Worksheet', () => {
     });
 
     it('should style of the inserted row with inherited style be mutable', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       const dateValue1 = new Date(1970, 1, 1);
@@ -631,7 +630,7 @@ describe('Worksheet', () => {
     });
 
     it('iterates over rows', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       ws.getCell('A1').value = 1;
@@ -650,7 +649,7 @@ describe('Worksheet', () => {
     });
 
     it('iterates over collumn cells', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       ws.getCell('A1').value = 1;
@@ -672,14 +671,14 @@ describe('Worksheet', () => {
     });
 
     it('returns undefined when row range is less than 1', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       expect(ws.getRows(1, 0)).toBe(undefined);
     });
     describe('when worksheet name is less than or equal 31', () => {
       it('save the original name', () => {
-        const wb = new ExcelJS.Workbook();
+        const wb = new ExcelTS.Workbook();
         let ws = wb.addWorksheet();
         ws.name = 'ThisIsAWorksheetName';
         expect(ws.name).toBe('ThisIsAWorksheetName');
@@ -692,7 +691,7 @@ describe('Worksheet', () => {
 
     describe('name is be not empty string', () => {
       it('when empty should thrown an error', () => {
-        const wb = new ExcelJS.Workbook();
+        const wb = new ExcelTS.Workbook();
 
         expect(() => {
           const ws = wb.addWorksheet();
@@ -700,7 +699,7 @@ describe('Worksheet', () => {
         }).toThrow('The name can\'t be empty.');
       });
       it('when isn\'t string should thrown an error', () => {
-        const wb = new ExcelJS.Workbook();
+        const wb = new ExcelTS.Workbook();
 
         expect(() => {
           const ws = wb.addWorksheet();
@@ -711,7 +710,7 @@ describe('Worksheet', () => {
 
     describe('when worksheet name is `History`', () => {
       it('thrown an error', () => {
-        const wb = new ExcelJS.Workbook();
+        const wb = new ExcelTS.Workbook();
 
         expect(() => {
           const ws = wb.addWorksheet();
@@ -724,7 +723,7 @@ describe('Worksheet', () => {
 
     describe('when worksheet name is longer than 31', () => {
       it('keep first 31 characters', () => {
-        const wb = new ExcelJS.Workbook();
+        const wb = new ExcelTS.Workbook();
         const ws = wb.addWorksheet();
         ws.name = 'ThisIsAWorksheetNameThatIsLongerThan31';
 
@@ -734,7 +733,7 @@ describe('Worksheet', () => {
 
     describe('when the worksheet name contains illegal characters', () => {
       it('throws an error', () => {
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelTS.Workbook();
 
         const invalidCharacters = ['*', '?', ':', '/', '\\', '[', ']'];
 
@@ -749,7 +748,7 @@ describe('Worksheet', () => {
       });
 
       it('throws an error', () => {
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new ExcelTS.Workbook();
 
         const invalidNames = ['\'sheetName', 'sheetName\''];
 
@@ -766,7 +765,7 @@ describe('Worksheet', () => {
 
     describe('when worksheet name already exists', () => {
       it('throws an error', () => {
-        const wb = new ExcelJS.Workbook();
+        const wb = new ExcelTS.Workbook();
 
         const validName = 'thisisaworksheetnameinuppercase';
         const invalideName = 'THISISAWORKSHEETNAMEINUPPERCASE';
@@ -782,7 +781,7 @@ describe('Worksheet', () => {
       });
 
       it('throws an error', () => {
-        const wb = new ExcelJS.Workbook();
+        const wb = new ExcelTS.Workbook();
 
         const validName = 'ThisIsAWorksheetNameThatIsLonge';
         const invalideName = 'ThisIsAWorksheetNameThatIsLongerThan31';
@@ -805,7 +804,7 @@ describe('Worksheet', () => {
   });
 
   it('returns sheet values', () => {
-    const wb = new ExcelJS.Workbook();
+    const wb = new ExcelTS.Workbook();
     const ws = wb.addWorksheet();
 
     ws.getCell('A1').value = 11;
@@ -824,7 +823,7 @@ describe('Worksheet', () => {
   });
 
   it('sets row styles', () => {
-    const wb = new ExcelJS.Workbook();
+    const wb = new ExcelTS.Workbook();
     const ws = wb.addWorksheet('basket');
 
     ws.getCell('A1').value = 5;
@@ -889,7 +888,7 @@ describe('Worksheet', () => {
   });
 
   it('sets col styles', () => {
-    const wb = new ExcelJS.Workbook();
+    const wb = new ExcelTS.Workbook();
     const ws = wb.addWorksheet('basket');
 
     ws.getCell('A1').value = 5;
@@ -954,14 +953,14 @@ describe('Worksheet', () => {
   });
 
   it('puts the lotion in the basket', () => {
-    const wb = new ExcelJS.Workbook();
+    const wb = new ExcelTS.Workbook();
     const ws = wb.addWorksheet('basket');
     ws.getCell('A1').value = 'lotion';
   });
 
   describe('Merge Cells', () => {
     it('references the same top-left value', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       // initial values
@@ -977,14 +976,14 @@ describe('Worksheet', () => {
       expect(ws.getCell('A2').value).toBe('A1');
       expect(ws.getCell('B2').value).toBe('A1');
 
-      expect(ws.getCell('A1').type).toBe(ExcelJS.ValueType.String);
-      expect(ws.getCell('B1').type).toBe(ExcelJS.ValueType.Merge);
-      expect(ws.getCell('A2').type).toBe(ExcelJS.ValueType.Merge);
-      expect(ws.getCell('B2').type).toBe(ExcelJS.ValueType.Merge);
+      expect(ws.getCell('A1').type).toBe(ExcelTS.ValueType.String);
+      expect(ws.getCell('B1').type).toBe(ExcelTS.ValueType.Merge);
+      expect(ws.getCell('A2').type).toBe(ExcelTS.ValueType.Merge);
+      expect(ws.getCell('B2').type).toBe(ExcelTS.ValueType.Merge);
     });
 
     it('does not allow overlapping merges', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       ws.mergeCells('B2:C3');
@@ -1010,7 +1009,7 @@ describe('Worksheet', () => {
     });
 
     it('merges and unmerges', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       const expectMaster = function(range, master) {
@@ -1062,7 +1061,7 @@ describe('Worksheet', () => {
     });
 
     it('does not allow overlapping merges', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       ws.mergeCells('B2:C3');
@@ -1088,7 +1087,7 @@ describe('Worksheet', () => {
     });
 
     it('merges styles', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
 
       // initial value
@@ -1171,7 +1170,7 @@ describe('Worksheet', () => {
 
   describe('When passed a non-Excel file', () => {
     it('Should not break when importing a .numbers file', () =>
-      new ExcelJS.Workbook().xlsx
+      new ExcelTS.Workbook().xlsx
         .readFile(path.resolve(__dirname, 'data', 'numbers.numbers'))
         .then(workbook => {
           expect(workbook).toHaveProperty('worksheets');
@@ -1180,7 +1179,7 @@ describe('Worksheet', () => {
   });
 
   it('Should not break when importing an Excel file that contains a chartsheet', () =>
-    new ExcelJS.Workbook().xlsx
+    new ExcelTS.Workbook().xlsx
       .readFile(path.resolve(__dirname, 'data', 'chart-sheet.xlsx'))
       .then(workbook => {
         expect(workbook).toHaveProperty('worksheets');
@@ -1196,7 +1195,7 @@ describe('Worksheet', () => {
 
     for (const file of fileList) {
       it(`Should set hidden attribute correctly (${file})`, done => {
-        const wb = new ExcelJS.Workbook();
+        const wb = new ExcelTS.Workbook();
         wb.xlsx
           .readFile(
             path.resolve(__dirname, 'data', 'hidden-test', `${file}.xlsx`)

@@ -1,14 +1,9 @@
 // *Note*: `fs.promises` not supported before Node.js 11.14.0;
 // ExcelJS version range '>=8.3.0' (as of 2023-10-08).
 
-import fs from 'fs';
-import JSZip from 'jszip';
-import { promisify } from 'util';
+import { unzipSync } from 'fflate';
 
-const fsReadFileAsync = promisify(fs.readFile);
-
-const ExcelJS = verquire('exceljs');
-
+import ExcelTS from '../../../src/index.ts';
 const PIVOT_TABLE_FILEPATHS = [
   'xl/pivotCache/pivotCacheRecords1.xml',
   'xl/pivotCache/pivotCacheDefinition1.xml',
@@ -35,7 +30,7 @@ const TEST_DATA = [
 describe('Workbook', () => {
   describe('Pivot Tables', () => {
     it('if pivot table added, then certain xml and rels files are added', async () => {
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new ExcelTS.Workbook();
 
       const worksheet1 = workbook.addWorksheet('Sheet1');
       worksheet1.addRows(TEST_DATA);
@@ -50,16 +45,16 @@ describe('Workbook', () => {
       });
 
       return workbook.xlsx.writeFile(TEST_XLSX_FILEPATH).then(async () => {
-        const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
-        const zip = await JSZip.loadAsync(buffer);
+        const buffer = await Bun.file(TEST_XLSX_FILEPATH).arrayBuffer();
+        const files = unzipSync(new Uint8Array(buffer));
         for (const filepath of PIVOT_TABLE_FILEPATHS) {
-          expect(zip.files[filepath]).toBeDefined();
+          expect(files[filepath]).toBeDefined();
         }
       });
     });
 
     it('reads pivot table xml into raw containers', async () => {
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new ExcelTS.Workbook();
 
       const worksheet1 = workbook.addWorksheet('Sheet1');
       worksheet1.addRows(TEST_DATA);
@@ -75,7 +70,7 @@ describe('Workbook', () => {
 
       const buffer = await workbook.xlsx.writeBuffer();
 
-      const readWorkbook = new ExcelJS.Workbook();
+      const readWorkbook = new ExcelTS.Workbook();
       await readWorkbook.xlsx.load(buffer);
 
       expect(Object.keys(readWorkbook.pivotTablesRaw)).toHaveLength(1);
@@ -88,7 +83,7 @@ describe('Workbook', () => {
     });
 
     it('if pivot table NOT added, then certain xml and rels files are not added', () => {
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new ExcelTS.Workbook();
 
       const worksheet1 = workbook.addWorksheet('Sheet1');
       worksheet1.addRows(TEST_DATA);
@@ -96,10 +91,10 @@ describe('Workbook', () => {
       workbook.addWorksheet('Sheet2');
 
       return workbook.xlsx.writeFile(TEST_XLSX_FILEPATH).then(async () => {
-        const buffer = await fsReadFileAsync(TEST_XLSX_FILEPATH);
-        const zip = await JSZip.loadAsync(buffer);
+        const buffer = await Bun.file(TEST_XLSX_FILEPATH).arrayBuffer();
+        const files = unzipSync(new Uint8Array(buffer));
         for (const filepath of PIVOT_TABLE_FILEPATHS) {
-          expect(zip.files[filepath]).toBeUndefined();
+          expect(files[filepath]).toBeUndefined();
         }
       });
     });

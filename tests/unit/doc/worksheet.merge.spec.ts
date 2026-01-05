@@ -1,9 +1,8 @@
 
 import testUtils from '../../utils/index.ts';
 
-const Excel = verquire('exceljs');
-const Dimensions = verquire('doc/range');
-
+import Excel from '../../../src/index.ts';
+import Dimensions from '../../../src/doc/range.ts';
 describe('Worksheet', () => {
   describe('Merge Cells', () => {
     it('references the same top-left value', () => {

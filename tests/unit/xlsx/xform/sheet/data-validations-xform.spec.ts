@@ -1,10 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const DataValidationsXform = verquire(
-  'xlsx/xform/sheet/data-validations-xform'
-);
-
+import DataValidationsXform from '../../../../../src/xlsx/xform/sheet/data-validations-xform.ts';
 const expectations = [
   {
     title: 'list type',

@@ -22,7 +22,7 @@ export interface StyleModel {
 }
 
 export interface NumFmtModel {
-  numFmtId?: number;
+  id?: number;
   formatCode?: string;
 }
 
@@ -242,7 +242,7 @@ class StylesXform extends BaseXform {
         if (this.model.numFmts) {
           const numFmtIndex = this.index.numFmt;
           (this.model?.numFmts || []).forEach((numFmt: NumFmtModel) => {
-            numFmtIndex[numFmt.numFmtId!] = numFmt.formatCode;
+            numFmtIndex[numFmt.id!] = numFmt.formatCode;
           });
         }
 

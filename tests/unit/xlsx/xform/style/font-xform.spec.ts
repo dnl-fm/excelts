@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const FontXform = verquire('xlsx/xform/style/font-xform');
-
+import FontXform from '../../../../../src/xlsx/xform/style/font-xform.ts';
 const expectations = [
   {
     title: 'green bold',

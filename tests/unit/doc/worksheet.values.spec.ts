@@ -1,9 +1,8 @@
 
 import testUtils from '../../utils/index.ts';
 
-const _ = verquire('utils/under-dash');
-const Excel = verquire('exceljs');
-
+import _ from '../../../src/utils/under-dash.ts';
+import Excel from '../../../src/index.ts';
 describe('Worksheet', () => {
   describe('Values', () => {
     it('stores values properly', () => {

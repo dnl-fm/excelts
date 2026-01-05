@@ -4,8 +4,7 @@ import book11Json from './data/book.1.1.json';
 import book13Json from './data/book.1.3.json';
 import book23Json from './data/book.2.3.json';
 
-const WorkbookXform = verquire('xlsx/xform/book/workbook-xform');
-
+import WorkbookXform from '../../../../../src/xlsx/xform/book/workbook-xform.ts';
 const expectations = [
   {
     title: 'book.1',

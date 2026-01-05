@@ -2,8 +2,7 @@
 import simpleWorkbookModel from '../data/simpleWorkbook.json';
 import testUtils from '../../utils/index.ts';
 
-const Excel = verquire('exceljs');
-
+import Excel from '../../../src/index.ts';
 // =============================================================================
 // Helpers
 

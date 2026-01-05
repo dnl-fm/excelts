@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const TableColumnXform = verquire('xlsx/xform/table/table-column-xform');
-
+import TableColumnXform from '../../../../../src/xlsx/xform/table/table-column-xform.ts';
 const expectations = [
   {
     title: 'label',

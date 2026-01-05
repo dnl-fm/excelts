@@ -1,103 +1,126 @@
 # ExcelTS
 
-[![Build Status](https://github.com/dnl-fm/excelts/actions/workflows/tests.yml/badge.svg?branch=main&event=push)](https://github.com/dnl-fm/excelts/actions/workflows/tests.yml)
+Read and write Excel files. TypeScript, minimal dependencies, works in Bun and browsers.
 
-> Bun-first TypeScript fork of [ExcelJS](https://github.com/exceljs/exceljs) for reading/writing Excel XLSX and CSV files.
+## Why?
 
-## Features
+[ExcelJS](https://github.com/exceljs/exceljs) is great but carries Node.js baggage. ExcelTS is a modernized fork:
 
-- Read and write XLSX files
-- Streaming API for large files
-- Rich cell formatting (fonts, colors, borders, fills)
-- Formulas, hyperlinks, images
-- Data validations and conditional formatting
-- CSV import/export
+| | ExcelJS | ExcelTS |
+|---|---------|---------|
+| Runtime | Node.js | Bun / Browser |
+| Modules | CJS + ESM | ESM only |
+| ZIP handling | 3 packages (170KB) | fflate (8KB) |
+| Types | Separate `.d.ts` | Native TypeScript |
 
-## Installation
+## Install
 
 ```bash
 bun add excelts
 ```
 
-## Quick Start
+## Examples
+
+### Write a spreadsheet
 
 ```typescript
 import ExcelTS from 'excelts';
 
-// Create a workbook
 const workbook = new ExcelTS.Workbook();
-const sheet = workbook.addWorksheet('Sheet1');
+const sheet = workbook.addWorksheet('Sales');
 
-// Add data
+// Define columns
 sheet.columns = [
-  { header: 'Name', key: 'name', width: 20 },
-  { header: 'Age', key: 'age', width: 10 },
+  { header: 'Product', key: 'product', width: 20 },
+  { header: 'Revenue', key: 'revenue', width: 15 },
 ];
 
-sheet.addRow({ name: 'John', age: 30 });
-sheet.addRow({ name: 'Jane', age: 25 });
+// Add rows
+sheet.addRow({ product: 'Widget', revenue: 1500 });
+sheet.addRow({ product: 'Gadget', revenue: 2300 });
 
-// Save to file
-await workbook.xlsx.writeFile('output.xlsx');
+// Style the header
+sheet.getRow(1).font = { bold: true };
+
+// Save
+await workbook.xlsx.writeFile('sales.xlsx');
 ```
 
-## Reading Files
+### Read a spreadsheet
 
 ```typescript
 const workbook = new ExcelTS.Workbook();
-await workbook.xlsx.readFile('input.xlsx');
+await workbook.xlsx.readFile('sales.xlsx');
 
-workbook.eachSheet((sheet, id) => {
-  sheet.eachRow((row, rowNumber) => {
-    console.log(row.values);
-  });
+const sheet = workbook.getWorksheet('Sales');
+sheet.eachRow((row, num) => {
+  console.log(num, row.values);
 });
 ```
 
-## Streaming (Large Files)
+### Stream large files
 
 ```typescript
-// Writing
-const workbook = new ExcelTS.stream.xlsx.WorkbookWriter({
-  filename: 'large.xlsx',
-});
-const sheet = workbook.addWorksheet('Data');
-for (let i = 0; i < 1000000; i++) {
+// Write 1M rows without memory issues
+const writer = new ExcelTS.stream.xlsx.WorkbookWriter({ filename: 'big.xlsx' });
+const sheet = writer.addWorksheet('Data');
+
+for (let i = 0; i < 1_000_000; i++) {
   sheet.addRow([i, `Row ${i}`]).commit();
 }
-await workbook.commit();
+await writer.commit();
 
-// Reading
-const workbook = new ExcelTS.stream.xlsx.WorkbookReader('large.xlsx');
-for await (const sheet of workbook) {
+// Read large files
+const reader = new ExcelTS.stream.xlsx.WorkbookReader('big.xlsx');
+for await (const sheet of reader) {
   for await (const row of sheet) {
-    console.log(row.values);
+    // Process row
   }
 }
 ```
 
-## Changes from ExcelJS
+### Cell formatting
 
-- **Bun-first**: Uses Bun for runtime, testing, and building
-- **TypeScript native**: All source code in TypeScript
-- **ESM only**: No CommonJS, no ES5 builds
-- **Modern tooling**: oxlint, oxfmt, bun test
-- **Simplified deps**: Removed legacy polyfills and build tools
+```typescript
+const cell = sheet.getCell('A1');
 
-## Development
-
-```bash
-bun install          # Install dependencies
-bun test             # Run all tests
-bun run build        # Build browser bundles
-bun run lint         # Run linter
-bun run format:write # Auto-format
+cell.value = 1234.56;
+cell.numFmt = '$#,##0.00';
+cell.font = { bold: true, color: { argb: 'FF0000' } };
+cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF00' } };
+cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' } };
 ```
+
+### Formulas
+
+```typescript
+sheet.getCell('A1').value = 10;
+sheet.getCell('A2').value = 20;
+sheet.getCell('A3').value = { formula: 'SUM(A1:A2)' };
+```
+
+### Images
+
+```typescript
+const imageId = workbook.addImage({
+  filename: 'logo.png',
+  extension: 'png',
+});
+
+sheet.addImage(imageId, 'B2:D6');
+```
+
+## API
+
+Full API matches [ExcelJS](https://github.com/exceljs/exceljs#interface). Key classes:
+
+- `Workbook` - Container for worksheets
+- `Worksheet` - Grid of cells, rows, columns
+- `Row` / `Cell` - Data and formatting
+- `WorkbookWriter` / `WorkbookReader` - Streaming API
 
 ## License
 
-MIT - Originally created by [Guyon Roche](https://github.com/guyonroche)
+MIT
 
-## Credits
-
-This is a modernized fork of [ExcelJS](https://github.com/exceljs/exceljs). All credit for the core functionality goes to the original authors and contributors.
+Fork of [ExcelJS](https://github.com/exceljs/exceljs) by Guyon Roche.

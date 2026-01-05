@@ -1,13 +1,12 @@
 import fs from 'fs';
 
-const ExcelJS = verquire('exceljs');
-
+import ExcelTS from '../../../src/index.ts';
 describe('github issues: Date field with cache style', () => {
   const rows = [];
   beforeEach(
     () =>
       new Promise((resolve, reject) => {
-        const workbookReader = new ExcelJS.stream.xlsx.WorkbookReader(
+        const workbookReader = new ExcelTS.stream.xlsx.WorkbookReader(
           fs.createReadStream('./tests/integration/data/dateIssue.xlsx'),
           {
             worksheets: 'emit',

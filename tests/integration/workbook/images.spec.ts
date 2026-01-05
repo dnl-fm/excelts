@@ -2,8 +2,7 @@
 import fs from 'fs';
 import { promisify } from 'util';
 
-const ExcelJS = verquire('exceljs');
-
+import ExcelTS from '../../../src/index.ts';
 const IMAGE_FILENAME = `${__dirname}/../data/image.png`;
 const TEST_XLSX_FILE_NAME = './tests/out/wb.test.xlsx';
 const fsReadFileAsync = promisify(fs.readFile);
@@ -14,7 +13,7 @@ const fsReadFileAsync = promisify(fs.readFile);
 describe('Workbook', () => {
   describe('Images', () => {
     it('stores background image', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
       let wb2;
       let ws2;
@@ -29,7 +28,7 @@ describe('Workbook', () => {
       return wb.xlsx
         .writeFile(TEST_XLSX_FILE_NAME)
         .then(() => {
-          wb2 = new ExcelJS.Workbook();
+          wb2 = new ExcelTS.Workbook();
           return wb2.xlsx.readFile(TEST_XLSX_FILE_NAME);
         })
         .then(() => {
@@ -47,7 +46,7 @@ describe('Workbook', () => {
     });
 
     it('stores embedded image and hyperlink', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
       let wb2;
       let ws2;
@@ -67,7 +66,7 @@ describe('Workbook', () => {
       return wb.xlsx
         .writeFile(TEST_XLSX_FILE_NAME)
         .then(() => {
-          wb2 = new ExcelJS.Workbook();
+          wb2 = new ExcelTS.Workbook();
           return wb2.xlsx.readFile(TEST_XLSX_FILE_NAME);
         })
         .then(() => {
@@ -98,7 +97,7 @@ describe('Workbook', () => {
     });
 
     it('stores embedded image with oneCell', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
       let wb2;
       let ws2;
@@ -117,7 +116,7 @@ describe('Workbook', () => {
       return wb.xlsx
         .writeFile(TEST_XLSX_FILE_NAME)
         .then(() => {
-          wb2 = new ExcelJS.Workbook();
+          wb2 = new ExcelTS.Workbook();
           return wb2.xlsx.readFile(TEST_XLSX_FILE_NAME);
         })
         .then(() => {
@@ -139,7 +138,7 @@ describe('Workbook', () => {
     });
 
     it('stores embedded image with one-cell-anchor', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
       let wb2;
       let ws2;
@@ -158,7 +157,7 @@ describe('Workbook', () => {
       return wb.xlsx
         .writeFile(TEST_XLSX_FILE_NAME)
         .then(() => {
-          wb2 = new ExcelJS.Workbook();
+          wb2 = new ExcelTS.Workbook();
           return wb2.xlsx.readFile(TEST_XLSX_FILE_NAME);
         })
         .then(() => {
@@ -182,7 +181,7 @@ describe('Workbook', () => {
     });
 
     it('stores embedded image with hyperlinks', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
       let wb2;
       let ws2;
@@ -205,7 +204,7 @@ describe('Workbook', () => {
       return wb.xlsx
         .writeFile(TEST_XLSX_FILE_NAME)
         .then(() => {
-          wb2 = new ExcelJS.Workbook();
+          wb2 = new ExcelTS.Workbook();
           return wb2.xlsx.readFile(TEST_XLSX_FILE_NAME);
         })
         .then(() => {
@@ -234,7 +233,7 @@ describe('Workbook', () => {
     });
 
     it('image extensions should not be case sensitive', () => {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelTS.Workbook();
       const ws = wb.addWorksheet('blort');
       let wb2;
       let ws2;
@@ -263,7 +262,7 @@ describe('Workbook', () => {
       return wb.xlsx
         .writeFile(TEST_XLSX_FILE_NAME)
         .then(() => {
-          wb2 = new ExcelJS.Workbook();
+          wb2 = new ExcelTS.Workbook();
           return wb2.xlsx.readFile(TEST_XLSX_FILE_NAME);
         })
         .then(() => {

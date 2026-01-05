@@ -3,8 +3,7 @@
 import fs from 'fs';
 import testXformHelper from '../test-xform-helper.ts';
 
-const ContentTypesXform = verquire('xlsx/xform/core/content-types-xform');
-
+import ContentTypesXform from '../../../../../src/xlsx/xform/core/content-types-xform.ts';
 const expectations = [
   {
     title: 'Three Sheets with shared strings',

@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const ColXform = verquire('xlsx/xform/sheet/col-xform');
-
+import ColXform from '../../../../../src/xlsx/xform/sheet/col-xform.ts';
 const expectations = [
   {
     title: 'Best Fit',

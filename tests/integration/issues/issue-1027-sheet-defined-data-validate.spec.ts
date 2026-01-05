@@ -1,10 +1,10 @@
-const ExcelJS = verquire('exceljs');
+import ExcelTS from '../../../src/index.ts';
 
 const TEST_XLSX_FILE_NAME = './tests/out/wb.test.xlsx';
 
 describe('github issues', () => {
   it('issue 1027 - Broken due to Cannot set property \'marked\' of undefined error', () => {
-    const wb = new ExcelJS.Workbook();
+    const wb = new ExcelTS.Workbook();
     const ws = wb.addWorksheet('Sheet1');
 
     const range = 'A2:A1048576';

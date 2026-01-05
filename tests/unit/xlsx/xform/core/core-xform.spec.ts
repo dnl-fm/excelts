@@ -3,8 +3,7 @@
 import fs from 'fs';
 import testXformHelper from '../test-xform-helper.ts';
 
-const CoreXform = verquire('xlsx/xform/core/core-xform');
-
+import CoreXform from '../../../../../src/xlsx/xform/core/core-xform.ts';
 const expectations = [
   {
     title: 'core.xml',

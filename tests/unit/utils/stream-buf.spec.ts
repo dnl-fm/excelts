@@ -2,9 +2,8 @@
 import fs from 'fs';
 import path from 'path';
 
-const StreamBuf = verquire('utils/stream-buf');
-const StringBuf = verquire('utils/string-buf');
-
+import StreamBuf from '../../../src/utils/stream-buf.ts';
+import StringBuf from '../../../src/utils/string-buf.ts';
 describe('StreamBuf', () => {
   // StreamBuf is designed as a general-purpose writable-readable stream
   // However its use in ExcelJS is primarily as a memory buffer between

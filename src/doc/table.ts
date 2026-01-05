@@ -116,7 +116,7 @@ class Table {
   }
 
   getFormula(column: TableColumnModel): string | null {
-    switch ((column as any).totalsRowFunction) {
+    switch (column.totalsRowFunction) {
       case 'none':
         return null;
       case 'average':
@@ -395,10 +395,11 @@ class Table {
   addColumn(column: TableColumnModel, values: unknown[], colIndex?: number): void {
     this.cacheState();
 
+    if (!this.table) return;
     if (colIndex === undefined) {
-      (this.table as any).columns.push(column);
-      ((this.table as any).rows as unknown[][]).forEach((row: unknown[], i: number) => {
-        (row as any[]).push(values[i]);
+      this.table.columns.push(column);
+      this.table.rows.forEach((row: unknown[], i: number) => {
+        (row as unknown[]).push(values[i]);
       });
     } else {
       this.table.columns.splice(colIndex, 0, column);

@@ -1,9 +1,8 @@
 
 import testXformHelper from './test-xform-helper.ts';
 
-const ListXform = verquire('xlsx/xform/list-xform');
-const IntegerXform = verquire('xlsx/xform/simple/integer-xform');
-
+import ListXform from '../../../../src/xlsx/xform/list-xform.ts';
+import IntegerXform from '../../../../src/xlsx/xform/simple/integer-xform.ts';
 const expectations = [
   {
     title: 'Tagged',

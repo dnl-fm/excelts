@@ -1,8 +1,7 @@
 
 import { createSheetMock } from '../../utils/index.ts';
 
-const Enums = verquire('doc/enums');
-
+import Enums from '../../../src/doc/enums.ts';
 describe('Row', () => {
   it('stores cells', () => {
     const sheet = createSheetMock();

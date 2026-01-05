@@ -1,8 +1,7 @@
 
 import testUtils from '../../utils/index.ts';
 
-const copyStyle = verquire('utils/copy-style');
-
+import copyStyle from '../../../src/utils/copy-style.ts';
 const style1 = {
   numFmt: testUtils.styles.numFmts.numFmt1,
   font: testUtils.styles.fonts.broadwayRedOutline20,

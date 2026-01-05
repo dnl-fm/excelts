@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const PageSetupXform = verquire('xlsx/xform/sheet/page-setup-xform');
-
+import PageSetupXform from '../../../../../src/xlsx/xform/sheet/page-setup-xform.ts';
 // -  "blackAndWhite": false
 // -  "cellComments": "None"
 // -  "draft": false

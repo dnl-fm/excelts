@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const StringXform = verquire('xlsx/xform/simple/string-xform');
-
+import StringXform from '../../../../../src/xlsx/xform/simple/string-xform.ts';
 const expectations = [
   {
     title: 'hello',

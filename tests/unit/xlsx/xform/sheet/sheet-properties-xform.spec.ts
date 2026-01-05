@@ -1,10 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const SheetPropertiesXform = verquire(
-  'xlsx/xform/sheet/sheet-properties-xform'
-);
-
+import SheetPropertiesXform from '../../../../../src/xlsx/xform/sheet/sheet-properties-xform.ts';
 const expectations = [
   {
     title: 'empty',

@@ -1,10 +1,9 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const RowXform = verquire('xlsx/xform/sheet/row-xform');
-const SharedStringsXform = verquire('xlsx/xform/strings/shared-strings-xform');
-const Enums = verquire('doc/enums');
-
+import RowXform from '../../../../../src/xlsx/xform/sheet/row-xform.ts';
+import SharedStringsXform from '../../../../../src/xlsx/xform/strings/shared-strings-xform.ts';
+import Enums from '../../../../../src/doc/enums.ts';
 const fakeStyles = {
   addStyleModel(style) {
     return style && JSON.stringify(style) !== '{}' ? 1 : 0;

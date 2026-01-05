@@ -1,4 +1,4 @@
-const BaseXform = verquire('xlsx/xform/base-xform');
+import BaseXform from '../../../../src/xlsx/xform/base-xform.ts';
 
 class CompyXform extends BaseXform {
   constructor(options) {

@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const BooleanXform = verquire('xlsx/xform/simple/boolean-xform');
-
+import BooleanXform from '../../../../../src/xlsx/xform/simple/boolean-xform.ts';
 const expectations = [
   {
     title: 'true',

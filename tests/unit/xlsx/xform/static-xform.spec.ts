@@ -1,8 +1,7 @@
 
 import testXformHelper from './test-xform-helper.ts';
 
-const StaticXform = verquire('xlsx/xform/static-xform');
-
+import StaticXform from '../../../../src/xlsx/xform/static-xform.ts';
 const expectations = [
   {
     title: 'Leaf',

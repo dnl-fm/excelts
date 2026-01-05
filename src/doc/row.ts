@@ -38,14 +38,16 @@ class Row {
   _worksheet: Worksheet;
   _number: number;
   _cells: (Cell | undefined)[];
-  outlineLevel: number;
+  _outlineLevel: number;
+  _hidden: boolean;
 
   constructor(worksheet: Worksheet, number: number) {
     this._worksheet = worksheet;
     this._number = number;
     this._cells = [];
     this.style = {};
-    this.outlineLevel = 0;
+    this._outlineLevel = 0;
+    this._hidden = false;
   }
 
   /** Row number (1-based) */
@@ -487,12 +489,12 @@ class Row {
   }
 
   set model(value: Record<string, unknown>) {
-    if ((value as any).number !== this._number) {
+    if ((value.number as number) !== this._number) {
       throw new Error('Invalid row number in model');
     }
     this._cells = [];
     let previousAddress: Record<string, unknown> | null = null;
-    ((value as any).cells as unknown[]).forEach((cellModel: unknown) => {
+    (value.cells as unknown[]).forEach((cellModel: unknown) => {
       switch (cellModel.type) {
         case Cell.Types.Merge:
           // special case - don't add this types

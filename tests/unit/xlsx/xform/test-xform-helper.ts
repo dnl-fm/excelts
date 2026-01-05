@@ -3,11 +3,10 @@ import CompyXform from './compy-xform.ts';
 import { PassThrough } from 'readable-stream';
 import _ from '../../../utils/under-dash.ts';
 
+import parseSax from '../../../../src/utils/parse-sax.ts';
+import XmlStream from '../../../../src/utils/xml-stream.ts';
+import BooleanXform from '../../../../src/xlsx/xform/simple/boolean-xform.ts';
 const { cloneDeep, each } = _;
-
-const parseSax = verquire('utils/parse-sax');
-const XmlStream = verquire('utils/xml-stream');
-const BooleanXform = verquire('xlsx/xform/simple/boolean-xform');
 
 function getExpectation(expectation: any, name: string) {
   if (!expectation.hasOwnProperty(name)) {

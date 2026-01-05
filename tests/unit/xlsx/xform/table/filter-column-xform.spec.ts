@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const FilterColumnXform = verquire('xlsx/xform/table/filter-column-xform');
-
+import FilterColumnXform from '../../../../../src/xlsx/xform/table/filter-column-xform.ts';
 const expectations = [
   {
     title: 'showing filter',

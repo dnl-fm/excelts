@@ -1,4 +1,4 @@
-const ExcelJS = verquire('exceljs');
+import ExcelTS from '../../../src/index.ts';
 
 describe('github issues', () => {
   it('pull request 1431 - streaming reader should handle rich text within shared strings', async () => {
@@ -12,7 +12,7 @@ describe('github issues', () => {
       'this should be the second shared string',
     ];
 
-    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
+    const workbook = new ExcelTS.stream.xlsx.WorkbookWriter({
       filename: './test.xlsx',
       useSharedStrings: true,
     });
@@ -24,7 +24,7 @@ describe('github issues', () => {
     await workbook.commit();
 
     return new Promise((resolve, reject) => {
-      const workbookReader = new ExcelJS.stream.xlsx.WorkbookReader(
+      const workbookReader = new ExcelTS.stream.xlsx.WorkbookReader(
         './test.xlsx',
         {
           entries: 'emit',

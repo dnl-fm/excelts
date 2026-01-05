@@ -1,11 +1,11 @@
-const ExcelJS = verquire('exceljs');
+import ExcelTS from '../../../src/index.ts';
 
 const TEST_CSV_FILE_NAME = './tests/out/issue-995-encoding.test.csv';
 const HEBREW_TEST_STRING = 'משהו שכתוב בעברית';
 
 describe('github issues', () => {
   it('issue 995 - encoding option works fine', () => {
-    const wb = new ExcelJS.Workbook();
+    const wb = new ExcelTS.Workbook();
     const ws = wb.addWorksheet('wheee');
     ws.getCell('A1').value = HEBREW_TEST_STRING;
 
@@ -15,7 +15,7 @@ describe('github issues', () => {
     return wb.csv
       .writeFile(TEST_CSV_FILE_NAME, options)
       .then(() => {
-        const ws2 = new ExcelJS.Workbook();
+        const ws2 = new ExcelTS.Workbook();
         return ws2.csv.readFile(TEST_CSV_FILE_NAME, options);
       })
       .then(ws2 => {

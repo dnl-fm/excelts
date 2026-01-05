@@ -1,4 +1,4 @@
-const colCache = verquire('utils/col-cache');
+import colCache from '../../../src/utils/col-cache.ts';
 
 describe('colCache', () => {
   it('caches values', () => {

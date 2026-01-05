@@ -1,6 +1,5 @@
 
 // useful stuff
-import fs from 'fs';
 
 const inherits = function(cls, superCtor, statics, prototype) {
   // eslint-disable-next-line no-underscore-dangle
@@ -154,12 +153,8 @@ const utils = {
   },
 
   fs: {
-    exists(path) {
-      return new Promise(resolve => {
-        fs.access(path, fs.constants.F_OK, err => {
-          resolve(!err);
-        });
-      });
+    async exists(path: string): Promise<boolean> {
+      return Bun.file(path).exists();
     },
   },
 

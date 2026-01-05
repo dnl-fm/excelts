@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const CellPositionXform = verquire('xlsx/xform/drawing/cell-position-xform');
-
+import CellPositionXform from '../../../../../src/xlsx/xform/drawing/cell-position-xform.ts';
 const expectations = [
   {
     title: 'integers',

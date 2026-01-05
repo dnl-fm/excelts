@@ -1,10 +1,8 @@
-
 /**
  * WorkbookWriter streams XLSX output with optional shared strings and styles.
  */
-import fs from 'fs';
-import { Writable } from 'stream';
-import Archiver from 'archiver';
+import { Writable, PassThrough } from 'stream';
+import { zipSync, strToU8 } from 'fflate';
 import StreamBuf from '../../utils/stream-buf.ts';
 import RelType from '../../xlsx/rel-type.ts';
 import StylesXform from '../../xlsx/xform/style/styles-xform.ts';
@@ -53,6 +51,86 @@ export interface WorkbookWriterImage {
   extension: string;
 }
 
+/** Simple ZIP builder that accumulates files and zips on finalize */
+class ZipBuilder {
+  private files: Map<string, Uint8Array> = new Map();
+  private streams: Map<string, StreamBuf> = new Map();
+  private eventHandlers: Map<string, Array<(...args: unknown[]) => void>> = new Map();
+
+  on(event: string, handler: (...args: unknown[]) => void): this {
+    if (!this.eventHandlers.has(event)) {
+      this.eventHandlers.set(event, []);
+    }
+    this.eventHandlers.get(event)!.push(handler);
+    return this;
+  }
+
+  private emit(event: string, ...args: unknown[]): void {
+    const handlers = this.eventHandlers.get(event);
+    if (handlers) {
+      handlers.forEach(h => h(...args));
+    }
+  }
+
+  append(data: string | Buffer | Uint8Array | StreamBuf, options: { name: string; base64?: boolean }): void {
+    // Normalize the path (remove leading slash)
+    const name = options.name.startsWith('/') ? options.name.slice(1) : options.name;
+    
+    if (data instanceof StreamBuf) {
+      // Track the stream - we'll read it on finalize
+      this.streams.set(name, data);
+      return;
+    }
+
+    let bytes: Uint8Array;
+    
+    if (options.base64) {
+      // Decode base64 string to bytes
+      const binaryString = atob(data as string);
+      bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+    } else if (typeof data === 'string') {
+      bytes = strToU8(data);
+    } else if (Buffer.isBuffer(data)) {
+      bytes = new Uint8Array(data);
+    } else {
+      bytes = data;
+    }
+    
+    this.files.set(name, bytes);
+  }
+
+  async file(filename: string, options: { name: string }): Promise<void> {
+    const name = options.name.startsWith('/') ? options.name.slice(1) : options.name;
+    const data = await Bun.file(filename).arrayBuffer();
+    this.files.set(name, new Uint8Array(data));
+  }
+
+  finalize(): Uint8Array {
+    // Collect all files
+    const filesObj: Record<string, Uint8Array> = {};
+    
+    // Add accumulated files
+    for (const [name, data] of this.files) {
+      filesObj[name] = data;
+    }
+    
+    // Add stream contents
+    for (const [name, stream] of this.streams) {
+      const buffer = stream.toBuffer();
+      if (buffer) {
+        filesObj[name] = new Uint8Array(buffer);
+      }
+    }
+    
+    const zipped = zipSync(filesObj, { level: 6 });
+    this.emit('finish');
+    return zipped;
+  }
+}
+
 class WorkbookWriter {
   created: Date;
   modified: Date;
@@ -65,12 +143,13 @@ class WorkbookWriter {
   views: unknown[];
   media: unknown[];
   commentRefs: unknown[];
-  zip: Archiver.Archiver;
+  zip: ZipBuilder;
   stream: Writable | StreamBuf;
   promise: Promise<unknown[]>;
   zipOptions?: Record<string, unknown>;
   private _definedNames: DefinedNames;
   private _worksheets: WorksheetWriter[];
+  private _filename?: string;
 
   constructor(options?: WorkbookWriterOptions) {
     options = options || {};
@@ -99,15 +178,15 @@ class WorkbookWriter {
     this.media = [];
     this.commentRefs = [];
 
-    this.zip = Archiver('zip', this.zipOptions);
+    this.zip = new ZipBuilder();
     if (options.stream) {
       this.stream = options.stream;
     } else if (options.filename) {
-      this.stream = fs.createWriteStream(options.filename);
+      this._filename = options.filename;
+      this.stream = new StreamBuf();
     } else {
       this.stream = new StreamBuf();
     }
-    this.zip.pipe(this.stream);
 
     // these bits can be added right now
     this.promise = Promise.all([this.addThemes(), this.addOfficeRels()]);
@@ -117,9 +196,10 @@ class WorkbookWriter {
     return this._definedNames;
   }
 
-  private _openStream(path: string): StreamBuf {
+  _openStream(path: string): StreamBuf {
     const stream = new StreamBuf({bufSize: 65536, batch: true});
     this.zip.append(stream, {name: path});
+    // Emit 'zipped' immediately since we're collecting data, not streaming
     stream.on('finish', () => {
       stream.emit('zipped');
     });
@@ -147,7 +227,7 @@ class WorkbookWriter {
   }
 
   async commit(): Promise<WorkbookWriter> {
-    // commit all worksheets, then add suplimentary files
+    // commit all worksheets, then add supplementary files
     await this.promise;
     await this.addMedia();
     await this._commitWorksheets();
@@ -259,7 +339,7 @@ class WorkbookWriter {
         {Id: 'rId2', Type: RelType.CoreProperties, Target: 'docProps/core.xml'},
         {Id: 'rId3', Type: RelType.ExtenderProperties, Target: 'docProps/app.xml'},
       ]);
-      this.zip.append(xml, {name: '/_rels/.rels'});
+      this.zip.append(xml, {name: '_rels/.rels'});
       resolve();
     });
   }
@@ -279,26 +359,25 @@ class WorkbookWriter {
     });
   }
 
-  private addMedia(): Promise<unknown[]> {
-    return Promise.all(
-      (this.media as Array<{ type: string; name: string; filename?: string; buffer?: Buffer; base64?: string }>).map(medium => {
-        if (medium.type === 'image') {
-          const filename = `xl/media/${medium.name}`;
-          if (medium.filename) {
-            return this.zip.file(medium.filename, {name: filename});
-          }
-          if (medium.buffer) {
-            return this.zip.append(medium.buffer, {name: filename});
-          }
-          if (medium.base64) {
-            const dataimg64 = medium.base64;
-            const content = dataimg64.substring(dataimg64.indexOf(',') + 1);
-            return this.zip.append(content, {name: filename, base64: true});
-          }
+  private async addMedia(): Promise<void> {
+    for (const medium of this.media as Array<{ type: string; name: string; filename?: string; buffer?: Buffer; base64?: string }>) {
+      if (medium.type === 'image') {
+        const filename = `xl/media/${medium.name}`;
+        if (medium.filename) {
+          await this.zip.file(medium.filename, {name: filename});
+        } else if (medium.buffer) {
+          this.zip.append(medium.buffer as Buffer, {name: filename});
+        } else if (medium.base64) {
+          const dataimg64 = medium.base64;
+          const content = dataimg64.substring(dataimg64.indexOf(',') + 1);
+          this.zip.append(content, {name: filename, base64: true});
+        } else {
+          throw new Error('Unsupported media');
         }
+      } else {
         throw new Error('Unsupported media');
-      })
-    );
+      }
+    }
   }
 
   private addApp(): Promise<void> {
@@ -327,7 +406,7 @@ class WorkbookWriter {
       return new Promise(resolve => {
         const sharedStringsXform = new SharedStringsXform();
         const xml = sharedStringsXform.toXml(this.sharedStrings);
-        this.zip.append(xml, {name: '/xl/sharedStrings.xml'});
+        this.zip.append(xml, {name: 'xl/sharedStrings.xml'});
         resolve();
       });
     }
@@ -360,13 +439,12 @@ class WorkbookWriter {
     return new Promise(resolve => {
       const xform = new RelationshipsXform();
       const xml = xform.toXml(relationships);
-      this.zip.append(xml, {name: '/xl/_rels/workbook.xml.rels'});
+      this.zip.append(xml, {name: 'xl/_rels/workbook.xml.rels'});
       resolve();
     });
   }
 
   private addWorkbook(): Promise<void> {
-    const {zip} = this;
     const model = {
       worksheets: this._worksheets.filter(Boolean),
       definedNames: this._definedNames.model,
@@ -378,21 +456,35 @@ class WorkbookWriter {
     return new Promise(resolve => {
       const xform = new WorkbookXform();
       xform.prepare(model);
-      zip.append(xform.toXml(model), {name: '/xl/workbook.xml'});
+      this.zip.append(xform.toXml(model), {name: 'xl/workbook.xml'});
       resolve();
     });
   }
 
-  private _finalize(): Promise<WorkbookWriter> {
-    return new Promise((resolve, reject) => {
-      this.stream.on('error', reject);
-      this.stream.on('finish', () => {
-        resolve(this);
+  private async _finalize(): Promise<WorkbookWriter> {
+    const zipped = this.zip.finalize();
+    const buffer = Buffer.from(zipped);
+    
+    if (this._filename) {
+      // Write directly to file with Bun
+      await Bun.write(this._filename, buffer);
+    } else if (this.stream instanceof StreamBuf) {
+      // Write to StreamBuf
+      this.stream.write(buffer);
+      this.stream.end();
+    } else {
+      // Write to provided stream
+      await new Promise<void>((resolve, reject) => {
+        this.stream.write(buffer, (err: Error | null | undefined) => {
+          if (err) reject(err);
+          else {
+            (this.stream as Writable).end(() => resolve());
+          }
+        });
       });
-      this.zip.on('error', reject);
-
-      this.zip.finalize();
-    });
+    }
+    
+    return this;
   }
 }
 

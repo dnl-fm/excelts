@@ -1,4 +1,4 @@
-const Enums = verquire('doc/enums');
+import Enums from '../../src/doc/enums.ts';
 
 export default {
   rows: {

@@ -1,5 +1,5 @@
 // Browser tests - using Bun environment instead of Jasmine
-import ExcelJS from '../../src/excelts.nodejs.ts';
+import ExcelJS from '../../src/index.ts';
 
 function unexpectedError(done) {
   return function(error) {
@@ -12,7 +12,7 @@ function unexpectedError(done) {
 
 describe('ExcelJS', () => {
   it('should read and write xlsx via binary buffer', done => {
-    const wb = new ExcelJS.Workbook();
+    const wb = new ExcelTS.Workbook();
     const ws = wb.addWorksheet('blort');
 
     ws.getCell('A1').value = 'Hello, World!';
@@ -21,7 +21,7 @@ describe('ExcelJS', () => {
     wb.xlsx
       .writeBuffer()
       .then(buffer => {
-        const wb2 = new ExcelJS.Workbook();
+        const wb2 = new ExcelTS.Workbook();
         return wb2.xlsx.load(buffer).then(() => {
           const ws2 = wb2.getWorksheet('blort');
           expect(ws2).toBeTruthy();
@@ -40,7 +40,7 @@ describe('ExcelJS', () => {
     const options = {
       base64: true,
     };
-    const wb = new ExcelJS.Workbook();
+    const wb = new ExcelTS.Workbook();
     const ws = wb.addWorksheet('blort');
 
     ws.getCell('A1').value = 'Hello, World!';
@@ -49,7 +49,7 @@ describe('ExcelJS', () => {
     wb.xlsx
       .writeBuffer(options)
       .then(buffer => {
-        const wb2 = new ExcelJS.Workbook();
+        const wb2 = new ExcelTS.Workbook();
         return wb2.xlsx.load(buffer.toString('base64'), options).then(() => {
           const ws2 = wb2.getWorksheet('blort');
           expect(ws2).toBeTruthy();
@@ -65,7 +65,7 @@ describe('ExcelJS', () => {
       .catch(unexpectedError(done));
   });
   it('should write csv via buffer', done => {
-    const wb = new ExcelJS.Workbook();
+    const wb = new ExcelTS.Workbook();
     const ws = wb.addWorksheet('blort');
 
     ws.getCell('A1').value = 'Hello, World!';

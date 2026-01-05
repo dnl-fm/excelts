@@ -1,8 +1,7 @@
 
 import testXformHelper from '../../test-xform-helper.ts';
 
-const SqrefExtXform = verquire('xlsx/xform/sheet/cf-ext/sqref-ext-xform');
-
+import SqrefExtXform from '../../../../../../src/xlsx/xform/sheet/cf-ext/sqref-ext-xform.ts';
 const expectations = [
   {
     title: 'range',

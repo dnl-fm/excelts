@@ -1,10 +1,10 @@
-const ExcelJS = verquire('exceljs');
+import ExcelTS from '../../../src/index.ts';
 
 const TEST_XLSX_FILE_NAME = './tests/out/wb.test.xlsx';
 
 describe('github issues', () => {
   it('pull request 1204 - Read and write data validation should be successful', async () => {
-    const wb = new ExcelJS.Workbook();
+    const wb = new ExcelTS.Workbook();
     await wb.xlsx.readFile('./tests/integration/data/test-pr-1204.xlsx');
     const expected = {
       E1: {

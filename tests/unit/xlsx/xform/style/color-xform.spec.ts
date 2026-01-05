@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const ColorXform = verquire('xlsx/xform/style/color-xform');
-
+import ColorXform from '../../../../../src/xlsx/xform/style/color-xform.ts';
 const expectations = [
   {
     title: 'RGB',

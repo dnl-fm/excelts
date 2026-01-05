@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const WorkbookViewXform = verquire('xlsx/xform/book/workbook-view-xform');
-
+import WorkbookViewXform from '../../../../../src/xlsx/xform/book/workbook-view-xform.ts';
 const expectations = [
   {
     title: 'Normal',

@@ -4,8 +4,7 @@ import fs from 'fs';
 import testXformHelper from '../test-xform-helper.ts';
 import _preparedModel from './data/sharedStrings.json';
 
-const SharedStringsXform = verquire('xlsx/xform/strings/shared-strings-xform');
-
+import SharedStringsXform from '../../../../../src/xlsx/xform/strings/shared-strings-xform.ts';
 const expectations = [
   {
     title: 'Shared Strings',

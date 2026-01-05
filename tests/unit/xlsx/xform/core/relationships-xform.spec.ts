@@ -4,8 +4,7 @@ import fs from 'fs';
 import testXformHelper from '../test-xform-helper.ts';
 import _preparedModel from './data/worksheet.rels.1.json';
 
-const RelationshipsXform = verquire('xlsx/xform/core/relationships-xform');
-
+import RelationshipsXform from '../../../../../src/xlsx/xform/core/relationships-xform.ts';
 const expectations = [
   {
     title: 'worksheet.rels',

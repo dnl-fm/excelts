@@ -1,13 +1,10 @@
 
 import { SaxesParser } from 'saxes';
-import { PassThrough } from 'readable-stream';
 import { bufferToString } from './browser-buffer-decode.ts';
 
-export default async function* (iterable) {;
-  // TODO: Remove once node v8 is deprecated
-  // Detect and upgrade old streams
-  if (iterable.pipe && !iterable[Symbol.asyncIterator]) {
-    iterable = iterable.pipe(new PassThrough());
+export default async function* (iterable: AsyncIterable<string | Buffer>) {
+  if (!iterable[Symbol.asyncIterator]) {
+    throw new Error('parseSax requires an async iterable');
   }
   const saxesParser = new SaxesParser();
   let error;

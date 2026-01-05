@@ -2,15 +2,19 @@
  * Core types for ExcelTS XLSX I/O operations
  */
 
-import { Readable, Writable } from 'readable-stream';
-import type JSZip from 'jszip';
-import type ZipStream from '../utils/zip-stream.ts';
+/**
+ * Stream types - async iterable interface for Bun-native streaming
+ */
+export type ReadableStream = AsyncIterable<Buffer | string>;
 
 /**
- * Stream types - unified interface for Node.js and browser streams
+ * Writable stream interface
  */
-export type ReadableStream = Readable | AsyncIterable<Buffer | string>;
-export type WritableStream = Writable;
+export interface WritableStream {
+  write(chunk: Buffer | string, callback?: (err?: Error) => void): boolean;
+  end(callback?: () => void): void;
+  on?(event: string, listener: (...args: unknown[]) => void): void;
+}
 
 /**
  * XLSX options for read operations
@@ -212,13 +216,120 @@ export interface PivotTableModel {
 }
 
 /**
- * JSZip entry interface
+ * Worksheet model returned by WorksheetXform.parseStream()
+ */
+export interface ParsedWorksheetModel extends WorksheetItemModel {
+  dimensions?: unknown;
+  cols?: unknown[];
+  rows?: unknown[];
+  mergeCells?: unknown;
+  hyperlinks?: unknown[];
+  dataValidations?: unknown[];
+  properties?: Record<string, unknown>;
+  views?: unknown[];
+  pageSetup?: Record<string, unknown>;
+  headerFooter?: unknown;
+  background?: unknown;
+  drawing?: unknown;
+  tables?: unknown[];
+  conditionalFormattings?: unknown[];
+  autoFilter?: unknown;
+  sheetProtection?: Record<string, unknown>;
+  sheetNo?: string | number;
+}
+
+/**
+ * Comments model returned by CommentsXform.parseStream()
+ */
+export interface ParsedCommentsModel {
+  comments: CommentModel[];
+}
+
+/**
+ * Table model returned by TableXform.parseStream()
+ */
+export interface ParsedTableModel extends TableModel {
+  tableRef?: string;
+  totalsRow?: boolean;
+  headerRow?: boolean;
+}
+
+/**
+ * Relationships array returned by RelationshipsXform.parseStream()
+ */
+export type ParsedRelationshipsModel = RelationshipModel[];
+
+/**
+ * Drawing model returned by DrawingXform.parseStream()
+ */
+export interface ParsedDrawingModel extends DrawingModel {
+  anchors: AnchorModel[];
+}
+
+/**
+ * VML Drawing model returned by VmlNotesXform.parseStream()
+ */
+export interface ParsedVmlDrawingModel {
+  [key: string]: unknown;
+}
+
+/**
+ * Workbook model returned by WorkbookXform.parseStream()
+ */
+export interface ParsedWorkbookModel {
+  sheets?: SheetDefinition[];
+  definedNames?: unknown;
+  views?: unknown[];
+  properties?: Record<string, unknown>;
+  calcProperties?: unknown;
+}
+
+/**
+ * Shared strings model returned by SharedStringsXform.parseStream()
+ */
+export interface ParsedSharedStringsModel {
+  [key: string]: unknown;
+}
+
+/**
+ * App properties model returned by AppXform.parseStream()
+ */
+export interface ParsedAppPropertiesModel {
+  company?: string;
+  manager?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Core properties model returned by CoreXform.parseStream()
+ */
+export interface ParsedCorePropertiesModel {
+  creator?: string;
+  lastModifiedBy?: string;
+  lastPrinted?: Date;
+  created?: Date;
+  modified?: Date;
+  title?: string;
+  subject?: string;
+  keywords?: string;
+  category?: string;
+  description?: string;
+  language?: string;
+  revision?: number;
+  contentStatus?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * JSZip entry interface with stream-like capabilities
  */
 export interface ZipEntry {
   name: string;
   dir: boolean;
   async(type: 'nodebuffer'): Promise<Buffer>;
   async(type: 'string'): Promise<string>;
+  on?(event: 'error', handler: (error: Error) => void): void;
+  pipe?(destination: WritableStream): void;
 }
 
 /**
@@ -229,6 +340,68 @@ export interface ZipWriter {
   append(data: string | Buffer, options: { name: string; base64?: boolean }): Promise<void> | void;
   finalize(): Promise<void> | void;
   on(event: 'finish' | 'error', handler: (...args: unknown[]) => void): void;
+}
+
+/**
+ * Custom array with add method for merge cells
+ */
+export interface MergesArray extends Array<unknown> {
+  add?: () => void;
+}
+
+/**
+ * Sheet options passed to StreamWriter classes
+ */
+export interface StreamWriterOptions {
+  id: number;
+  name?: string;
+  state?: string;
+  properties?: Record<string, unknown>;
+  headerFooter?: Record<string, unknown>;
+  pageSetup?: Record<string, unknown>;
+  useSharedStrings?: boolean;
+  workbook: unknown;
+  views?: unknown[];
+  autoFilter?: unknown;
+  [key: string]: unknown;
+}
+
+/**
+ * Workbook interface for streaming operations
+ */
+export interface StreamingWorkbook {
+  _openStream(path: string): unknown;
+  [key: string]: unknown;
+}
+
+/**
+ * Stream interface with pause method
+ */
+export interface PausableStream extends WritableStream {
+  pause?(): void;
+  [key: string]: unknown;
+}
+
+/**
+ * Relationship type constants
+ */
+export interface RelTypeRecord {
+  OfficeDocument: string;
+  Worksheet: string;
+  CalcChain: string;
+  SharedStrings: string;
+  Styles: string;
+  Theme: string;
+  Hyperlink: string;
+  Image: string;
+  CoreProperties: string;
+  ExtenderProperties: string;
+  Comments: string;
+  VmlDrawing: string;
+  Table: string;
+  PivotCacheDefinition: string;
+  PivotCacheRecords: string;
+  PivotTable: string;
 }
 
 /**

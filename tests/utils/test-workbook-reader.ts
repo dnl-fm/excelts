@@ -6,10 +6,9 @@ import stylesJson from './data/styles.json';
 import sheetPropertiesJson from './data/sheet-properties.json';
 import pageSetupJson from './data/page-setup.json';
 
+import utils from '../../src/utils/utils.ts';
+import ExcelTS from '../../src/index.ts';
 const testValues = tools.fix(sheetValuesJson);
-
-const utils = verquire('utils/utils');
-const ExcelJS = verquire('exceljs');
 
 function fillFormula(f) {
   return Object.assign({formula: undefined}, f);
@@ -31,7 +30,7 @@ export default {
   pageSetup: tools.fix(pageSetupJson),
 
   checkBook(filename) {
-    const wb = new ExcelJS.stream.xlsx.WorkbookReader();
+    const wb = new ExcelTS.stream.xlsx.WorkbookReader();
 
     // expectations
     const dateAccuracy = 0.00001;
@@ -49,30 +48,30 @@ export default {
               case 1:
                 expect(row.getCell('A').value).toBe(7);
                 expect(row.getCell('A').type).toBe(
-                  ExcelJS.ValueType.Number
+                  ExcelTS.ValueType.Number
                 );
                 expect(row.getCell('B').value).toEqual(streamedValues.B1);
                 expect(row.getCell('B').type).toBe(
-                  ExcelJS.ValueType.String
+                  ExcelTS.ValueType.String
                 );
                 expect(
                   Math.abs(row.getCell('C').value - streamedValues.C1)
                 ).toBeLessThan(dateAccuracy);
                 expect(row.getCell('C').type).toBe(
-                  ExcelJS.ValueType.Number
+                  ExcelTS.ValueType.Number
                 );
 
                 expect(row.getCell('D').value).toEqual(streamedValues.D1);
                 expect(row.getCell('D').type).toBe(
-                  ExcelJS.ValueType.Formula
+                  ExcelTS.ValueType.Formula
                 );
                 expect(row.getCell('E').value).toEqual(streamedValues.E1);
                 expect(row.getCell('E').type).toBe(
-                  ExcelJS.ValueType.Formula
+                  ExcelTS.ValueType.Formula
                 );
                 expect(row.getCell('F').value).toEqual(streamedValues.F1);
                 expect(row.getCell('F').type).toBe(
-                  ExcelJS.ValueType.SharedString
+                  ExcelTS.ValueType.SharedString
                 );
                 expect(row.getCell('G').value).toEqual(streamedValues.G1);
                 break;
@@ -81,40 +80,40 @@ export default {
                 // A2:B3
                 expect(row.getCell('A').value).toBe(5);
                 expect(row.getCell('A').type).toBe(
-                  ExcelJS.ValueType.Number
+                  ExcelTS.ValueType.Number
                 );
 
-                expect(row.getCell('B').type).toBe(ExcelJS.ValueType.Null);
+                expect(row.getCell('B').type).toBe(ExcelTS.ValueType.Null);
 
                 // C2:D3
                 expect(row.getCell('C').value).toBeNull();
-                expect(row.getCell('C').type).toBe(ExcelJS.ValueType.Null);
+                expect(row.getCell('C').type).toBe(ExcelTS.ValueType.Null);
 
                 expect(row.getCell('D').value).toBeNull();
-                expect(row.getCell('D').type).toBe(ExcelJS.ValueType.Null);
+                expect(row.getCell('D').type).toBe(ExcelTS.ValueType.Null);
 
                 break;
 
               case 3:
                 expect(row.getCell('A').value).toBe(null);
-                expect(row.getCell('A').type).toBe(ExcelJS.ValueType.Null);
+                expect(row.getCell('A').type).toBe(ExcelTS.ValueType.Null);
 
                 expect(row.getCell('B').value).toBe(null);
-                expect(row.getCell('B').type).toBe(ExcelJS.ValueType.Null);
+                expect(row.getCell('B').type).toBe(ExcelTS.ValueType.Null);
 
                 expect(row.getCell('C').value).toBeNull();
-                expect(row.getCell('C').type).toBe(ExcelJS.ValueType.Null);
+                expect(row.getCell('C').type).toBe(ExcelTS.ValueType.Null);
 
                 expect(row.getCell('D').value).toBeNull();
-                expect(row.getCell('D').type).toBe(ExcelJS.ValueType.Null);
+                expect(row.getCell('D').type).toBe(ExcelTS.ValueType.Null);
                 break;
 
               case 4:
                 expect(row.getCell('A').type).toBe(
-                  ExcelJS.ValueType.Number
+                  ExcelTS.ValueType.Number
                 );
                 expect(row.getCell('C').type).toBe(
-                  ExcelJS.ValueType.Number
+                  ExcelTS.ValueType.Number
                 );
                 break;
 
@@ -122,36 +121,36 @@ export default {
                 // test fonts and formats
                 expect(row.getCell('A').value).toEqual(streamedValues.B1);
                 expect(row.getCell('A').type).toBe(
-                  ExcelJS.ValueType.String
+                  ExcelTS.ValueType.String
                 );
                 expect(row.getCell('B').value).toEqual(streamedValues.B1);
                 expect(row.getCell('B').type).toBe(
-                  ExcelJS.ValueType.String
+                  ExcelTS.ValueType.String
                 );
                 expect(row.getCell('C').value).toEqual(streamedValues.B1);
                 expect(row.getCell('C').type).toBe(
-                  ExcelJS.ValueType.String
+                  ExcelTS.ValueType.String
                 );
 
                 expect(Math.abs(row.getCell('D').value - 1.6)).toBeLessThan(
                   0.00000001
                 );
                 expect(row.getCell('D').type).toBe(
-                  ExcelJS.ValueType.Number
+                  ExcelTS.ValueType.Number
                 );
 
                 expect(Math.abs(row.getCell('E').value - 1.6)).toBeLessThan(
                   0.00000001
                 );
                 expect(row.getCell('E').type).toBe(
-                  ExcelJS.ValueType.Number
+                  ExcelTS.ValueType.Number
                 );
 
                 expect(
                   Math.abs(row.getCell('F').value - streamedValues.C1)
                 ).toBeLessThan(dateAccuracy);
                 expect(row.getCell('F').type).toBe(
-                  ExcelJS.ValueType.Number
+                  ExcelTS.ValueType.Number
                 );
                 break;
 

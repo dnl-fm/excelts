@@ -1,8 +1,7 @@
 
 import { createSheetMock } from '../../utils/index.ts';
 
-const Anchor = verquire('doc/anchor');
-
+import Anchor from '../../../src/doc/anchor.ts';
 describe('Anchor', () => {
   describe('colWidth', () => {
     it('should colWidth equals 640000 when worksheet is undefined', () => {

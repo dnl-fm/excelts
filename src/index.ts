@@ -1,5 +1,5 @@
 /**
- * Node-style entrypoint for ExcelJS APIs and stream helpers.
+ * Main entrypoint for ExcelTS APIs and stream helpers.
  */
 import _Workbook from './doc/workbook.ts';
 import _ModelContainer from './doc/modelcontainer.ts';
@@ -7,7 +7,7 @@ import _WorkbookWriter from './stream/xlsx/workbook-writer.ts';
 import _WorkbookReader from './stream/xlsx/workbook-reader.ts';
 import * as _enums from './doc/enums.ts';
 
-const ExcelJS = {
+const ExcelTS = {
   Workbook: _Workbook,
   ModelContainer: _ModelContainer,
   stream: {
@@ -18,6 +18,6 @@ const ExcelJS = {
   },
 };
 
-Object.assign(ExcelJS, _enums);
+Object.assign(ExcelTS, _enums);
 
-export default ExcelJS;
+export default ExcelTS;

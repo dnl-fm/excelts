@@ -1160,7 +1160,7 @@ class Worksheet {
    */
   addTable(model: Record<string, unknown>): Table {
     const table = new Table(this, model);
-    this.tables[(model as any).name] = table;
+    this.tables[model.name as string] = table;
     return table;
   }
 
@@ -1204,7 +1204,10 @@ Please leave feedback at https://github.com/exceljs/exceljs/discussions/2575`
     const pivotTable = makePivotTable(this, model);
 
     this.pivotTables.push(pivotTable);
-    (this.workbook as any).pivotTables.push(pivotTable);
+    (this.workbook as Record<string, unknown>).pivotTables = [
+      ...((this.workbook as Record<string, unknown>).pivotTables as unknown[] || []),
+      pivotTable
+    ];
 
     return pivotTable;
   }
@@ -1326,32 +1329,32 @@ Please leave feedback at https://github.com/exceljs/exceljs/discussions/2575`
   }
 
   _parseMergeCells(model: WorksheetModel): void {
-    _.each((model as any).mergeCells, (merge: unknown) => {
+    _.each(model.mergeCells, (merge: unknown) => {
       this.mergeCellsWithoutStyle(merge as string);
     });
   }
 
   set model(value: WorksheetModel) {
-    this.name = (value as any).name;
-    this._columns = Column.fromModel(this, (value as any).cols);
+    this.name = value.name;
+    this._columns = Column.fromModel(this, value.cols);
     this._parseRows(value);
 
     this._parseMergeCells(value);
-    this.dataValidations = new DataValidations((value as any).dataValidations);
-    this.properties = (value as any).properties;
-    this.pageSetup = (value as any).pageSetup;
-    this.headerFooter = (value as any).headerFooter;
-    this.views = (value as any).views;
-    this.autoFilter = (value as any).autoFilter;
-    this._media = ((value as any).media as unknown[]).map(medium => new Image(this, medium));
-    this.sheetProtection = (value as any).sheetProtection;
-    this.tables = ((value as any).tables as unknown[]).reduce((tables: Record<string, Table>, table: unknown) => {
+    this.dataValidations = new DataValidations(value.dataValidations);
+    this.properties = value.properties;
+    this.pageSetup = value.pageSetup;
+    this.headerFooter = value.headerFooter;
+    this.views = value.views;
+    this.autoFilter = value.autoFilter;
+    this._media = (value.media as unknown[]).map(medium => new Image(this, medium));
+    this.sheetProtection = value.sheetProtection;
+    this.tables = (value.tables as unknown[]).reduce((tables: Record<string, Table>, table: unknown) => {
       const t = new Table();
-      (t as any).model = table;
-      tables[table.name] = t;
+      (t as Record<string, unknown>).model = table;
+      tables[(table as Record<string, unknown>).name as string] = t;
       return tables;
     }, {});
-    this.pivotTables = (value as any).pivotTables;
+    this.pivotTables = value.pivotTables;
     this.conditionalFormattings = value.conditionalFormattings;
   }
 }

@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const PhoneticTextXform = verquire('xlsx/xform/strings/phonetic-text-xform');
-
+import PhoneticTextXform from '../../../../../src/xlsx/xform/strings/phonetic-text-xform.ts';
 const expectations = [
   {
     title: 'text',

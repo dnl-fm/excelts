@@ -1,10 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const PageSetupPropertiesXform = verquire(
-  'xlsx/xform/sheet/page-setup-properties-xform'
-);
-
+import PageSetupPropertiesXform from '../../../../../src/xlsx/xform/sheet/page-setup-properties-xform.ts';
 const expectations = [
   {
     title: 'fitToPage',

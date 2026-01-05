@@ -5,8 +5,7 @@ import testXformHelper from '../test-xform-helper.ts';
 import _preparedModel from './data/table.1.1.json';
 import _parsedModel from './data/table.1.3.json';
 
-const TableXform = verquire('xlsx/xform/table/table-xform');
-
+import TableXform from '../../../../../src/xlsx/xform/table/table-xform.ts';
 const expectations = [
   {
     title: 'showing filter',

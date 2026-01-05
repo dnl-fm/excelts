@@ -1,8 +1,7 @@
 
 import testXformHelper from '../test-xform-helper.ts';
 
-const DefinedNameXform = verquire('xlsx/xform/book/defined-name-xform');
-
+import DefinedNameXform from '../../../../../src/xlsx/xform/book/defined-name-xform.ts';
 const expectations = [
   {
     title: 'Defined Names',

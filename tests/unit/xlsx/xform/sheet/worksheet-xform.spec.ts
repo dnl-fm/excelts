@@ -31,13 +31,11 @@ import sheet63Json from './data/sheet.6.3.json';
 import sheet70Json from './data/sheet.7.0.json';
 import sheet71Json from './data/sheet.7.1.json';
 
-const Enums = verquire('doc/enums');
-const XmlStream = verquire('utils/xml-stream');
-const WorksheetXform = verquire('xlsx/xform/sheet/worksheet-xform');
-
-const SharedStringsXform = verquire('xlsx/xform/strings/shared-strings-xform');
-const StylesXform = verquire('xlsx/xform/style/styles-xform');
-
+import Enums from '../../../../../src/doc/enums.ts';
+import XmlStream from '../../../../../src/utils/xml-stream.ts';
+import WorksheetXform from '../../../../../src/xlsx/xform/sheet/worksheet-xform.ts';
+import SharedStringsXform from '../../../../../src/xlsx/xform/strings/shared-strings-xform.ts';
+import StylesXform from '../../../../../src/xlsx/xform/style/styles-xform.ts';
 const fakeStyles = {
   addStyleModel(style, cellType) {
     if (cellType === Enums.ValueType.Date) {

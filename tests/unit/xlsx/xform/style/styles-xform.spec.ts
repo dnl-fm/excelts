@@ -5,9 +5,8 @@ import testXformHelper from '../test-xform-helper.ts';
 import { expectXmlEqual } from '../test-xform-helper.ts';
 import _preparedModel from './data/styles.1.1.json';
 
-const StylesXform = verquire('xlsx/xform/style/styles-xform');
-const XmlStream = verquire('utils/xml-stream');
-
+import StylesXform from '../../../../../src/xlsx/xform/style/styles-xform.ts';
+import XmlStream from '../../../../../src/utils/xml-stream.ts';
 const expectations = [
   {
     title: 'Styles with fonts',
