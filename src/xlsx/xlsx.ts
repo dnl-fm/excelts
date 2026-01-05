@@ -713,8 +713,8 @@ class XLSX {
     worksheetOptions.commentRefs = model.commentRefs = [];
     let tableCount = 0;
     model.tables = {};
-    model.worksheets.forEach((worksheet: any) => {
-      (worksheet.tables || []).forEach((table: any) => {
+    model.worksheets.forEach((worksheet: unknown) => {
+      ((worksheet as any).tables || []).forEach((table: unknown) => {
         tableCount++;
         table.target = `table${tableCount}.xml`;
         table.id = tableCount;

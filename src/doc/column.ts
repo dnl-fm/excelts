@@ -242,7 +242,7 @@ class Column {
     } else {
       opts = options as Record<string, unknown>;
     }
-    (this._worksheet as any).eachRow(opts, (row: any, rowNumber: number) => {
+    (this._worksheet as any).eachRow(opts, (row: unknown, rowNumber: number) => {
       (iter as Function)(row.getCell(colNumber), rowNumber);
     });
   }

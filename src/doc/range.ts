@@ -4,32 +4,40 @@
  */
 import colCache from '../utils/col-cache.ts';
 
+export interface RangeModel {
+  top: number;
+  left: number;
+  bottom: number;
+  right: number;
+  sheetName?: string;
+}
+
 class Range {
+  model?: RangeModel;
+
   constructor() {
     this.decode(arguments);
   }
 
-  setTLBR(t: any, l: any, b?: any, r?: any, s?: string): void {
+  setTLBR(t: number | string, l: number | string, b?: number | string, r?: number | string, s?: string): void {
     if (arguments.length < 4) {
-      // setTLBR(tl, br, s)
-      const tl = colCache.decodeAddress(t);
-      const br = colCache.decodeAddress(l);
+      const tl = colCache.decodeAddress(t as string);
+      const br = colCache.decodeAddress(l as string);
       this.model = {
         top: Math.min(tl.row, br.row),
         left: Math.min(tl.col, br.col),
         bottom: Math.max(tl.row, br.row),
         right: Math.max(tl.col, br.col),
-        sheetName: b,
+        sheetName: b as string,
       };
 
       this.setTLBR(tl.row, tl.col, br.row, br.col, s);
     } else {
-      // setTLBR(t, l, b, r, s)
       this.model = {
-        top: Math.min(t, b),
-        left: Math.min(l, r),
-        bottom: Math.max(t, b),
-        right: Math.max(l, r),
+        top: Math.min(t as number, b as number),
+        left: Math.min(l as number, r as number),
+        bottom: Math.max(t as number, b as number),
+        right: Math.max(l as number, r as number),
         sheetName: s,
       };
     }
@@ -170,11 +178,12 @@ class Range {
     if (!this.model.right || right > this.right) this.right = right;
   }
 
-  expandRow(row: any): void {
+  expandRow(row: Record<string, unknown>): void {
     if (row) {
-      const {dimensions, number} = row;
+      const dimensions = (row as any).dimensions;
+      const number = (row as any).number;
       if (dimensions) {
-        this.expand(number, dimensions.min, number, dimensions.max);
+        this.expand(number, (dimensions as any).min, number, (dimensions as any).max);
       }
     }
   }
@@ -238,10 +247,10 @@ class Range {
     return this.containsEx(address);
   }
 
-  containsEx(address: any): boolean {
-    if (address.sheetName && this.sheetName && address.sheetName !== this.sheetName) return false;
+  containsEx(address: Record<string, unknown>): boolean {
+    if ((address as any).sheetName && this.sheetName && (address as any).sheetName !== this.sheetName) return false;
     return (
-      address.row >= this.top &&
+      (address as any).row >= this.top &&
       address.row <= this.bottom &&
       address.col >= this.left &&
       address.col <= this.right

@@ -1345,7 +1345,7 @@ Please leave feedback at https://github.com/exceljs/exceljs/discussions/2575`
     this.autoFilter = (value as any).autoFilter;
     this._media = ((value as any).media as unknown[]).map(medium => new Image(this, medium));
     this.sheetProtection = (value as any).sheetProtection;
-    this.tables = ((value as any).tables as unknown[]).reduce((tables: Record<string, Table>, table: any) => {
+    this.tables = ((value as any).tables as unknown[]).reduce((tables: Record<string, Table>, table: unknown) => {
       const t = new Table();
       (t as any).model = table;
       tables[table.name] = t;

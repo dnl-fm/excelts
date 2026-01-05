@@ -2,7 +2,9 @@
  * DataValidations stores per-cell validation rules for a worksheet.
  */
 class DataValidations {
-  constructor(model?: any) {
+  model: Record<string, unknown>;
+
+  constructor(model?: Record<string, unknown>) {
     this.model = model || {};
   }
 

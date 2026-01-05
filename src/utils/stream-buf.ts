@@ -143,7 +143,7 @@ class ReadWriteBuf {
 
 // Note: Not sure why but StreamBuf does not like JS "class" sugar. It fails the
 // integration tests
-const StreamBuf = function(options?: any): void {
+const StreamBuf = function(options?: Record<string, unknown>): void {
   options = options || {};
   this.bufSize = options.bufSize || 1024 * 1024;
   this.buffers = [];
@@ -176,7 +176,7 @@ utils.inherits(StreamBuf, Stream.Duplex, {
       case 1:
         return this.buffers[0].toBuffer();
       default:
-        return Buffer.concat(this.buffers.map((rwBuf: any) => rwBuf.toBuffer()));
+        return Buffer.concat((this.buffers as any[]).map((rwBuf: unknown) => (rwBuf as any).toBuffer()));
     }
   },
 

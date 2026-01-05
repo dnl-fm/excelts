@@ -4,7 +4,7 @@
 // convert between encoding schemes in a stream
 // Work in Progress - Will complete this at some point
 // TODO: jconv needs to be imported when this feature is implemented
-let _jconv: any;
+let _jconv: unknown;
 
 class StreamConverter {
   constructor(inner, options) {

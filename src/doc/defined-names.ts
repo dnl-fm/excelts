@@ -6,31 +6,49 @@ import Range from './range.ts';
 
 const rangeRegexp = /[$](\w+)[$](\d+)(:[$](\w+)[$](\d+))?/;
 
+export interface CellAddress {
+  sheetName?: string;
+  address?: string;
+  row?: number;
+  col?: number;
+  top?: number;
+  bottom?: number;
+  left?: number;
+  right?: number;
+}
+
+export interface DefinedNameModel {
+  name: string;
+  ranges: unknown[];
+  [key: string]: unknown;
+}
+
 /**
  * DefinedNames tracks named ranges and cell references in a workbook.
  */
 class DefinedNames {
+  matrixMap: Record<string, CellMatrix> = {};
+
   constructor() {
     this.matrixMap = {};
   }
 
-  getMatrix(name: string): any {
+  getMatrix(name: string): CellMatrix {
     const matrix = this.matrixMap[name] || (this.matrixMap[name] = new CellMatrix());
     return matrix;
   }
 
-  // add a name to a cell. locStr in the form SheetName!$col$row or SheetName!$c1$r1:$c2:$r2
   add(locStr: string, name: unknown): void {
     const location = colCache.decodeEx(locStr);
     this.addEx(location, name);
   }
 
-  addEx(location: any, name: unknown): void {
+  addEx(location: CellAddress, name: unknown): void {
     const matrix = this.getMatrix(name as string);
-    if (location.top) {
-      for (let col = location.left; col <= location.right; col++) {
-        for (let row = location.top; row <= location.bottom; row++) {
-          const address = {
+    if ((location as any).top) {
+      for (let col = (location as any).left; col <= (location as any).right; col++) {
+        for (let row = (location as any).top; row <= (location as any).bottom; row++) {
+          const address: CellAddress = {
             sheetName: location.sheetName,
             address: colCache.n2l(col) + row,
             row,
@@ -50,41 +68,40 @@ class DefinedNames {
     this.removeEx(location, name);
   }
 
-  removeEx(location: any, name: unknown): void {
+  removeEx(location: CellAddress, name: unknown): void {
     const matrix = this.getMatrix(name as string);
     matrix.removeCellEx(location);
   }
 
-  removeAllNames(location: any): void {
-    _.each(this.matrixMap, matrix => {
+  removeAllNames(location: CellAddress): void {
+    _.each(this.matrixMap, (matrix: CellMatrix) => {
       matrix.removeCellEx(location);
     });
   }
 
-  forEach(callback: (name: string, cell: any) => void): void {
-    _.each(this.matrixMap, (matrix, name) => {
-      matrix.forEach(cell => {
+  forEach(callback: (name: string, cell: unknown) => void): void {
+    _.each(this.matrixMap, (matrix: CellMatrix, name: string) => {
+      matrix.forEach((cell: unknown) => {
         callback(name, cell);
       });
     });
   }
 
-  // get all the names of a cell
   getNames(addressStr: string): unknown[] {
     return this.getNamesEx(colCache.decodeEx(addressStr));
   }
 
-  getNamesEx(address: any): unknown[] {
-    return _.map(this.matrixMap, (matrix, name) => matrix.findCellEx(address) && name).filter(
+  getNamesEx(address: CellAddress): unknown[] {
+    return _.map(this.matrixMap, (matrix: CellMatrix, name: string) => matrix.findCellEx(address) && name).filter(
       Boolean
     );
   }
 
-  _explore(matrix: any, cell: any): Range {
-    cell.mark = false;
+  _explore(matrix: CellMatrix, cell: Record<string, unknown>): Range {
+    (cell as any).mark = false;
     const {sheetName} = cell;
 
-    const range = new Range(cell.row, cell.col, cell.row, cell.col, sheetName);
+    const range = new Range((cell as any).row, (cell as any).col, (cell as any).row, (cell as any).col, sheetName as string);
     let x;
     let y;
 
@@ -103,18 +120,18 @@ class DefinedNames {
 
     // grow horizontal - ensure all rows can grow
     function hGrow(xx: number, edge: string): boolean {
-      const cells: any[] = [];
-      for (y = range.top; y <= range.bottom; y++) {
-        const c = matrix.findCellAt(sheetName, y, xx);
-        if (c && c.mark) {
+      const cells: unknown[] = [];
+      for (y = (range as any).top; y <= (range as any).bottom; y++) {
+        const c = matrix.findCellAt(sheetName as string, y, (cell as any).col);
+        if (c && (c as any).mark) {
           cells.push(c);
         } else {
           return false;
         }
       }
-      range[edge] = xx;
+      (range as any)[edge] = xx;
       for (let i = 0; i < cells.length; i++) {
-        cells[i].mark = false;
+        ((cells[i] as any)).mark = false;
       }
       return true;
     }
@@ -124,19 +141,18 @@ class DefinedNames {
     return range;
   }
 
-  getRanges(name: string, matrix?: any): Record<string, unknown> {
-    matrix = matrix || this.matrixMap[name];
+  getRanges(name: string, matrix?: CellMatrix): Record<string, unknown> {
+    const m = matrix || this.matrixMap[name];
 
-    if (!matrix) {
+    if (!m) {
       return {name, ranges: []};
     }
 
-    // mark and sweep!
-    matrix.forEach((cell: any) => {
-      cell.mark = true;
+    m.forEach((cell: unknown) => {
+      ((cell as any)).mark = true;
     });
     const ranges = matrix
-      .map((cell: any) => cell.mark && this._explore(matrix, cell))
+      .map((cell: unknown) => ((cell as any).mark && this._explore(m, cell)))
       .filter(Boolean)
       .map((range: Range) => range.$shortRange);
 
@@ -146,15 +162,13 @@ class DefinedNames {
     };
   }
 
-  normaliseMatrix(matrix: any, sheetName: string): void {
-    // some of the cells might have shifted on specified sheet
-    // need to reassign rows, cols
-    matrix.forEachInSheet(sheetName, (cell: any, row: number, col: number) => {
+  normaliseMatrix(matrix: CellMatrix, sheetName: string): void {
+    matrix.forEachInSheet(sheetName, (cell: unknown, row: number, col: number) => {
       if (cell) {
-        if (cell.row !== row || cell.col !== col) {
-          cell.row = row;
-          cell.col = col;
-          cell.address = colCache.n2l(col) + row;
+        if ((cell as any).row !== row || (cell as any).col !== col) {
+          (cell as any).row = row;
+          (cell as any).col = col;
+          (cell as any).address = colCache.n2l(col) + row;
         }
       }
     });
@@ -177,16 +191,15 @@ class DefinedNames {
   get model(): unknown[] {
     // To get names per cell - just iterate over all names finding cells if they exist
     return _.map(this.matrixMap, (matrix, name) => this.getRanges(name, matrix)).filter(
-      (definedName: any) => definedName.ranges.length
+      (definedName: unknown) => (definedName as any).ranges?.length
     );
   }
 
-  set model(value: any[]) {
-    // value is [ { name, ranges }, ... ]
+  set model(value: DefinedNameModel[]) {
     const matrixMap = (this.matrixMap = {});
-    value.forEach((definedName: any) => {
-      const matrix = (matrixMap[definedName.name] = new CellMatrix());
-      definedName.ranges.forEach((rangeStr: string) => {
+    value.forEach((definedName: DefinedNameModel) => {
+      const matrix = (matrixMap[(definedName as any).name] = new CellMatrix());
+      ((definedName as any).ranges as string[]).forEach((rangeStr: string) => {
         if (rangeRegexp.test(rangeStr.split('!').pop() || '')) {
           matrix.addCell(rangeStr);
         }

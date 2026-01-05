@@ -1,13 +1,40 @@
 /* eslint-disable max-classes-per-file */
 
+import colCache from '../utils/col-cache.ts';
+import type Worksheet from './worksheet.ts';
+
+export interface TableColumnModel {
+  name: string;
+  filterButton?: boolean;
+  style?: unknown;
+  totalsRowLabel?: unknown;
+  totalsRowFunction?: string;
+  totalsRowResult?: unknown;
+  totalsRowFormula?: unknown;
+  [key: string]: unknown;
+}
+
+export interface TableModel {
+  name: string;
+  displayName?: string;
+  ref?: string;
+  headerRow?: boolean;
+  totalsRow?: boolean;
+  style?: Record<string, unknown>;
+  columns: TableColumnModel[];
+  rows: unknown[][];
+  [key: string]: unknown;
+}
+
 /**
  * Table Column wrapper for column-level metadata and styling.
  */
-import colCache from '../utils/col-cache.ts';
-
 class Column {
-  // wrapper around column model, allowing access and manipulation
-  constructor(table: any, column: any, index: number) {
+  table: Table;
+  column: TableColumnModel;
+  index: number;
+
+  constructor(table: Table, column: TableColumnModel, index: number) {
     this.table = table;
     this.column = column;
     this.index = index;
@@ -74,20 +101,22 @@ class Column {
  * Table represents an Excel table with columns, rows, and filters.
  */
 class Table {
-  constructor(worksheet: any, table?: any) {
+  worksheet?: Worksheet;
+  table?: TableModel;
+  columns: Column[] = [];
+  state?: string;
+
+  constructor(worksheet?: Worksheet, table?: TableModel) {
     this.worksheet = worksheet;
     if (table) {
       this.table = table;
-      // check things are ok first
       this.validate();
-
       this.store();
     }
   }
 
-  getFormula(column: any): string | null {
-    // get the correct formula to apply to the totals row
-    switch (column.totalsRowFunction) {
+  getFormula(column: TableColumnModel): string | null {
+    switch ((column as any).totalsRowFunction) {
       case 'none':
         return null;
       case 'average':
@@ -279,11 +308,11 @@ class Table {
     }
   }
 
-  get model(): any {
+  get model(): TableModel | undefined {
     return this.table;
   }
 
-  set model(value: any) {
+  set model(value: TableModel | undefined) {
     this.table = value;
   }
 
@@ -363,15 +392,13 @@ class Table {
     return new Column(this, column, colIndex);
   }
 
-  addColumn(column: any, values: unknown[], colIndex?: number): void {
-    // Add a new column, including column defn and values
-    // Inserts at colNumber or adds to the right
+  addColumn(column: TableColumnModel, values: unknown[], colIndex?: number): void {
     this.cacheState();
 
     if (colIndex === undefined) {
-      this.table.columns.push(column);
-      this.table.rows.forEach((row, i) => {
-        row.push(values[i]);
+      (this.table as any).columns.push(column);
+      ((this.table as any).rows as unknown[][]).forEach((row: unknown[], i: number) => {
+        (row as any[]).push(values[i]);
       });
     } else {
       this.table.columns.splice(colIndex, 0, column);
@@ -391,7 +418,7 @@ class Table {
     });
   }
 
-  _assign(target: any, prop: string, value: unknown): void {
+  _assign(target: Record<string, unknown>, prop: string, value: unknown): void {
     this.cacheState();
     target[prop] = value;
   }

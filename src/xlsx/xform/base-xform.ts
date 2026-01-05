@@ -2,70 +2,49 @@
 /* 'virtual' methods used as a form of documentation */
 /* eslint-disable class-methods-use-this */
 
-// Base class for Xforms
 import parseSax from '../../utils/parse-sax.ts';
 import XmlStream from '../../utils/xml-stream.ts';
+import type { ReadableStream } from '../../types/index.ts';
 
 class BaseXform {
-  // constructor(/* model, name */) {}
+  model?: unknown;
+  map?: Record<string, unknown>;
 
-  // ============================================================
-  // Virtual Interface
-  prepare(/* model, options */): void {
-    // optional preparation (mutation) of model so it is ready for write
-  }
-
-  render(/* xmlStream, model */): void {
-    // convert model to xml
-  }
-
-  parseOpen(_node: any): void {
-    // XML node opened
-  }
-
-  parseText(_text: string): void {
-    // chunk of text encountered for current node
-  }
-
-  parseClose(_name: string): boolean | undefined {
-    // XML node closed
-  }
-
-  reconcile(_model: any, _options: any): void {
-    // optional post-parse step (opposite to prepare)
-  }
+  prepare(_model?: unknown, _options?: unknown): void {}
+  render(_xmlStream?: unknown, _model?: unknown): void {}
+  parseOpen(_node: unknown): void {}
+  parseText(_text: string): void {}
+  parseClose(_name: string): boolean | undefined { return undefined; }
+  reconcile(_model: unknown, _options?: unknown): void {}
 
   // ============================================================
   reset(): void {
-    // to make sure parses don't bleed to next iteration
     this.model = null;
 
-    // if we have a map - reset them too
     if (this.map) {
-      Object.values(this.map).forEach((xform: any) => {
+      Object.values(this.map).forEach((xform: unknown) => {
         if (xform instanceof BaseXform) {
           xform.reset();
-        } else if (xform.xform) {
-          xform.xform.reset();
+        } else if ((xform as any)?.xform) {
+          ((xform as any).xform as BaseXform).reset();
         }
       });
     }
   }
 
-  mergeModel(obj: any): void {
-    // set obj's props to this.model
+  mergeModel(obj: unknown): void {
     this.model = Object.assign(this.model || {}, obj);
   }
 
-  async parse(saxParser: any): Promise<unknown> {
-    for await (const events of saxParser) {
-      for (const {eventType, value} of events) {
+  async parse(saxParser: unknown): Promise<unknown> {
+    for await (const events of (saxParser as any)) {
+      for (const {eventType, value} of events as any) {
         if (eventType === 'opentag') {
           this.parseOpen(value);
         } else if (eventType === 'text') {
           this.parseText(value);
         } else if (eventType === 'closetag') {
-          if (!this.parseClose(value.name)) {
+          if (!this.parseClose((value as any).name)) {
             return this.model;
           }
         }
@@ -74,7 +53,7 @@ class BaseXform {
     return this.model;
   }
 
-  async parseStream(stream: any): Promise<unknown> {
+  async parseStream(stream: ReadableStream): Promise<unknown> {
     return this.parse(parseSax(stream));
   }
 
@@ -84,7 +63,7 @@ class BaseXform {
     return this.toXml(this.model);
   }
 
-  toXml(model: any): string {
+  toXml(model: unknown): string {
     const xmlStream = new XmlStream();
     this.render(xmlStream, model);
     return xmlStream.xml;

@@ -6,6 +6,9 @@ import customParseFormat from 'dayjs/plugin/customParseFormat';
 import utc from 'dayjs/plugin/utc';
 import StreamBuf from '../utils/stream-buf.ts';
 import utils from '../utils/utils.ts';
+import type { ReadableStream, WritableStream } from '../types/index.ts';
+import type Workbook from '../doc/workbook.ts';
+import type Worksheet from '../doc/worksheet.ts';
 
 dayjs.extend(customParseFormat);
 dayjs.extend(utc);
@@ -30,7 +33,7 @@ interface CSVReadOptions {
   sheetName?: string;
   dateFormats?: string[];
   map?: (datum: unknown) => unknown;
-  parserOptions?: any;
+  parserOptions?: Record<string, unknown>;
 }
 
 interface CSVWriteOptions {
@@ -40,7 +43,7 @@ interface CSVWriteOptions {
   dateUTC?: boolean;
   map?: (value: unknown) => unknown;
   includeEmptyRows?: boolean;
-  formatterOptions?: any;
+  formatterOptions?: Record<string, unknown>;
 }
 
 interface CSVFileWriteOptions extends CSVWriteOptions {
@@ -51,12 +54,15 @@ interface CSVFileWriteOptions extends CSVWriteOptions {
  * CSV handles reading and writing worksheets to CSV streams and files.
  */
 class CSV {
-  constructor(workbook: any) {
+  workbook: Workbook;
+  worksheet: Worksheet | null;
+
+  constructor(workbook: Workbook) {
     this.workbook = workbook;
     this.worksheet = null;
   }
 
-  async readFile(filename: string, options?: CSVReadOptions): Promise<any> {
+  async readFile(filename: string, options?: CSVReadOptions): Promise<Worksheet> {
     const opts = options || {};
     if (!(await exists(filename))) {
       throw new Error(`File not found: ${filename}`);
@@ -67,7 +73,7 @@ class CSV {
     return worksheet;
   }
 
-  read(stream: any, options?: CSVReadOptions): Promise<any> {
+  read(stream: ReadableStream, options?: CSVReadOptions): Promise<Worksheet> {
     const opts = options || {};
 
     return new Promise((resolve, reject) => {
@@ -133,17 +139,14 @@ class CSV {
     );
   }
 
-  write(stream: any, options?: CSVWriteOptions): Promise<void> {
+  write(stream: WritableStream, options?: CSVWriteOptions): Promise<void> {
     return new Promise((resolve, reject) => {
       const opts = options || {};
-      // const encoding = opts.encoding || 'utf8';
-      // const separator = opts.separator || ',';
-      // const quoteChar = opts.quoteChar || '\'';
 
-      const worksheet = this.workbook.getWorksheet(opts.sheetName || opts.sheetId);
+      const worksheet = (this.workbook as any).getWorksheet(opts.sheetName || opts.sheetId);
 
       const csvStream = fastCsv.format(opts.formatterOptions);
-      stream.on('finish', () => {
+      (stream as any).on('finish', () => {
         resolve();
       });
       csvStream.on('error', reject);
@@ -181,7 +184,7 @@ class CSV {
       const includeEmptyRows = opts.includeEmptyRows === undefined || opts.includeEmptyRows;
       let lastRow = 1;
       if (worksheet) {
-        worksheet.eachRow((row: any, rowNumber: number) => {
+        (worksheet as any).eachRow((row: unknown, rowNumber: number) => {
           if (includeEmptyRows) {
             while (lastRow++ < rowNumber - 1) {
               csvStream.write([]);
