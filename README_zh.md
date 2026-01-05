@@ -4,6 +4,8 @@
 [![Code Quality: Javascript](https://img.shields.io/lgtm/grade/javascript/g/exceljs/exceljs.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/exceljs/exceljs/context:javascript)
 [![Total Alerts](https://img.shields.io/lgtm/alerts/g/exceljs/exceljs.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/exceljs/exceljs/alerts)
 
+> 维护中的分支，使用 Bun 工具链和现代运行环境，不再提供 ES5 版本。
+
 读取，操作并写入电子表格数据和样式到 XLSX 和 JSON 文件。
 
 一个 Excel 电子表格文件逆向工程项目。
@@ -11,6 +13,8 @@
 # 安装
 
 ```shell
+bun add exceljs
+# 或者
 npm install exceljs
 ```
 
@@ -55,7 +59,7 @@ npm install exceljs
 
 欢迎贡献！这可以帮助我了解大家需要一些什么功能，或者哪些 bugs 造成了极大的麻烦。
 
-我只有一个请求；如果您提交对错误修复的请求（PR），请添加一个能够解决问题的单元测试或集成测试（在 *spec* 文件夹中）。
+我只有一个请求；如果您提交对错误修复的请求（PR），请添加一个能够解决问题的单元测试或集成测试（在 *tests* 文件夹中）。
 即使只是测试失败的请求（PR）也可以 - 我可以分析测试的过程并以此修复代码。
 
 注意：请尽可能避免在请求（PR）中修改软件包版本。
@@ -176,65 +180,23 @@ npm install exceljs
 const ExcelJS = require('exceljs');
 ```
 
-## ES5 导入[⬆](#目录)<!-- Link generated with jump2header -->
+## 运行环境[⬆](#目录)<!-- Link generated with jump2header -->
 
-要使用 ES5 编译代码，请使用 *dist/es5* 路径。
+此分支面向 Bun，要求 Bun 1.3+。不再提供 ES5 版本。
 
-```javascript
-const ExcelJS = require('exceljs/dist/es5');
-```
+## 浏览器包[⬆](#目录)<!-- Link generated with jump2header -->
 
-**注意：**ES5 版本对许多 polyfill 都具有隐式依赖，而 exceljs 不再明确添加。
-您需要在依赖项中添加 `core-js` 和 `regenerator-runtime`，并在导入 `exceljs` 之前在代码中包含以下引用：
+浏览器包使用 `bun build` 构建，位于 `dist/`。
 
-```javascript
-// exceljs 所需的 polyfills
-require('core-js/modules/es.promise');
-require('core-js/modules/es.string.includes');
-require('core-js/modules/es.object.assign');
-require('core-js/modules/es.object.keys');
-require('core-js/modules/es.symbol');
-require('core-js/modules/es.symbol.async-iterator');
-require('regenerator-runtime/runtime');
-
-const ExcelJS = require('exceljs/dist/es5');
-```
-
-对于 IE 11，您还需要一个 polyfill 以支持 unicode regex 模式。 例如，
-
-```js
-const rewritePattern = require('regexpu-core');
-const {generateRegexpuOptions} = require('@babel/helper-create-regexp-features-plugin/lib/util');
-
-const {RegExp} = global;
-try {
-  new RegExp('a', 'u');
-} catch (err) {
-  global.RegExp = function(pattern, flags) {
-    if (flags && flags.includes('u')) {
-      return new RegExp(rewritePattern(pattern, flags, generateRegexpuOptions({flags, pattern})));
-    }
-    return new RegExp(pattern, flags);
-  };
-  global.RegExp.prototype = RegExp.prototype;
-}
-```
-
-## 浏览器端[⬆](#目录)<!-- Link generated with jump2header -->
-
-ExcelJS 在 *dist/* 文件夹内发布了两个支持浏览器的包：
-
-一个是隐式依赖 `core-js` polyfills 的...
 ```html
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.26.0/polyfill.js"></script>
 <script src="exceljs.js"></script>
 ```
 
-另一个则没有...
 ```html
-<script src="--your-project's-pollyfills-here--"></script>
 <script src="exceljs.bare.js"></script>
 ```
+
+这些包会暴露全局 `ExcelJS` 对象，`.bare` 版本不包含 polyfills。
 
 
 # 接口[⬆](#目录)<!-- Link generated with jump2header -->
@@ -2417,7 +2379,7 @@ workbookReader.on('error', (err) => {
 
 由于工作簿读写器的流式传输性质，因此未包括这些内容。只能使用基于文档的工作簿（有关详细信息，请参见 <a href="#创建工作簿">创建工作簿</a>）。
 
-例如，在浏览器中使用 ExcelJS 的代码可查看 github 中的<a href="https://github.com/exceljs/exceljs/tree/master/spec/browser"> spec / browser </a>文件夹。
+例如，在浏览器中使用 ExcelJS 的代码可查看 github 中的<a href="https://github.com/exceljs/exceljs/tree/master/tests/browser"> tests / browser </a>文件夹。
 
 ## 预捆绑[⬆](#目录)<!-- Link generated with jump2header -->
 

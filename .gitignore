@@ -13,7 +13,7 @@ build/*
 
 # Test Output Folder
 out/*
-spec/out/*
+tests/out/*
 
 # Tmp folder
 tmp/*
@@ -47,13 +47,14 @@ build/Release
 node_modules
 
 # gold internals
-spec/integration/data/gold
+tests/integration/data/gold
 
 # bundle files
-/spec/manual/public/exceljs.js
-/spec/manual/public/exceljs.min.js
+/tests/manual/public/exceljs.js
+/tests/manual/public/exceljs.min.js
 
 package-lock.json
+bun.lockb
 
 # optional switch off tests
 .disable-test-*
@@ -67,3 +68,5 @@ _SpecRunner.html
 # Ignore xlsx files generated during testing
 *.xlsx
 enpm-lock.yaml
+# Old generated JS in src
+src/*.js

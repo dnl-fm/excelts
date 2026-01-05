@@ -1,13 +1,17 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es5",
+    "target": "es2020",
     "sourceMap": true,
-    "types": [
-      "node",
-      "mocha"
-    ]
+    "types": ["bun-types"],
+    "skipLibCheck": true,
+    "esModuleInterop": true
   },
+  "include": [
+    "src/**/*.ts",
+    "index.ts",
+    "tests/**/*.ts"
+  ],
   "exclude": [
     "node_modules"
   ]

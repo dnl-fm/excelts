@@ -1702,6 +1702,10 @@ export interface WorkbookModel {
 	contentStatus: string;
 	themes: string[];
 	media: Media[];
+	pivotTables?: unknown[];
+	pivotTablesRaw?: Record<string, string>;
+	pivotCacheDefinitionsRaw?: Record<string, string>;
+	pivotCacheRecordsRaw?: Record<string, string>;
 }
 
 export class Workbook {
@@ -1723,6 +1727,11 @@ export class Workbook {
 	 * Workbook calculation Properties
 	 */
 	calcProperties: CalculationProperties;
+
+	pivotTables: unknown[];
+	pivotTablesRaw: Record<string, string>;
+	pivotCacheDefinitionsRaw: Record<string, string>;
+	pivotCacheRecordsRaw: Record<string, string>;
 
 	/**
 	 * xlsx file format operations
