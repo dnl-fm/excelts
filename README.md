@@ -11,6 +11,7 @@ Read and write Excel files. TypeScript, minimal dependencies, works in Bun and b
 | Runtime | Node.js | Bun / Browser |
 | Modules | CJS + ESM | ESM only |
 | ZIP handling | 3 packages (170KB) | fflate (8KB) |
+| Bundle size | 2.1 MB | 817 KB |
 | Types | Separate `.d.ts` | Native TypeScript |
 
 ## Install
@@ -29,20 +30,16 @@ import ExcelTS from 'excelts';
 const workbook = new ExcelTS.Workbook();
 const sheet = workbook.addWorksheet('Sales');
 
-// Define columns
 sheet.columns = [
   { header: 'Product', key: 'product', width: 20 },
   { header: 'Revenue', key: 'revenue', width: 15 },
 ];
 
-// Add rows
 sheet.addRow({ product: 'Widget', revenue: 1500 });
 sheet.addRow({ product: 'Gadget', revenue: 2300 });
 
-// Style the header
 sheet.getRow(1).font = { bold: true };
 
-// Save
 await workbook.xlsx.writeFile('sales.xlsx');
 ```
 
@@ -56,6 +53,68 @@ const sheet = workbook.getWorksheet('Sales');
 sheet.eachRow((row, num) => {
   console.log(num, row.values);
 });
+```
+
+### Browser: Load from ArrayBuffer
+
+```html
+<script src="excelts.min.js"></script>
+<script>
+async function loadExcel(arrayBuffer) {
+  const workbook = new ExcelTS.Workbook();
+  await workbook.xlsx.load(arrayBuffer);
+  
+  workbook.eachSheet((sheet) => {
+    console.log(sheet.name);
+    sheet.eachRow((row) => {
+      console.log(row.values);
+    });
+  });
+}
+
+// From fetch
+const response = await fetch('data.xlsx');
+const buffer = await response.arrayBuffer();
+await loadExcel(buffer);
+
+// From file input
+input.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  const buffer = await file.arrayBuffer();
+  await loadExcel(buffer);
+});
+
+// From drag & drop
+dropzone.addEventListener('drop', async (e) => {
+  const file = e.dataTransfer.files[0];
+  const buffer = await file.arrayBuffer();
+  await loadExcel(buffer);
+});
+</script>
+```
+
+### Browser: Generate and download
+
+```javascript
+const workbook = new ExcelTS.Workbook();
+const sheet = workbook.addWorksheet('Export');
+
+sheet.addRow(['Name', 'Email', 'Date']);
+sheet.addRow(['John', 'john@example.com', new Date()]);
+
+// Get as buffer and trigger download
+const buffer = await workbook.xlsx.writeBuffer();
+const blob = new Blob([buffer], { 
+  type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+});
+const url = URL.createObjectURL(blob);
+
+const a = document.createElement('a');
+a.href = url;
+a.download = 'export.xlsx';
+a.click();
+
+URL.revokeObjectURL(url);
 ```
 
 ### Stream large files
