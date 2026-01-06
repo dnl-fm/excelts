@@ -130,6 +130,31 @@ class ZipBuilder {
   }
 }
 
+/**
+ * Streaming XLSX writer for creating large workbooks with low memory usage.
+ *
+ * Unlike Workbook which holds everything in memory, WorkbookWriter streams
+ * rows directly to the output file as they are committed.
+ *
+ * @example
+ * ```ts
+ * const workbook = new ExcelTS.stream.xlsx.WorkbookWriter({
+ *   filename: 'large-file.xlsx',
+ *   useSharedStrings: true,
+ *   useStyles: true,
+ * });
+ *
+ * const sheet = workbook.addWorksheet('Data');
+ * sheet.columns = [{ header: 'ID' }, { header: 'Name' }];
+ *
+ * for (let i = 0; i < 1000000; i++) {
+ *   sheet.addRow([i, `Row ${i}`]).commit();
+ * }
+ *
+ * await sheet.commit();
+ * await workbook.commit();
+ * ```
+ */
 class WorkbookWriter {
   created: Date;
   modified: Date;

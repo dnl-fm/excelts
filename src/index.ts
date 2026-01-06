@@ -1,5 +1,43 @@
 /**
- * Main entrypoint for ExcelTS APIs and stream helpers.
+ * ExcelTS - Read and write Excel XLSX and CSV files.
+ *
+ * @example Basic usage
+ * ```ts
+ * import ExcelTS from '@dnl-fm/excelts';
+ *
+ * // Create a workbook
+ * const workbook = new ExcelTS.Workbook();
+ * const sheet = workbook.addWorksheet('Sheet1');
+ *
+ * sheet.columns = [
+ *   { header: 'Name', key: 'name', width: 20 },
+ *   { header: 'Age', key: 'age', width: 10 },
+ * ];
+ *
+ * sheet.addRow({ name: 'Alice', age: 30 });
+ * sheet.addRow({ name: 'Bob', age: 25 });
+ *
+ * await workbook.xlsx.writeFile('output.xlsx');
+ * ```
+ *
+ * @example Streaming large files
+ * ```ts
+ * import ExcelTS from '@dnl-fm/excelts';
+ *
+ * const workbook = new ExcelTS.stream.xlsx.WorkbookWriter({
+ *   filename: 'large.xlsx',
+ * });
+ *
+ * const sheet = workbook.addWorksheet('Data');
+ * for (let i = 0; i < 1000000; i++) {
+ *   sheet.addRow([i, `Row ${i}`]).commit();
+ * }
+ *
+ * await sheet.commit();
+ * await workbook.commit();
+ * ```
+ *
+ * @module
  */
 import _Workbook from './doc/workbook.ts';
 import _ModelContainer from './doc/modelcontainer.ts';

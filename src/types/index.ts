@@ -1,5 +1,7 @@
 /**
- * Core types for ExcelTS XLSX I/O operations
+ * Core types for ExcelTS XLSX I/O operations.
+ *
+ * @module
  */
 
 // =============================================================================
