@@ -11,6 +11,15 @@
         "run bunx tsc --noEmit"
       ],
       "passes": true
+    },
+    {
+      "id": "7bf5c342",
+      "description": "all tests need to pass",
+      "category": "functional",
+      "steps": [
+        "run bun test to get the state of all tests"
+      ],
+      "passes": true
     }
   ]
 }

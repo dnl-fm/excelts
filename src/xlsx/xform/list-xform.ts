@@ -75,8 +75,9 @@ class ListXform extends BaseXform {
         this.model = [] as unknown as Record<string, unknown>;
         return true;
       default:
-        this.childXform.parseOpen(node);
-        if (this.childXform.model !== undefined) {
+        // Check if child xform recognizes this element (returns true)
+        // Note: parseOpen returns boolean in implementations (base type is void)
+        if ((this.childXform.parseOpen(node) as unknown) === true) {
           this.parser = this.childXform;
           return true;
         }

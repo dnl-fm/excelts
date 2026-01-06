@@ -99,11 +99,15 @@ class CfRuleExtXform extends CompositeXform {
   }
 
   createNewModel({attributes}: SaxNode) {
-    return {
+    const model: {type?: string; x14Id?: string; priority?: number} = {
       type: attributes.type,
       x14Id: attributes.id,
-      priority: BaseXform.toIntValue(attributes.priority),
     };
+    // Only include priority if it was present in the XML
+    if (attributes.priority !== undefined) {
+      model.priority = BaseXform.toIntValue(attributes.priority);
+    }
+    return model;
   }
 
   onParserClose(_name: string, parser: BaseXform) {

@@ -336,12 +336,18 @@ class Worksheet {
       return Math.max(pv, headerCount);
     }, 0);
 
-    // construct Column objects
+    // First pass: create Column objects without setting defn
+    // This prevents header setter from creating duplicate columns via getColumn()
     let count = 1;
     const columns = (this._columns = []);
-    value.forEach(defn => {
-      const column = new Column(this, count++, defn as Record<string, unknown>);
+    value.forEach(() => {
+      const column = new Column(this, count++, false);
       columns.push(column);
+    });
+
+    // Second pass: set definitions (which sets headers, keys, etc.)
+    value.forEach((defn, index) => {
+      columns[index].defn = defn as Record<string, unknown>;
     });
   }
 
@@ -1337,7 +1343,9 @@ Please leave feedback at https://github.com/exceljs/exceljs/discussions/2575`
   }
 
   _parseMergeCells(model: WorksheetModel): void {
-    _.each(model.merges, (merge: unknown) => {
+    // Support both 'merges' (from model getter) and 'mergeCells' (from xform parsing)
+    const merges = model.merges || (model as unknown as {mergeCells?: unknown[]}).mergeCells;
+    _.each(merges, (merge: unknown) => {
       this.mergeCellsWithoutStyle(merge as string);
     });
   }

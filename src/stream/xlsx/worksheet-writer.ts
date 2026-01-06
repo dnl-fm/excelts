@@ -310,11 +310,18 @@ class WorksheetWriter {
     }, 0);
     this._headerRowCount = headerCount;
 
+    // First pass: create Column objects without setting defn
+    // This prevents header setter from creating duplicate columns via getColumn()
     let count = 1;
     const columns = (this._columns = []);
-    value.forEach((defn: ColumnDefinition) => {
-      const column = new Column(this as unknown as Column['_worksheet'], count++, defn as Record<string, unknown>);
+    value.forEach(() => {
+      const column = new Column(this as unknown as Column['_worksheet'], count++, false);
       columns.push(column);
+    });
+
+    // Second pass: set definitions (which sets headers, keys, etc.)
+    value.forEach((defn, index) => {
+      columns[index].defn = defn as Record<string, unknown>;
     });
   }
 

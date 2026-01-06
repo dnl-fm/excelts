@@ -12,9 +12,10 @@ type DrawingModel = {
 function getAnchorType(model: Record<string, unknown>) {
   const range = typeof model.range === 'string' 
     ? colCache.decode(model.range)
-    : model.range as { br?: unknown } | undefined;
+    : model.range;
 
-  return range && 'br' in range ? 'xdr:twoCellAnchor' : 'xdr:oneCellAnchor';
+  // Check for actual br value, not just property existence (br can be undefined)
+  return (range as { br?: unknown } | undefined)?.br ? 'xdr:twoCellAnchor' : 'xdr:oneCellAnchor';
 }
 
 class DrawingXform extends BaseXform {
