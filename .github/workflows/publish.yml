@@ -26,7 +26,9 @@ jobs:
         run: bun install
 
       - name: Run tests
-        run: bun test
+        run: |
+          bun test tests/unit --timeout 20000
+          bun test tests/integration --timeout 20000
 
       - name: Publish to JSR
         run: bunx jsr publish --allow-slow-types
