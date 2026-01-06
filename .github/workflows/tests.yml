@@ -32,7 +32,10 @@ jobs:
         continue-on-error: true
 
       - name: Run tests
-        run: bun test
+        run: |
+          bun test tests/unit --timeout 20000
+          bun test tests/integration --timeout 20000
+          bun test tests/end-to-end --timeout 20000
         env:
           CI: true
 
@@ -61,6 +64,13 @@ jobs:
           test -f dist/excelts.min.js
           test -f dist/excelts.bare.js
           test -f dist/excelts.bare.min.js
+
+      - name: Run dist and browser tests
+        run: |
+          bun test tests/dist --timeout 20000
+          bun test tests/browser --timeout 20000
+        env:
+          CI: true
 
   typecheck:
     timeout-minutes: 10
