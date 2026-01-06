@@ -1,10 +1,28 @@
 import XmlStream from '../../../utils/xml-stream.ts';
 import BaseXform from '../base-xform.ts';
 import CommentXform from './comment-xform.ts';
+import type {XmlStreamWriter} from '../xform-types.ts';
+
+type CommentModel = {
+  ref?: string;
+  author?: string;
+  text?: unknown;
+  [key: string]: unknown;
+};
+
+type CommentsModel = {
+  comments: CommentModel[];
+  [key: string]: unknown;
+};
 
 class CommentsXform extends BaseXform {
   static COMMENTS_ATTRIBUTES = {
     xmlns: 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
+  };
+
+  declare model: CommentsModel | undefined;
+  declare map: {
+    comment: CommentXform;
   };
 
   constructor() {
@@ -15,7 +33,7 @@ class CommentsXform extends BaseXform {
     this.parser = null;
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model?: CommentsModel) {
     model = model || this.model;
     xmlStream.openXml(XmlStream.StdDocAttributes);
     xmlStream.openNode('comments', CommentsXform.COMMENTS_ATTRIBUTES);
@@ -35,7 +53,7 @@ class CommentsXform extends BaseXform {
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: {name: string; attributes: Record<string, string>}) {
     if (this.parser) {
       this.parser.parseOpen(node);
       return true;
@@ -55,18 +73,18 @@ class CommentsXform extends BaseXform {
     }
   }
 
-  parseText(text) {
+  parseText(text: string) {
     if (this.parser) {
       this.parser.parseText(text);
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string) {
     switch (name) {
       case 'commentList':
         return false;
       case 'comment':
-        this.model.comments.push(this.parser.model);
+        this.model!.comments.push(this.parser!.model as CommentModel);
         this.parser = undefined;
         return true;
       default:

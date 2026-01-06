@@ -1,0 +1,31 @@
+# Progress Log
+
+Project: excelts
+Started: 2026-01-06 12:27
+
+---
+
+
+## 2026-01-06 12:40 - Comment Xform Type Fixes
+
+**What was done:**
+- Fixed 4 type errors in comment-related xform files
+- Files fixed:
+  - `src/xlsx/xform/comment/comments-xform.ts` - Added CommentsModel type, typed render/parse methods
+  - `src/xlsx/xform/comment/vml-textbox-xform.ts` - Added VmlTextboxModel, VmlTextboxRenderModel types
+  - `src/xlsx/xform/comment/style/vml-position-xform.ts` - Added VmlPositionConfig type for constructor
+  - `src/xlsx/xform/comment/style/vml-protection-xform.ts` - Added VmlProtectionConfig type for constructor
+
+**Error count progress:**
+- Before: 381 total / 30 source
+- After: 378 total / 27 source
+- Net reduction: 3 source errors fixed
+
+**Gotchas:**
+- CommentsModel needed index signature `[key: string]: unknown` to be compatible with worksheet objects passed to render()
+- VmlPosition/Protection xforms use a private `_model` config (separate from BaseXform.model) for tag name
+
+**Suggestions for next task:**
+- Continue with remaining source errors (27 left)
+- Good candidates: strings xforms (text-xform, rich-text-xform, phonetic-text-xform have simple fixes)
+- Or tackle book xforms (workbook-view-xform, workbook-xform)

@@ -1,8 +1,16 @@
 
 import BaseXform from '../../base-xform.ts';
+import type {XmlStreamWriter} from '../../xform-types.ts';
+
+type VmlProtectionConfig = {
+  tag: string;
+};
 
 class VmlProtectionXform extends BaseXform {
-  constructor(model) {
+  private _model: VmlProtectionConfig;
+  text: string = '';
+
+  constructor(model: VmlProtectionConfig) {
     super();
     this._model = model;
   }
@@ -11,11 +19,11 @@ class VmlProtectionXform extends BaseXform {
     return this._model && this._model.tag;
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: unknown) {
     xmlStream.leafNode(this.tag, null, model);
   }
 
-  parseOpen(node) {
+  parseOpen(node: {name: string}) {
     switch (node.name) {
       case this.tag:
         this.text = '';
@@ -25,7 +33,7 @@ class VmlProtectionXform extends BaseXform {
     }
   }
 
-  parseText(text) {
+  parseText(text: string) {
     this.text = text;
   }
 

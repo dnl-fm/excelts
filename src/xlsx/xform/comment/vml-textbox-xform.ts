@@ -1,36 +1,53 @@
 
 import BaseXform from '../base-xform.ts';
 
+type VmlTextboxModel = {
+  inset?: number[];
+};
+
+type VmlTextboxRenderModel = {
+  note?: {
+    margins?: {
+      inset?: number[] | string;
+    };
+  };
+};
+
 class VmlTextboxXform extends BaseXform {
+  declare model: VmlTextboxModel | undefined;
+
   get tag() {
     return 'v:textbox';
   }
 
-  conversionUnit(value, multiple, unit) {
-    return `${parseFloat(value) * multiple.toFixed(2)}${unit}`;
+  conversionUnit(value: number | string, multiple: number, unit: string) {
+    return `${parseFloat(String(value)) * Number(multiple.toFixed(2))}${unit}`;
   }
 
-  reverseConversionUnit(inset) {
+  reverseConversionUnit(inset: string | undefined) {
     return (inset || '').split(',').map(margin => {
       return Number(parseFloat(this.conversionUnit(parseFloat(margin), 0.1, '')).toFixed(2));
     });
   }
 
-  render(xmlStream, model) {
-    const attributes = {
+  render(xmlStream: {openNode: (tag: string, attrs: Record<string, unknown>) => void; leafNode: (tag: string, attrs: Record<string, unknown>) => void; closeNode: () => void}, model: VmlTextboxRenderModel) {
+    const attributes: {style: string; inset?: string} = {
       style: 'mso-direction-alt:auto',
     };
     if (model && model.note) {
-      let {inset} = model.note && model.note.margins;
-      if (Array.isArray(inset)) {
-        inset = inset
+      const marginInset = model.note.margins?.inset;
+      let insetStr: string | undefined;
+      if (Array.isArray(marginInset)) {
+        insetStr = marginInset
           .map(margin => {
             return this.conversionUnit(margin, 10, 'mm');
           })
           .join(',');
+      } else if (typeof marginInset === 'string') {
+        insetStr = marginInset;
       }
-      if (inset) {
-        attributes.inset = inset;
+      if (insetStr) {
+        attributes.inset = insetStr;
       }
     }
     xmlStream.openNode('v:textbox', attributes);
@@ -38,7 +55,7 @@ class VmlTextboxXform extends BaseXform {
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: {name: string; attributes: {inset?: string}}) {
     switch (node.name) {
       case this.tag:
         this.model = {
@@ -52,7 +69,7 @@ class VmlTextboxXform extends BaseXform {
 
   parseText() {}
 
-  parseClose(name) {
+  parseClose(name: string) {
     switch (name) {
       case this.tag:
         return false;

@@ -1,8 +1,16 @@
 
 import BaseXform from '../../base-xform.ts';
+import type {XmlStreamWriter} from '../../xform-types.ts';
+
+type VmlPositionConfig = {
+  tag: string;
+};
 
 class VmlPositionXform extends BaseXform {
-  constructor(model) {
+  private _model: VmlPositionConfig;
+  declare model: Record<string, boolean> | undefined;
+
+  constructor(model: VmlPositionConfig) {
     super();
     this._model = model;
   }
@@ -11,15 +19,15 @@ class VmlPositionXform extends BaseXform {
     return this._model && this._model.tag;
   }
 
-  render(xmlStream, model, type) {
+  render(xmlStream: XmlStreamWriter, model: string, type: string[]) {
     if (model === type[2]) {
-      xmlStream.leafNode(this.tag);
+      xmlStream.leafNode(this.tag, null);
     } else if (this.tag === 'x:SizeWithCells' && model === type[1]) {
-      xmlStream.leafNode(this.tag);
+      xmlStream.leafNode(this.tag, null);
     }
   }
 
-  parseOpen(node) {
+  parseOpen(node: {name: string}) {
     switch (node.name) {
       case this.tag:
         this.model = {};
