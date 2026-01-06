@@ -62,8 +62,6 @@ jobs:
         run: |
           test -f dist/excelts.js
           test -f dist/excelts.min.js
-          test -f dist/excelts.bare.js
-          test -f dist/excelts.bare.min.js
 
       - name: Run dist and browser tests
         run: |
