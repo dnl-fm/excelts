@@ -229,6 +229,24 @@ testXformHelper(expectations);
 - ⚠️ 876 unit tests passing, 7 failing (pre-existing issues with cfvo/iconSet parsing)
 - ⚠️ 405 type errors remaining (54 in source, 351 in tests)
 
+## Releasing
+
+**Version files to update:**
+- `package.json` - version field
+- `jsr.json` - version field
+
+Both must be in sync before publishing.
+
+**Publishing to JSR:**
+```bash
+# 1. Update versions in both files
+# 2. Commit changes
+# 3. Push to main (triggers publish workflow)
+git push origin main
+```
+
+The publish workflow runs tests, then publishes to JSR via `bunx jsr publish`.
+
 ## TODO
 
 - [ ] Fix remaining 54 source type errors (see `typecheck-fix.md`)
