@@ -1,6 +1,6 @@
 {
   "name": "@dnl-fm/excelts",
-  "version": "5.1.1",
+  "version": "5.1.2",
   "description": "Bun-first TypeScript library for reading and writing Excel XLSX and CSV files",
   "exports": "./src/index.ts",
   "publish": {
