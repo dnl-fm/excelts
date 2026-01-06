@@ -11,7 +11,14 @@
 import BaseXform from './base-xform.ts';
 import XmlStream from '../../utils/xml-stream.ts';
 
-function build(xmlStream, model) {
+type StaticModel = {
+  tag: string;
+  $?: Record<string, unknown>;
+  c?: StaticModel[];
+  t?: string;
+};
+
+function build(xmlStream, model: StaticModel) {
   xmlStream.openNode(model.tag, model.$);
   if (model.c) {
     model.c.forEach(child => {
@@ -25,9 +32,11 @@ function build(xmlStream, model) {
 }
 
 class StaticXform extends BaseXform {
-  constructor(model) {
-    super();
+  _model: StaticModel;
+  _xml?: string;
 
+  constructor(model: StaticModel) {
+    super();
     // This class is an optimisation for static (unimportant and unchanging) xml
     // It is stateless - apart from its static model and so can be used as a singleton
     // Being stateless - it will only track entry to and exit from it's root xml tag during parsing and nothing else
@@ -37,7 +46,7 @@ class StaticXform extends BaseXform {
     this._model = model;
   }
 
-  render(xmlStream) {
+  render(xmlStream: {writeXml: (xml: string) => void}, _model?: unknown) {
     if (!this._xml) {
       const stream = new XmlStream();
       build(stream, this._model);

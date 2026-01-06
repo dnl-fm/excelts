@@ -1,15 +1,36 @@
-
 import XmlStream from '../../../utils/xml-stream.ts';
 import BaseXform from '../base-xform.ts';
+import type {XmlStreamWriter, SaxNode} from '../xform-types.ts';
+
+type CacheFieldData = {
+  name: string;
+  sharedItems: string[] | null;
+};
+
+type PivotTableModel = {
+  rows: number[];
+  columns: number[];
+  values: number[];
+  metric: string;
+  cacheFields: CacheFieldData[];
+  cacheId: number;
+};
 
 class PivotTableXform extends BaseXform {
+  static PIVOT_TABLE_ATTRIBUTES: Record<string, string> = {
+    xmlns: 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
+    'xmlns:mc': 'http://schemas.openxmlformats.org/markup-compatibility/2006',
+    'mc:Ignorable': 'xr',
+    'xmlns:xr': 'http://schemas.microsoft.com/office/spreadsheetml/2014/revision',
+  };
+
   constructor() {
     super();
 
     this.map = {};
   }
 
-  prepare(_model) {
+  prepare(_model: unknown) {
     // TK
   }
 
@@ -18,7 +39,7 @@ class PivotTableXform extends BaseXform {
     return 'pivotTableDefinition';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: PivotTableModel) {
     // eslint-disable-next-line no-unused-vars
     const {rows, columns, values, metric, cacheFields, cacheId} = model;
 
@@ -121,26 +142,28 @@ class PivotTableXform extends BaseXform {
     xmlStream.closeNode();
   }
 
-  parseOpen(_node) {
+  parseOpen(_node: SaxNode) {
+    // TK
+    return false;
+  }
+
+  parseText(_text: string) {
     // TK
   }
 
-  parseText(_text) {
+  parseClose(_name: string): boolean {
     // TK
+    return false;
   }
 
-  parseClose(_name) {
-    // TK
-  }
-
-  reconcile(_model, _options) {
+  reconcile(_model: unknown, _options: unknown) {
     // TK
   }
 }
 
 // Helpers
 
-function renderPivotFields(pivotTable) {
+function renderPivotFields(pivotTable: PivotTableModel) {
   /* eslint-disable no-nested-ternary */
   return pivotTable.cacheFields
     .map((cacheField, fieldIndex) => {
@@ -157,7 +180,7 @@ function renderPivotFields(pivotTable) {
     .join('');
 }
 
-function renderPivotField(fieldType, sharedItems) {
+function renderPivotField(fieldType: string | null, sharedItems: string[] | null) {
   // fieldType: 'row', 'column', 'value', null
 
   const defaultAttributes = 'compact="0" outline="0" showAll="0" defaultSubtotal="0"';
@@ -166,8 +189,8 @@ function renderPivotField(fieldType, sharedItems) {
     const axis = fieldType === 'row' ? 'axisRow' : 'axisCol';
     return `
       <pivotField axis="${axis}" ${defaultAttributes}>
-        <items count="${sharedItems.length + 1}">
-          ${sharedItems.map((item, index) => `<item x="${index}" />`).join('\n              ')}
+        <items count="${sharedItems!.length + 1}">
+          ${sharedItems!.map((_item, index) => `<item x="${index}" />`).join('\n              ')}
         </items>
       </pivotField>
     `;
@@ -179,12 +202,5 @@ function renderPivotField(fieldType, sharedItems) {
     />
   `;
 }
-
-PivotTableXform.PIVOT_TABLE_ATTRIBUTES = {
-  xmlns: 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
-  'xmlns:mc': 'http://schemas.openxmlformats.org/markup-compatibility/2006',
-  'mc:Ignorable': 'xr',
-  'xmlns:xr': 'http://schemas.microsoft.com/office/spreadsheetml/2014/revision',
-};
 
 export default PivotTableXform;

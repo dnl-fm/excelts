@@ -1,4 +1,22 @@
 const addressRegex = /^[A-Z]+\d+$/;
+
+interface Address {
+  address: string;
+  col: number | undefined;
+  row: number | undefined;
+  $col$row: string;
+}
+
+interface RangeLocation {
+  top: number;
+  left: number;
+  bottom: number;
+  right: number;
+  tl: string;
+  br: string;
+  dimensions: string;
+}
+
 // =========================================================================
 // Column Letter to Number conversion
 const colCache = {
@@ -121,7 +139,7 @@ const colCache = {
   },
 
   // convert address string into structure
-  decodeAddress(value) {
+  decodeAddress(value: string): Address {
     const addr = value.length < 5 && this._hash[value];
     if (addr) {
       return addr;
@@ -192,24 +210,29 @@ const colCache = {
   },
 
   // convert [address], [tl:br] into address structures
-  decode(value) {
+  decode(value: string): RangeLocation | Address {
     const parts = value.split(':');
     if (parts.length === 2) {
-      const tl = this.decodeAddress(parts[0]);
-      const br = this.decodeAddress(parts[1]);
-      const result = {
-        top: Math.min(tl.row, br.row),
-        left: Math.min(tl.col, br.col),
-        bottom: Math.max(tl.row, br.row),
-        right: Math.max(tl.col, br.col),
+      const tl = this.decodeAddress(parts[0]) as Address;
+      const br = this.decodeAddress(parts[1]) as Address;
+      const top = Math.min(tl.row as number, br.row as number);
+      const left = Math.min(tl.col as number, br.col as number);
+      const bottom = Math.max(tl.row as number, br.row as number);
+      const right = Math.max(tl.col as number, br.col as number);
+      const tlStr = this.n2l(left) + top;
+      const brStr = this.n2l(right) + bottom;
+      const result: RangeLocation = {
+        top,
+        left,
+        bottom,
+        right,
+        tl: tlStr,
+        br: brStr,
+        dimensions: `${tlStr}:${brStr}`,
       };
-      // reconstruct tl, br and dimensions
-      result.tl = this.n2l(result.left) + result.top;
-      result.br = this.n2l(result.right) + result.bottom;
-      result.dimensions = `${result.tl}:${result.br}`;
       return result;
     }
-    return this.decodeAddress(value);
+    return this.decodeAddress(value) as Address;
   },
 
   // convert [sheetName!][$]col[$]row[[$]col[$]row] into address or range structures

@@ -1,16 +1,37 @@
-
-
 import XmlStream from '../../../utils/xml-stream.ts';
 import BaseXform from '../base-xform.ts';
+import type {XmlStreamWriter, SaxNode} from '../xform-types.ts';
+
+type SourceSheet = {
+  getSheetValues: () => unknown[][];
+};
+
+type CacheFieldData = {
+  name: string;
+  sharedItems: string[] | null;
+};
+
+type PivotCacheRecordsModel = {
+  sourceSheet: SourceSheet;
+  cacheFields: CacheFieldData[];
+};
 
 class PivotCacheRecordsXform extends BaseXform {
+  static PIVOT_CACHE_RECORDS_ATTRIBUTES: Record<string, string> = {
+    xmlns: 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
+    'xmlns:r': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
+    'xmlns:mc': 'http://schemas.openxmlformats.org/markup-compatibility/2006',
+    'mc:Ignorable': 'xr',
+    'xmlns:xr': 'http://schemas.microsoft.com/office/spreadsheetml/2014/revision',
+  };
+
   constructor() {
     super();
 
     this.map = {};
   }
 
-  prepare(_model) {
+  prepare(_model: unknown) {
     // TK
   }
 
@@ -19,7 +40,7 @@ class PivotCacheRecordsXform extends BaseXform {
     return 'pivotCacheRecords';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: PivotCacheRecordsModel) {
     const {sourceSheet, cacheFields} = model;
     const sourceBodyRows = sourceSheet.getSheetValues().slice(2);
 
@@ -35,13 +56,13 @@ class PivotCacheRecordsXform extends BaseXform {
 
     function renderTable() {
       const rowsInXML = sourceBodyRows.map(row => {
-        const realRow = row.slice(1);
+        const realRow = (row as unknown[]).slice(1);
         return [...renderRowLines(realRow)].join('');
       });
       return rowsInXML.join('');
     }
 
-    function* renderRowLines(row) {
+    function* renderRowLines(row: unknown[]) {
       // PivotCache Record: http://www.datypic.com/sc/ooxml/e-ssml_r-1.html
       // Note: pretty-printing this for now to ease debugging.
       yield '\n  <r>';
@@ -52,7 +73,7 @@ class PivotCacheRecordsXform extends BaseXform {
       yield '\n  </r>';
     }
 
-    function renderCell(value, sharedItems) {
+    function renderCell(value: unknown, sharedItems: string[] | null) {
       // no shared items
       // --------------------------------------------------
       if (sharedItems === null) {
@@ -67,7 +88,7 @@ class PivotCacheRecordsXform extends BaseXform {
 
       // shared items
       // --------------------------------------------------
-      const sharedItemsIndex = sharedItems.indexOf(value);
+      const sharedItemsIndex = sharedItems.indexOf(value as string);
       if (sharedItemsIndex < 0) {
         throw new Error(`${JSON.stringify(value)} not in sharedItems ${JSON.stringify(sharedItems)}`);
       }
@@ -76,29 +97,23 @@ class PivotCacheRecordsXform extends BaseXform {
     }
   }
 
-  parseOpen(_node) {
+  parseOpen(_node: SaxNode) {
+    // TK
+    return false;
+  }
+
+  parseText(_text: string) {
     // TK
   }
 
-  parseText(_text) {
+  parseClose(_name: string): boolean {
     // TK
+    return false;
   }
 
-  parseClose(_name) {
-    // TK
-  }
-
-  reconcile(_model, _options) {
+  reconcile(_model: unknown, _options: unknown) {
     // TK
   }
 }
-
-PivotCacheRecordsXform.PIVOT_CACHE_RECORDS_ATTRIBUTES = {
-  xmlns: 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
-  'xmlns:r': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
-  'xmlns:mc': 'http://schemas.openxmlformats.org/markup-compatibility/2006',
-  'mc:Ignorable': 'xr',
-  'xmlns:xr': 'http://schemas.microsoft.com/office/spreadsheetml/2014/revision',
-};
 
 export default PivotCacheRecordsXform;

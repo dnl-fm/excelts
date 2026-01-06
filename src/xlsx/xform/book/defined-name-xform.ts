@@ -2,8 +2,19 @@
 import BaseXform from '../base-xform.ts';
 import colCache from '../../../utils/col-cache.ts';
 
+interface DefinedNameModel {
+  name: string;
+  ranges: string[];
+  localSheetId?: number;
+}
+
 class DefinedNamesXform extends BaseXform {
-  render(xmlStream, model) {
+  _parsedName?: string;
+  _parsedLocalSheetId?: string;
+  _parsedText: string[] = [];
+  declare model: DefinedNameModel | undefined;
+
+  render(xmlStream: any, model: DefinedNameModel) {
     // <definedNames>
     //   <definedName name="name">name.ranges.join(',')</definedName>
     //   <definedName name="_xlnm.Print_Area" localSheetId="0">name.ranges.join(',')</definedName>
@@ -16,7 +27,7 @@ class DefinedNamesXform extends BaseXform {
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: { name: string; attributes: Record<string, string> }) {
     switch (node.name) {
       case 'definedName':
         this._parsedName = node.attributes.name;
@@ -28,13 +39,13 @@ class DefinedNamesXform extends BaseXform {
     }
   }
 
-  parseText(text) {
+  parseText(text: string) {
     this._parsedText.push(text);
   }
 
-  parseClose() {
+  parseClose(_name: string) {
     this.model = {
-      name: this._parsedName,
+      name: this._parsedName!,
       ranges: extractRanges(this._parsedText.join('')),
     };
     if (this._parsedLocalSheetId !== undefined) {
@@ -44,7 +55,7 @@ class DefinedNamesXform extends BaseXform {
   }
 }
 
-function isValidRange(range) {
+function isValidRange(range: string) {
   try {
     colCache.decodeEx(range);
     return true;
@@ -53,7 +64,7 @@ function isValidRange(range) {
   }
 }
 
-function extractRanges(parsedText) {
+function extractRanges(parsedText: string): string[] {
   const ranges = [];
   let quotesOpened = false;
   let last = '';

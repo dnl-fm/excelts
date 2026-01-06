@@ -137,7 +137,7 @@ class Table {
       case 'sum':
         return `SUBTOTAL(109,${this.table.name}[${column.name}])`;
       case 'custom':
-        return column.totalsRowFormula;
+        return column.totalsRowFormula as string;
       default:
         throw new Error(`Invalid Totals Row Function: ${column.totalsRowFunction}`);
     }
@@ -191,7 +191,7 @@ class Table {
     assert(table.rows, 'Table must have row definitions');
 
     table.tl = colCache.decodeAddress(table.ref);
-    const {row, col} = table.tl;
+    const {row, col} = table.tl as { row: number; col: number };
     assert(row > 0, 'Table must be on valid row');
     assert(col > 0, 'Table must be on valid col');
 
@@ -226,7 +226,7 @@ class Table {
     };
 
     const {worksheet, table} = this;
-    const {row, col} = table.tl;
+    const {row, col} = table.tl as { row: number; col: number };
     let count = 0;
     if (table.headerRow) {
       const r = worksheet.getRow(row + count++);
@@ -270,10 +270,10 @@ class Table {
     }
   }
 
-  load(worksheet) {
+  load(worksheet: Worksheet) {
     // where the table will read necessary features from a loaded sheet
     const {table} = this;
-    const {row, col} = table.tl;
+    const {row, col} = table.tl as { row: number; col: number };
     let count = 0;
     if (table.headerRow) {
       const r = worksheet.getRow(row + count++);
@@ -441,59 +441,59 @@ class Table {
   }
 
   get displayName(): string {
-    return this.table.displyName || this.table.name;
+    return (this.table.displayName as string) || this.table.name;
   }
-  set displayNamename(value: string) {
+  set displayName(value: string) {
     this.table.displayName = value;
   }
 
   get headerRow(): boolean {
-    return this.table.headerRow;
+    return this.table.headerRow as boolean;
   }
   set headerRow(value: boolean) {
     this._assign(this.table, 'headerRow', value);
   }
 
   get totalsRow(): boolean {
-    return this.table.totalsRow;
+    return this.table.totalsRow as boolean;
   }
   set totalsRow(value: boolean) {
     this._assign(this.table, 'totalsRow', value);
   }
 
   get theme(): string {
-    return this.table.style.name;
+    return this.table.style?.name as string;
   }
   set theme(value: string) {
-    this.table.style.name = value;
+    this.table.style!.name = value;
   }
 
   get showFirstColumn(): boolean {
-    return this.table.style.showFirstColumn;
+    return this.table.style?.showFirstColumn as boolean;
   }
   set showFirstColumn(value: boolean) {
-    this.table.style.showFirstColumn = value;
+    this.table.style!.showFirstColumn = value;
   }
 
   get showLastColumn(): boolean {
-    return this.table.style.showLastColumn;
+    return this.table.style?.showLastColumn as boolean;
   }
   set showLastColumn(value: boolean) {
-    this.table.style.showLastColumn = value;
+    this.table.style!.showLastColumn = value;
   }
 
   get showRowStripes(): boolean {
-    return this.table.style.showRowStripes;
+    return this.table.style?.showRowStripes as boolean;
   }
   set showRowStripes(value: boolean) {
-    this.table.style.showRowStripes = value;
+    this.table.style!.showRowStripes = value;
   }
 
   get showColumnStripes(): boolean {
-    return this.table.style.showColumnStripes;
+    return this.table.style?.showColumnStripes as boolean;
   }
   set showColumnStripes(value: boolean) {
-    this.table.style.showColumnStripes = value;
+    this.table.style!.showColumnStripes = value;
   }
   /* eslint-enable lines-between-class-members */
 }

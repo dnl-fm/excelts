@@ -3,6 +3,15 @@
 import utils from '../../utils/utils.ts';
 import RelType from '../../xlsx/rel-type.ts';
 
+interface StreamLike {
+  write(data: string): void;
+  end(): void;
+}
+
+interface WorkbookLike {
+  _openStream(path: string): StreamLike;
+}
+
 class HyperlinksProxy {
   writer: SheetRelsWriter;
 
@@ -10,7 +19,7 @@ class HyperlinksProxy {
     this.writer = sheetRelsWriter;
   }
 
-  push(hyperlink) {
+  push(hyperlink: { target: string; address: string }) {
     this.writer.addHyperlink(hyperlink);
   }
 }
@@ -18,12 +27,12 @@ class HyperlinksProxy {
 class SheetRelsWriter {
   id: unknown;
   count: number;
-  _hyperlinks: unknown[];
-  _workbook: Record<string, unknown>;
-  _stream?: unknown;
+  _hyperlinks: Array<{ rId: string; address: string }>;
+  _workbook: WorkbookLike;
+  _stream?: StreamLike;
   _hyperlinksProxy?: HyperlinksProxy;
 
-  constructor(options: Record<string, unknown>) {
+  constructor(options: { id: unknown; workbook: WorkbookLike }) {
     // in a workbook, each sheet will have a number
     this.id = options.id;
 
@@ -33,10 +42,10 @@ class SheetRelsWriter {
     // keep record of all hyperlinks
     this._hyperlinks = [];
 
-    this._workbook = options.workbook as Record<string, unknown>;
+    this._workbook = options.workbook;
   }
 
-  get stream() {
+  get stream(): StreamLike {
     if (!this._stream) {
       // eslint-disable-next-line no-underscore-dangle
       this._stream = this._workbook._openStream(`/xl/worksheets/_rels/sheet${this.id}.xml.rels`);
@@ -48,7 +57,7 @@ class SheetRelsWriter {
     return this._hyperlinks.length;
   }
 
-  each(fn) {
+  each(fn: (item: { rId: string; address: string }) => void) {
     return this._hyperlinks.forEach(fn);
   }
 
@@ -56,7 +65,7 @@ class SheetRelsWriter {
     return this._hyperlinksProxy || (this._hyperlinksProxy = new HyperlinksProxy(this));
   }
 
-  addHyperlink(hyperlink) {
+  addHyperlink(hyperlink: { target: string; address: string }) {
     // Write to stream
     const relationship = {
       Target: hyperlink.target,
@@ -72,11 +81,11 @@ class SheetRelsWriter {
     });
   }
 
-  addMedia(media) {
+  addMedia(media: { Type: string; Target: string; TargetMode?: string }) {
     return this._writeRelationship(media);
   }
 
-  addRelationship(rel) {
+  addRelationship(rel: { Type: string; Target: string; TargetMode?: string }) {
     return this._writeRelationship(rel);
   }
 
@@ -97,7 +106,7 @@ class SheetRelsWriter {
     );
   }
 
-  _writeRelationship(relationship) {
+  _writeRelationship(relationship: { Type: string; Target: string; TargetMode?: string }) {
     if (!this.count) {
       this._writeOpen();
     }

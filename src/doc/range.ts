@@ -45,7 +45,7 @@ class Range {
     }
   }
 
-  decode(argv: IArguments): void {
+  decode(argv: IArguments | unknown[]): void {
     switch (argv.length) {
       case 5: // [t,l,b,r,s]
         this.setTLBR(argv[0], argv[1], argv[2], argv[3], argv[4]);

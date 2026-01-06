@@ -3,6 +3,7 @@ import _ from '../utils/under-dash.ts';
 import Enums from './enums.ts';
 import colCache from '../utils/col-cache.ts';
 import type Worksheet from './worksheet.ts';
+import type Cell from './cell.ts';
 
 const DEFAULT_COLUMN_WIDTH = 9;
 
@@ -46,7 +47,7 @@ class Column {
   /** @internal */
   _outlineLevel?: number;
 
-  constructor(worksheet: Worksheet, number: number, defn?: Record<string, unknown>) {
+  constructor(worksheet: Worksheet, number: number, defn?: Record<string, unknown> | false) {
     this._worksheet = worksheet;
     this._number = number;
     if (defn !== false) {
@@ -87,7 +88,7 @@ class Column {
 
   set defn(value: Record<string, unknown> | undefined) {
     if (value) {
-      this.key = value.key;
+      this.key = value.key as string | number | undefined;
       this.width = value.width !== undefined ? (value.width as number) : DEFAULT_COLUMN_WIDTH;
       this.outlineLevel = value.outlineLevel as number;
       if (value.style) {
@@ -153,14 +154,14 @@ class Column {
   }
 
   set key(value: string | number | undefined) {
-    const column = this._key && this._worksheet.getColumnKey(this._key);
+    const column = this._key && this._worksheet.getColumnKey(String(this._key));
     if (column === this) {
-      this._worksheet.deleteColumnKey(this._key);
+      this._worksheet.deleteColumnKey(String(this._key));
     }
 
     this._key = value;
     if (value) {
-      this._worksheet.setColumnKey(this._key, this);
+      this._worksheet.setColumnKey(String(this._key), this);
     }
   }
 
@@ -185,7 +186,7 @@ class Column {
   /** Whether this column is collapsed in outline */
   get collapsed(): boolean {
     return !!(
-      this._outlineLevel && this._outlineLevel >= this._worksheet.properties.outlineLevelCol
+      this._outlineLevel && this._outlineLevel >= (this._worksheet.properties.outlineLevelCol as number)
     );
   }
 
@@ -241,7 +242,7 @@ class Column {
    * });
    * ```
    */
-  eachCell(options?: Record<string, unknown> | ((cell: unknown, rowNum: number) => void), iteratee?: (cell: unknown, rowNum: number) => void): void {
+  eachCell(options?: Record<string, unknown> | ((cell: Cell, rowNum: number) => void), iteratee?: (cell: Cell, rowNum: number) => void): void {
     let iter = iteratee;
     let opts: Record<string, unknown> | undefined = undefined;
     const colNumber = this.number;
@@ -250,7 +251,7 @@ class Column {
     } else {
       opts = options as Record<string, unknown>;
     }
-    const worksheetRecord = this._worksheet as Record<string, unknown>;
+    const worksheetRecord = this._worksheet as unknown as Record<string, unknown>;
     (worksheetRecord.eachRow as Function)(opts, (row: unknown, rowNumber: number) => {
       const rowRecord = row as Record<string, unknown>;
       (iter as Function)((rowRecord.getCell as Function)(colNumber), rowNumber);
@@ -376,7 +377,7 @@ class Column {
           if (col) {
             col = null;
           }
-        } else if (!col || !column.equivalentTo(col as Column)) {
+        } else if (!col || !column.equivalentTo(col as unknown as Column)) {
           col = {
             min: index + 1,
             max: index + 1,

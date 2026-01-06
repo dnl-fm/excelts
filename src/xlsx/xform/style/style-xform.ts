@@ -10,7 +10,18 @@ import BaseXform from '../base-xform.ts';
 import AlignmentXform from './alignment-xform.ts';
 import ProtectionXform from './protection-xform.ts';
 
+type StyleModel = {
+  numFmtId?: number;
+  fontId?: number;
+  fillId?: number;
+  borderId?: number;
+  xfId?: number;
+  alignment?: unknown;
+  protection?: unknown;
+};
+
 class StyleXform extends BaseXform {
+  declare model: StyleModel | undefined;
   xfId: boolean;
 
   constructor(options?: { xfId?: boolean }) {

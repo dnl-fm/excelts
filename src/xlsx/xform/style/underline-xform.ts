@@ -1,39 +1,45 @@
 
 import BaseXform from '../base-xform.ts';
+import type { SaxNode, XmlStreamWriter } from '../xform-types.ts';
 
 class UnderlineXform extends BaseXform {
-  constructor(model?) {
+  static Attributes: Record<string, Record<string, string>>;
+
+  constructor(model?: boolean | string) {
     super();
 
-    this.model = model;
+    if (model !== undefined) {
+      (this as unknown as { model: boolean | string }).model = model;
+    }
   }
 
-  get tag() {
+  get tag(): string {
     return 'u';
   }
 
-  render(xmlStream, model) {
-    model = model || this.model;
+  render(xmlStream: XmlStreamWriter, model?: boolean | string): void {
+    const m = model ?? this.model;
 
-    if (model === true) {
-      xmlStream.leafNode('u');
-    } else {
-      const attr = UnderlineXform.Attributes[model];
+    if (m === true) {
+      xmlStream.leafNode('u', null);
+    } else if (typeof m === 'string') {
+      const attr = UnderlineXform.Attributes[m];
       if (attr) {
         xmlStream.leafNode('u', attr);
       }
     }
   }
 
-  parseOpen(node) {
+  parseOpen(node: SaxNode): boolean {
     if (node.name === 'u') {
-      this.model = node.attributes.val || true;
+      (this as unknown as { model: boolean | string }).model = node.attributes.val || true;
     }
+    return true;
   }
 
-  parseText() {}
+  parseText(): void {}
 
-  parseClose() {
+  parseClose(): boolean {
     return false;
   }
 }

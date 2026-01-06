@@ -12,8 +12,14 @@ import RichTextXform from './rich-text-xform.ts';
 import PhoneticTextXform from './phonetic-text-xform.ts';
 import BaseXform from '../base-xform.ts';
 
+type SharedStringModel = {
+  richText?: unknown[];
+} | string;
+
 class SharedStringXform extends BaseXform {
-  constructor(model?) {
+  declare model: SharedStringModel | undefined;
+
+  constructor(model?: SharedStringModel) {
     super();
 
     this.model = model;
@@ -74,15 +80,16 @@ class SharedStringXform extends BaseXform {
       if (!this.parser.parseClose(name)) {
         switch (name) {
           case 'r': {
-            let rt = this.model.richText;
+            const model = this.model as { richText?: unknown[] };
+            let rt = model.richText;
             if (!rt) {
-              rt = this.model.richText = [];
+              rt = model.richText = [];
             }
             rt.push(this.parser.model);
             break;
           }
           case 't':
-            this.model = this.parser.model;
+            this.model = this.parser.model as string;
             break;
           default:
             break;

@@ -108,11 +108,11 @@ class DefinedNames {
 
     // grow vertical - only one col to worry about
     function vGrow(yy: number, edge: string): boolean {
-      const c = matrix.findCellAt(sheetName, yy, cell.col!);
+      const c = matrix.findCellAt(sheetName, yy, cell.col!) as CellAddress | undefined;
       if (!c || !c.mark) {
         return false;
       }
-      (c as CellAddress).mark = false;
+      c.mark = false;
       range[edge as keyof typeof range] = yy as never;
       return true;
     }

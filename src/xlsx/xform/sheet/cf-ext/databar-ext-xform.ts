@@ -1,11 +1,46 @@
-
-
 import BaseXform from '../../base-xform.ts';
 import CompositeXform from '../../composite-xform.ts';
 import ColorXform from '../../style/color-xform.ts';
 import CfvoExtXform from './cfvo-ext-xform.ts';
+import type {XmlStreamWriter, SaxNode} from '../../xform-types.ts';
+
+type CfvoModel = {
+  type?: string;
+  value?: string | number;
+};
+
+type ColorModel = {
+  argb?: string;
+  theme?: number;
+  tint?: number;
+};
+
+type DatabarExtModel = {
+  cfvo: CfvoModel[];
+  minLength?: number;
+  maxLength?: number;
+  border?: boolean;
+  gradient?: boolean;
+  negativeBarColorSameAsPositive?: boolean;
+  negativeBarBorderColorSameAsPositive?: boolean;
+  axisPosition?: unknown;
+  direction?: unknown;
+  borderColor?: ColorModel;
+  negativeBorderColor?: ColorModel;
+  negativeFillColor?: ColorModel;
+  axisColor?: ColorModel;
+  [key: string]: unknown;
+};
 
 class DatabarExtXform extends CompositeXform {
+  cfvoXform: CfvoExtXform;
+  borderColorXform: ColorXform;
+  negativeBorderColorXform: ColorXform;
+  negativeFillColorXform: ColorXform;
+  axisColorXform: ColorXform;
+
+  declare model: DatabarExtModel | undefined;
+
   constructor() {
     super();
 
@@ -22,7 +57,7 @@ class DatabarExtXform extends CompositeXform {
     };
   }
 
-  static isExt(rule) {
+  static isExt(rule: {gradient?: boolean}) {
     // not all databars need ext
     // TODO: refine this
     return !rule.gradient;
@@ -32,7 +67,7 @@ class DatabarExtXform extends CompositeXform {
     return 'x14:dataBar';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: DatabarExtModel) {
     xmlStream.openNode(this.tag, {
       minLength: BaseXform.toIntAttribute(model.minLength, 0, true),
       maxLength: BaseXform.toIntAttribute(model.maxLength, 100, true),
@@ -51,7 +86,9 @@ class DatabarExtXform extends CompositeXform {
     });
 
     model.cfvo.forEach(cfvo => {
-      this.cfvoXform.render(xmlStream, cfvo);
+      if (cfvo.type) {
+        this.cfvoXform.render(xmlStream, cfvo as { type: string; value?: string | number });
+      }
     });
 
     this.borderColorXform.render(xmlStream, model.borderColor);
@@ -62,7 +99,7 @@ class DatabarExtXform extends CompositeXform {
     xmlStream.closeNode();
   }
 
-  createNewModel({attributes}) {
+  createNewModel({attributes}: SaxNode): DatabarExtModel {
     return {
       cfvo: [],
       minLength: BaseXform.toIntValue(attributes.minLength, 0),
@@ -82,15 +119,15 @@ class DatabarExtXform extends CompositeXform {
     };
   }
 
-  onParserClose(name, parser) {
+  onParserClose(name: string, parser: BaseXform) {
     const [, prop] = name.split(':');
     switch (prop) {
       case 'cfvo':
-        this.model.cfvo.push(parser.model);
+        this.model!.cfvo.push(parser.model as CfvoModel);
         break;
 
       default:
-        this.model[prop] = parser.model;
+        this.model![prop] = parser.model;
         break;
     }
   }

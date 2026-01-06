@@ -1,13 +1,44 @@
-
-
 import BaseXform from '../base-xform.ts';
 import VmlAnchorXform from './vml-anchor-xform.ts';
 import VmlProtectionXform from './style/vml-protection-xform.ts';
 import VmlPositionXform from './style/vml-position-xform.ts';
+import type {XmlStreamWriter, SaxNode} from '../xform-types.ts';
 
 const POSITION_TYPE = ['twoCells', 'oneCells', 'absolute'];
 
+type VmlClientDataModel = {
+  anchor: unknown[];
+  protection: {
+    locked?: unknown;
+    lockText?: unknown;
+  };
+  editAs: string;
+};
+
+type VmlClientDataRenderModel = {
+  note: {
+    protection: {
+      locked?: unknown;
+      lockText?: unknown;
+    };
+    editAs?: string;
+  };
+  refAddress: {
+    row: number;
+    col: number;
+  };
+};
+
 class VmlClientDataXform extends BaseXform {
+  declare model: VmlClientDataModel | undefined;
+  declare map: {
+    'x:Anchor': VmlAnchorXform;
+    'x:Locked': VmlProtectionXform;
+    'x:LockText': VmlProtectionXform;
+    'x:SizeWithCells': VmlPositionXform;
+    'x:MoveWithCells': VmlPositionXform;
+  };
+
   constructor() {
     super();
     this.map = {
@@ -23,7 +54,7 @@ class VmlClientDataXform extends BaseXform {
     return 'x:ClientData';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: VmlClientDataRenderModel) {
     const {protection, editAs} = model.note;
     xmlStream.openNode(this.tag, {ObjectType: 'Note'});
     this.map['x:MoveWithCells'].render(xmlStream, editAs, POSITION_TYPE);
@@ -37,7 +68,7 @@ class VmlClientDataXform extends BaseXform {
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: SaxNode) {
     switch (node.name) {
       case this.tag:
         this.reset();
@@ -48,7 +79,7 @@ class VmlClientDataXform extends BaseXform {
         };
         break;
       default:
-        this.parser = this.map[node.name];
+        this.parser = this.map[node.name as keyof typeof this.map];
         if (this.parser) {
           this.parser.parseOpen(node);
         }
@@ -57,13 +88,13 @@ class VmlClientDataXform extends BaseXform {
     return true;
   }
 
-  parseText(text) {
+  parseText(text: string) {
     if (this.parser) {
       this.parser.parseText(text);
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string) {
     if (this.parser) {
       if (!this.parser.parseClose(name)) {
         this.parser = undefined;
@@ -82,14 +113,14 @@ class VmlClientDataXform extends BaseXform {
   normalizeModel() {
     const position = Object.assign(
       {},
-      this.map['x:MoveWithCells'].model,
-      this.map['x:SizeWithCells'].model
+      this.map['x:MoveWithCells'].model as Record<string, unknown>,
+      this.map['x:SizeWithCells'].model as Record<string, unknown>
     );
     const len = Object.keys(position).length;
-    this.model.editAs = POSITION_TYPE[len];
-    this.model.anchor = this.map['x:Anchor'].text;
-    this.model.protection.locked = this.map['x:Locked'].text;
-    this.model.protection.lockText = this.map['x:LockText'].text;
+    this.model!.editAs = POSITION_TYPE[len];
+    this.model!.anchor = (this.map['x:Anchor'] as VmlAnchorXform & {text: unknown[]}).text;
+    this.model!.protection.locked = (this.map['x:Locked'] as VmlProtectionXform & {text: unknown}).text;
+    this.model!.protection.lockText = (this.map['x:LockText'] as VmlProtectionXform & {text: unknown}).text;
   }
 }
 

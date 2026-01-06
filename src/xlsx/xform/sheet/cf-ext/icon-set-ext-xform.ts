@@ -1,11 +1,34 @@
-
-
 import BaseXform from '../../base-xform.ts';
 import CompositeXform from '../../composite-xform.ts';
 import CfvoExtXform from './cfvo-ext-xform.ts';
 import CfIconExtXform from './cf-icon-ext-xform.ts';
+import type {XmlStreamWriter, SaxNode} from '../../xform-types.ts';
+
+type CfvoModel = {
+  type?: string;
+  value?: string | number;
+};
+
+type CfIconModel = {
+  iconSet?: string;
+  iconId?: number;
+};
+
+type IconSetExtModel = {
+  cfvo: CfvoModel[];
+  icons?: CfIconModel[];
+  iconSet?: unknown;
+  reverse?: boolean;
+  showValue?: boolean;
+  [key: string]: unknown;
+};
 
 class IconSetExtXform extends CompositeXform {
+  cfvoXform: CfvoExtXform;
+  cfIconXform: CfIconExtXform;
+
+  declare model: IconSetExtModel | undefined;
+
   constructor() {
     super();
 
@@ -19,7 +42,7 @@ class IconSetExtXform extends CompositeXform {
     return 'x14:iconSet';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: IconSetExtModel) {
     xmlStream.openNode(this.tag, {
       iconSet: BaseXform.toStringAttribute(model.iconSet),
       reverse: BaseXform.toBoolAttribute(model.reverse, false),
@@ -28,7 +51,9 @@ class IconSetExtXform extends CompositeXform {
     });
 
     model.cfvo.forEach(cfvo => {
-      this.cfvoXform.render(xmlStream, cfvo);
+      if (cfvo.type) {
+        this.cfvoXform.render(xmlStream, cfvo as { type: string; value?: string | number });
+      }
     });
 
     if (model.icons) {
@@ -41,7 +66,7 @@ class IconSetExtXform extends CompositeXform {
     xmlStream.closeNode();
   }
 
-  createNewModel({attributes}) {
+  createNewModel({attributes}: SaxNode): IconSetExtModel {
     return {
       cfvo: [],
       iconSet: BaseXform.toStringValue(attributes.iconSet, '3TrafficLights'),
@@ -50,22 +75,22 @@ class IconSetExtXform extends CompositeXform {
     };
   }
 
-  onParserClose(name, parser) {
+  onParserClose(name: string, parser: BaseXform) {
     const [, prop] = name.split(':');
     switch (prop) {
       case 'cfvo':
-        this.model.cfvo.push(parser.model);
+        this.model!.cfvo.push(parser.model as CfvoModel);
         break;
 
       case 'cfIcon':
-        if (!this.model.icons) {
-          this.model.icons = [];
+        if (!this.model!.icons) {
+          this.model!.icons = [];
         }
-        this.model.icons.push(parser.model);
+        this.model!.icons.push(parser.model as CfIconModel);
         break;
 
       default:
-        this.model[prop] = parser.model;
+        this.model![prop] = parser.model;
         break;
     }
   }

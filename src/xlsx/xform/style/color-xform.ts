@@ -2,7 +2,15 @@
 // Color encapsulates translation from color model to/from xlsx
 import BaseXform from '../base-xform.ts';
 
+type ColorModel = {
+  argb?: string;
+  theme?: number;
+  tint?: number;
+  indexed?: number;
+};
+
 class ColorXform extends BaseXform {
+  declare model: ColorModel | undefined;
   name: string;
 
   constructor(name?: string) {

@@ -1,9 +1,31 @@
 
 import BaseXform from '../base-xform.ts';
 
+type WorkbookViewAttributes = {
+  xWindow: number;
+  yWindow: number;
+  windowWidth: number;
+  windowHeight: number;
+  firstSheet?: number;
+  activeTab?: number;
+  visibility?: string;
+};
+
+type WorkbookViewModel = {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  firstSheet?: number;
+  activeTab?: number;
+  visibility?: string;
+};
+
 class WorkbookViewXform extends BaseXform {
-  render(xmlStream, model) {
-    const attributes = {
+  declare model: WorkbookViewModel | undefined;
+
+  render(xmlStream: { leafNode: (tag: string, attrs: WorkbookViewAttributes) => void }, model: WorkbookViewModel) {
+    const attributes: WorkbookViewAttributes = {
       xWindow: model.x || 0,
       yWindow: model.y || 0,
       windowWidth: model.width || 12000,

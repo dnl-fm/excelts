@@ -10,17 +10,23 @@ export type ReadableStream = AsyncIterable<Uint8Array | string>;
 /**
  * Writable stream interface
  */
-export interface WritableStream {
+export interface XlsxWritableStream {
   write(chunk: Uint8Array | string, callback?: (err?: Error) => void): boolean;
   end(callback?: () => void): void;
   on?(event: string, listener: (...args: unknown[]) => void): void;
 }
+
+/** @deprecated Use XlsxWritableStream instead */
+export type WritableStream = XlsxWritableStream;
 
 /**
  * XLSX options for read operations
  */
 export interface XlsxReadOptions {
   base64?: boolean;
+  maxRows?: number;
+  maxCols?: number;
+  ignoreNodes?: string[];
   [key: string]: unknown;
 }
 
@@ -218,7 +224,7 @@ export interface PivotTableModel {
 /**
  * Worksheet model returned by WorksheetXform.parseStream()
  */
-export interface ParsedWorksheetModel extends WorksheetItemModel {
+export interface ParsedWorksheetModel extends Omit<WorksheetItemModel, 'tables'> {
   dimensions?: unknown;
   cols?: unknown[];
   rows?: unknown[];
@@ -230,8 +236,8 @@ export interface ParsedWorksheetModel extends WorksheetItemModel {
   pageSetup?: Record<string, unknown>;
   headerFooter?: unknown;
   background?: unknown;
-  drawing?: unknown;
-  tables?: unknown[];
+  drawing?: DrawingModel;
+  tables?: TableModel[] | unknown[];
   conditionalFormattings?: unknown[];
   autoFilter?: unknown;
   sheetProtection?: Record<string, unknown>;
@@ -241,8 +247,8 @@ export interface ParsedWorksheetModel extends WorksheetItemModel {
 /**
  * Comments model returned by CommentsXform.parseStream()
  */
-export interface ParsedCommentsModel {
-  comments: CommentModel[];
+export interface ParsedCommentsModel extends CommentsModel {
+  comments?: CommentModel[];
 }
 
 /**
@@ -336,7 +342,7 @@ export interface ZipEntry {
  * ZipStream writer interface
  */
 export interface ZipWriter {
-  pipe(destination: WritableStream): ZipWriter;
+  pipe(destination: XlsxWritableStream | unknown): ZipWriter;
   append(data: string | Uint8Array, options: { name: string; base64?: boolean }): Promise<void> | void;
   finalize(): Promise<void> | void;
   on(event: 'finish' | 'error', handler: (...args: unknown[]) => void): void;

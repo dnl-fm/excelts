@@ -1105,7 +1105,7 @@ class FormulaValue {
       const {worksheet} = this.cell;
       const master = worksheet.findCell(this.model.sharedFormula as string | number);
       this._translatedFormula =
-        master && slideFormula(master.formula, master.address, this.model.address);
+        master && slideFormula(master.formula, master.address, this.model.address as string);
     }
     return this._translatedFormula;
   }

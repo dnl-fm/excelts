@@ -24,10 +24,17 @@ function pushAttributes(xml, attributes) {
   }
 }
 
+interface Rollback {
+  xml: number;
+  stack: number;
+  leaf: boolean;
+  open: boolean;
+}
+
 class XmlStream {
   _xml: string[];
   _stack: string[];
-  _rollbacks: unknown[];
+  _rollbacks: Rollback[];
   open: boolean;
   leaf: boolean;
 
@@ -124,7 +131,7 @@ class XmlStream {
     this.leaf = false;
   }
 
-  leafNode(name, attributes, text) {
+  leafNode(name: string, attributes?: Record<string, unknown>, text?: unknown) {
     this.openNode(name, attributes);
     if (text !== undefined) {
       // zeros need to be written

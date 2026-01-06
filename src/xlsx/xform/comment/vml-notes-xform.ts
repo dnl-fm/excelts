@@ -6,7 +6,14 @@ import XmlStream from '../../../utils/xml-stream.ts';
 import BaseXform from '../base-xform.ts';
 import VmlShapeXform from './vml-shape-xform.ts';
 
+type VmlNotesModel = {
+  comments: unknown[];
+};
+
 class VmlNotesXform extends BaseXform {
+  declare model: VmlNotesModel | undefined;
+  static DRAWING_ATTRIBUTES: Record<string, string>;
+  
   constructor() {
     super();
     this.map = {

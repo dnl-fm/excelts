@@ -86,7 +86,7 @@ class Row {
   }
 
   /** @internal */
-  getCellEx(address: {col: number; row: number}): Cell {
+  getCellEx(address: {col: number; row: number; address: string}): Cell {
     let cell = this._cells[address.col - 1];
     if (!cell) {
       const column = this._worksheet.getColumn(address.col);
@@ -449,7 +449,7 @@ class Row {
   /** Whether this row is collapsed in outline */
   get collapsed(): boolean {
     return !!(
-      this._outlineLevel && this._outlineLevel >= this._worksheet.properties.outlineLevelRow
+      this._outlineLevel && this._outlineLevel >= (this._worksheet.properties.outlineLevelRow as number)
     );
   }
 
@@ -493,14 +493,15 @@ class Row {
       throw new Error('Invalid row number in model');
     }
     this._cells = [];
-    let previousAddress: Record<string, unknown> | null = null;
-    (value.cells as unknown[]).forEach((cellModel: unknown) => {
+    let previousAddress: { row: number; col: number; address: string; $col$row: string } | null = null;
+    const cells = value.cells as Array<{ type?: number; address?: string; [key: string]: unknown }>;
+    cells.forEach(cellModel => {
       switch (cellModel.type) {
         case Cell.Types.Merge:
           // special case - don't add this types
           break;
         default: {
-          let address;
+          let address: { row: number; col: number; address: string; $col$row: string } | undefined;
           if (cellModel.address) {
             address = colCache.decodeAddress(cellModel.address);
           } else if (previousAddress) {
@@ -515,22 +516,22 @@ class Row {
               $col$row: `$${colCache.n2l(col)}$${row}`,
             };
           }
-          previousAddress = address;
+          previousAddress = address ?? null;
           const cell = this.getCellEx(address);
-          cell.model = cellModel;
+          cell.model = cellModel as Record<string, unknown>;
           break;
         }
       }
     });
 
     if (value.height) {
-      this.height = value.height;
+      this.height = value.height as number;
     } else {
       delete this.height;
     }
 
-    this.hidden = value.hidden;
-    this.outlineLevel = value.outlineLevel || 0;
+    this.hidden = value.hidden as boolean;
+    this.outlineLevel = (value.outlineLevel as number) || 0;
 
     this.style = (value.style && JSON.parse(JSON.stringify(value.style))) || {};
   }

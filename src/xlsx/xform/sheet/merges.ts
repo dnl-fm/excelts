@@ -1,17 +1,43 @@
 
-
 import _ from '../../../utils/under-dash.ts';
 import Range from '../../../doc/range.ts';
 import colCache from '../../../utils/col-cache.ts';
 import Enums from '../../../doc/enums.ts';
 
+interface MergeRef {
+  address: string;
+  master: string;
+}
+
+interface RowWithCells {
+  cells: Array<{
+    type: number;
+    address: string;
+    master?: string;
+  } | undefined>;
+}
+
+interface RangeLocation {
+  top: number;
+  left: number;
+  bottom: number;
+  right: number;
+  tl: string;
+  br: string;
+  dimensions: string;
+}
+
 class Merges {
+  merges: Record<string, Range>;
+  hash: Record<string, Range>;
+
   constructor() {
     // optional mergeCells is array of ranges (like the xml)
     this.merges = {};
+    this.hash = {};
   }
 
-  add(merge) {
+  add(merge: MergeRef): void {
     // merge is {address, master}
     if (this.merges[merge.master]) {
       this.merges[merge.master].expandToAddress(merge.address);
@@ -21,14 +47,14 @@ class Merges {
     }
   }
 
-  get mergeCells() {
-    return _.map(this.merges, merge => merge.range);
+  get mergeCells(): string[] {
+    return _.map(this.merges, (merge: Range) => merge.range) as string[];
   }
 
-  reconcile(mergeCells, rows) {
+  reconcile(mergeCells: string[], rows: RowWithCells[]): void {
     // reconcile merge list with merge cells
-    _.each(mergeCells, merge => {
-      const dimensions = colCache.decode(merge);
+    _.each(mergeCells, (merge: string) => {
+      const dimensions = colCache.decode(merge) as RangeLocation;
       for (let i = dimensions.top; i <= dimensions.bottom; i++) {
         const row = rows[i - 1];
         for (let j = dimensions.left; j <= dimensions.right; j++) {
@@ -47,7 +73,7 @@ class Merges {
     });
   }
 
-  getMasterAddress(address) {
+  getMasterAddress(address: string): string | undefined {
     // if address has been merged, return its master's address. Assumes reconcile has been called
     const range = this.hash[address];
     return range && range.tl;

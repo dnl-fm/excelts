@@ -15,13 +15,19 @@ import TextXform from './text-xform.ts';
 import FontXform from '../style/font-xform.ts';
 import BaseXform from '../base-xform.ts';
 
+type RichTextModel = {
+  text?: string;
+  font?: unknown;
+};
+
 class RichTextXform extends BaseXform {
+  declare model: RichTextModel | undefined;
   _textXform?: TextXform;
   _fontXform?: FontXform;
 
   static FONT_OPTIONS: Record<string, unknown>;
 
-  constructor(model?: unknown) {
+  constructor(model?: RichTextModel) {
     super();
 
     this.model = model;
@@ -78,16 +84,24 @@ class RichTextXform extends BaseXform {
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string) {
     switch (name) {
       case 'r':
         return false;
       case 't':
-        this.model.text = this.parser.model;
+        // Finalize child parser's model first
+        this.parser?.parseClose(name);
+        if (this.model) {
+          this.model.text = this.parser?.model as string;
+        }
         this.parser = undefined;
         return true;
       case 'rPr':
-        this.model.font = this.parser.model;
+        // Finalize child parser's model first
+        this.parser?.parseClose(name);
+        if (this.model) {
+          this.model.font = this.parser?.model;
+        }
         this.parser = undefined;
         return true;
       default:

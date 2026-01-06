@@ -4,8 +4,33 @@ import BaseXform from '../base-xform.ts';
 import DateXform from '../simple/date-xform.ts';
 import StringXform from '../simple/string-xform.ts';
 import IntegerXform from '../simple/integer-xform.ts';
+import type { SaxNode, XmlStreamWriter } from '../xform-types.ts';
+
+interface CoreModel {
+  creator?: string;
+  title?: string;
+  subject?: string;
+  description?: string;
+  identifier?: string;
+  language?: string;
+  keywords?: string;
+  category?: string;
+  lastModifiedBy?: string;
+  lastPrinted?: Date;
+  revision?: number;
+  version?: string;
+  contentStatus?: string;
+  contentType?: string;
+  created?: Date;
+  modified?: Date;
+  [key: string]: unknown;
+}
 
 class CoreXform extends BaseXform {
+  static CORE_PROPERTY_ATTRIBUTES: Record<string, string>;
+  static DateFormat: (dt: Date) => string;
+  static DateAttrs: Record<string, string>;
+  
   constructor() {
     super();
 
@@ -37,7 +62,7 @@ class CoreXform extends BaseXform {
     };
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: CoreModel): void {
     xmlStream.openXml(XmlStream.StdDocAttributes);
 
     xmlStream.openNode('cp:coreProperties', CoreXform.CORE_PROPERTY_ATTRIBUTES);
@@ -62,7 +87,7 @@ class CoreXform extends BaseXform {
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: SaxNode): boolean {
     if (this.parser) {
       this.parser.parseOpen(node);
       return true;
@@ -72,7 +97,7 @@ class CoreXform extends BaseXform {
       case 'coreProperties':
         return true;
       default:
-        this.parser = this.map[node.name];
+        this.parser = this.map![node.name];
         if (this.parser) {
           this.parser.parseOpen(node);
           return true;
@@ -81,13 +106,13 @@ class CoreXform extends BaseXform {
     }
   }
 
-  parseText(text) {
+  parseText(text: string): void {
     if (this.parser) {
       this.parser.parseText(text);
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string): boolean {
     if (this.parser) {
       if (!this.parser.parseClose(name)) {
         this.parser = undefined;
@@ -121,7 +146,7 @@ class CoreXform extends BaseXform {
   }
 }
 
-CoreXform.DateFormat = function(dt) {
+CoreXform.DateFormat = function(dt: Date): string {
   return dt.toISOString().replace(/[.]\d{3}/, '');
 };
 CoreXform.DateAttrs = {'xsi:type': 'dcterms:W3CDTF'};

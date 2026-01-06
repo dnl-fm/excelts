@@ -12,17 +12,18 @@ import type { ReadableStream } from '../../types/index.ts';
 
 interface WorksheetReaderOptions {
   workbook?: unknown;
-  id?: number;
+  id?: number | string;
   iterator?: unknown;
   options?: Record<string, unknown>;
 }
 
 class WorksheetReader extends SimpleEventEmitter {
   workbook: unknown;
-  id: number;
+  id: number | string;
   iterator: unknown;
   options: Record<string, unknown>;
   name: string;
+  state?: string;
   _columns: Column[] | null;
   _keys: Record<string, Column>;
   _dimensions: Dimensions;

@@ -38,8 +38,8 @@ class Note {
     return _.deepMerge({}, Note.DEFAULT_CONFIGS, value);
   }
 
-  set model(value) {
-    const {note} = value;
+  set model(value: Record<string, unknown>) {
+    const note = value.note as { texts: Array<{ text?: string; [key: string]: unknown }> };
     const {texts} = note;
     if (texts.length === 1 && Object.keys(texts[0]).length === 1) {
       this.note = texts[0].text;
@@ -48,7 +48,7 @@ class Note {
     }
   }
 
-  static fromModel(model) {
+  static fromModel(model: Record<string, unknown>): Note {
     const note = new Note();
     note.model = model;
     return note;

@@ -1,10 +1,35 @@
-
-
+import BaseXform from '../../base-xform.ts';
 import CompositeXform from '../../composite-xform.ts';
 import SqRefExtXform from './sqref-ext-xform.ts';
 import CfRuleExtXform from './cf-rule-ext-xform.ts';
+import type {XmlStreamWriter} from '../../xform-types.ts';
+
+type CfRuleExtModel = {
+  type?: string;
+  x14Id?: string;
+  priority?: number;
+  custom?: boolean;
+  dataBar?: unknown;
+  iconSet?: string;
+  gradient?: boolean;
+  [key: string]: unknown;
+};
+
+type ConditionalFormattingExtModel = {
+  ref?: string;
+  rules: CfRuleExtModel[];
+};
+
+type PrepareOptions = {
+  styles?: unknown;
+};
 
 class ConditionalFormattingExtXform extends CompositeXform {
+  sqRef: SqRefExtXform;
+  cfRule: CfRuleExtXform;
+
+  declare model: ConditionalFormattingExtModel | undefined;
+
   constructor() {
     super();
 
@@ -18,13 +43,13 @@ class ConditionalFormattingExtXform extends CompositeXform {
     return 'x14:conditionalFormatting';
   }
 
-  prepare(model, options) {
+  prepare(model: ConditionalFormattingExtModel, options: PrepareOptions) {
     model.rules.forEach(rule => {
       this.cfRule.prepare(rule, options);
     });
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: ConditionalFormattingExtModel) {
     if (!model.rules.some(CfRuleExtXform.isExt)) {
       return;
     }
@@ -41,20 +66,20 @@ class ConditionalFormattingExtXform extends CompositeXform {
     xmlStream.closeNode();
   }
 
-  createNewModel() {
+  createNewModel(): ConditionalFormattingExtModel {
     return {
       rules: [],
     };
   }
 
-  onParserClose(name, parser) {
+  onParserClose(name: string, parser: BaseXform) {
     switch (name) {
       case 'xm:sqref':
-        this.model.ref = parser.model;
+        this.model!.ref = parser.model as string;
         break;
 
       case 'x14:cfRule':
-        this.model.rules.push(parser.model);
+        this.model!.rules.push(parser.model as CfRuleExtModel);
         break;
     }
   }

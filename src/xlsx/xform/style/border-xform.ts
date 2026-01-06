@@ -4,7 +4,33 @@ import BaseXform from '../base-xform.ts';
 import utils from '../../../utils/utils.ts';
 import ColorXform from './color-xform.ts';
 
+type EdgeModel = {
+  style?: string;
+  color?: unknown;
+};
+
 class EdgeXform extends BaseXform {
+  declare model: EdgeModel | undefined;
+
+  static validStyleValues: Record<string, boolean> = [
+    'thin',
+    'dashed',
+    'dotted',
+    'dashDot',
+    'hair',
+    'dashDotDot',
+    'slantDashDot',
+    'mediumDashed',
+    'mediumDashDotDot',
+    'mediumDashDot',
+    'medium',
+    'double',
+    'thick',
+  ].reduce((p, v) => {
+    p[v] = true;
+    return p;
+  }, {} as Record<string, boolean>);
+
   name: string;
   defaultColor?: unknown;
 
@@ -89,25 +115,6 @@ class EdgeXform extends BaseXform {
     return EdgeXform.validStyleValues[value];
   }
 }
-
-EdgeXform.validStyleValues = [
-  'thin',
-  'dashed',
-  'dotted',
-  'dashDot',
-  'hair',
-  'dashDotDot',
-  'slantDashDot',
-  'mediumDashed',
-  'mediumDashDotDot',
-  'mediumDashDot',
-  'medium',
-  'double',
-  'thick',
-].reduce((p, v) => {
-  p[v] = true;
-  return p;
-}, {});
 
 // Border encapsulates translation from border model to/from xlsx
 class BorderXform extends BaseXform {

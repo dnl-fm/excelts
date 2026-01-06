@@ -1,7 +1,16 @@
 
 import BaseXform from '../base-xform.ts';
 
+type HyperlinkModel = {
+  address?: string;
+  rId?: string;
+  tooltip?: string;
+  target?: string;
+};
+
 class HyperlinkXform extends BaseXform {
+  declare model: HyperlinkModel | undefined;
+
   get tag() {
     return 'hyperlink';
   }

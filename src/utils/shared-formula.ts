@@ -5,9 +5,9 @@ import colCache from './col-cache.ts';
 const replacementCandidateRx = /(([a-z_\-0-9]*)!)?([a-z0-9_$]{2,})([(])?/gi;
 const CRrx = /^([$])?([a-z]+)([$])?([1-9][0-9]*)$/i;
 
-function slideFormula(formula, fromCell, toCell) {
-  const offset = colCache.decode(fromCell);
-  const to = colCache.decode(toCell);
+function slideFormula(formula: string, fromCell: string, toCell: string) {
+  const offset = colCache.decode(fromCell) as { col: number; row: number };
+  const to = colCache.decode(toCell) as { col: number; row: number };
   return formula.replace(
     replacementCandidateRx,
     (refMatch, sheet, sheetMaybe, addrPart, trailingParen) => {

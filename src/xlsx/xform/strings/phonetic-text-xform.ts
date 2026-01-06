@@ -8,7 +8,16 @@ import TextXform from './text-xform.ts';
 import RichTextXform from './rich-text-xform.ts';
 import BaseXform from '../base-xform.ts';
 
+type PhoneticTextModel = {
+  sb?: number;
+  eb?: number;
+  richText?: unknown[];
+  text?: string;
+};
+
 class PhoneticTextXform extends BaseXform {
+  declare model: PhoneticTextModel | undefined;
+
   constructor() {
     super();
 
@@ -65,20 +74,26 @@ class PhoneticTextXform extends BaseXform {
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string) {
     if (this.parser) {
-      if (!this.parser.parseClose(name)) {
+      // Call child's parseClose - if it returns false, it's done
+      const childDone = !this.parser.parseClose(name);
+      if (childDone) {
         switch (name) {
           case 'r': {
-            let rt = this.model.richText;
-            if (!rt) {
-              rt = this.model.richText = [];
+            if (this.model) {
+              let rt = this.model.richText;
+              if (!rt) {
+                rt = this.model.richText = [];
+              }
+              rt.push(this.parser.model);
             }
-            rt.push(this.parser.model);
             break;
           }
           case 't':
-            this.model.text = this.parser.model;
+            if (this.model) {
+              this.model.text = this.parser.model as string;
+            }
             break;
           default:
             break;

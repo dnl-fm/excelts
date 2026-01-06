@@ -1,4 +1,8 @@
 class SharedStrings {
+  private _values: unknown[];
+  private _totalRefs: number;
+  private _hash: Record<string, number>;
+
   constructor() {
     this._values = [];
     this._totalRefs = 0;
@@ -22,9 +26,9 @@ class SharedStrings {
   }
 
   add(value: unknown): number {
-    let index = this._hash[value];
+    let index = this._hash[String(value)];
     if (index === undefined) {
-      index = this._hash[value] = this._values.length;
+      index = this._hash[String(value)] = this._values.length;
       this._values.push(value);
     }
     this._totalRefs++;

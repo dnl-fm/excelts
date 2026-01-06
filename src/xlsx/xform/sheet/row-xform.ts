@@ -3,9 +3,20 @@
 import BaseXform from '../base-xform.ts';
 import utils from '../../../utils/utils.ts';
 import CellXform from './cell-xform.ts';
+import type {
+  RowModel,
+  RowXformPrepareOptions,
+  RowXformReconcileOptions,
+  XmlStreamWriter,
+  SaxNode,
+  CellModel,
+} from '../xform-types.ts';
 
 class RowXform extends BaseXform {
   maxItems?: number;
+  numRowsSeen = 0;
+  declare map: { c: CellXform; [key: string]: BaseXform };
+  declare model: RowModel | undefined;
 
   constructor(options?: { maxItems?: number }) {
     super();
@@ -20,7 +31,7 @@ class RowXform extends BaseXform {
     return 'row';
   }
 
-  prepare(model, options) {
+  prepare(model: RowModel, options: RowXformPrepareOptions) {
     const styleId = options.styles.addStyleModel(model.style);
     if (styleId) {
       model.styleId = styleId;
@@ -31,7 +42,7 @@ class RowXform extends BaseXform {
     });
   }
 
-  render(xmlStream, model, options) {
+  render(xmlStream: XmlStreamWriter, model: RowModel, options?: RowXformPrepareOptions) {
     xmlStream.openNode('row');
     xmlStream.addAttribute('r', model.number);
     if (model.height) {
@@ -64,9 +75,9 @@ class RowXform extends BaseXform {
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: SaxNode) {
     if (this.parser) {
-      this.parser.parseOpen(node);
+      this.parser.parseOpen?.(node);
       return true;
     }
     if (node.name === 'row') {
@@ -74,12 +85,13 @@ class RowXform extends BaseXform {
       const spans = node.attributes.spans
         ? node.attributes.spans.split(':').map(span => parseInt(span, 10))
         : [undefined, undefined];
-      const model = (this.model = {
+      const model: RowModel = {
         number: parseInt(node.attributes.r, 10),
         min: spans[0],
         max: spans[1],
         cells: [],
-      });
+      };
+      this.model = model;
       if (node.attributes.s) {
         model.styleId = parseInt(node.attributes.s, 10);
       }
@@ -103,23 +115,23 @@ class RowXform extends BaseXform {
 
     this.parser = this.map[node.name];
     if (this.parser) {
-      this.parser.parseOpen(node);
+      this.parser.parseOpen?.(node);
       return true;
     }
     return false;
   }
 
-  parseText(text) {
+  parseText(text: string) {
     if (this.parser) {
       this.parser.parseText(text);
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string) {
     if (this.parser) {
-      if (!this.parser.parseClose(name)) {
-        this.model.cells.push(this.parser.model);
-        if (this.maxItems && this.model.cells.length > this.maxItems) {
+      if (!this.parser.parseClose?.(name)) {
+        this.model!.cells.push(this.parser.model);
+        if (this.maxItems && this.model!.cells.length > this.maxItems) {
           throw new Error(`Max column count (${this.maxItems}) exceeded`);
         }
         this.parser = undefined;
@@ -129,15 +141,15 @@ class RowXform extends BaseXform {
     return false;
   }
 
-  reconcile(model, options) {
-    model.style = model.styleId ? options.styles.getStyleModel(model.styleId) : {};
+  reconcile(model: RowModel, options: RowXformReconcileOptions) {
+    model.style = model.styleId && options.styles ? options.styles.getStyleModel(model.styleId) : {};
     if (model.styleId !== undefined) {
       model.styleId = undefined;
     }
 
     const cellXform = this.map.c;
     model.cells.forEach(cellModel => {
-      cellXform.reconcile(cellModel, options);
+      cellXform.reconcile(cellModel as CellModel, options);
     });
   }
 }

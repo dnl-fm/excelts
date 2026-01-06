@@ -4,6 +4,9 @@ import BaseXform from '../base-xform.ts';
 import ColorXform from './color-xform.ts';
 
 class StopXform extends BaseXform {
+  declare map: { color: ColorXform };
+  declare model: { position: number; color?: unknown } | undefined;
+
   constructor() {
     super();
 
@@ -16,16 +19,16 @@ class StopXform extends BaseXform {
     return 'stop';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: any, model: { position: number; color?: unknown }) {
     xmlStream.openNode('stop');
     xmlStream.addAttribute('position', model.position);
     this.map.color.render(xmlStream, model.color);
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: { name: string; attributes: Record<string, string> }) {
     if (this.parser) {
-      this.parser.parseOpen(node);
+      this.parser.parseOpen?.(node);
       return true;
     }
     switch (node.name) {
@@ -36,7 +39,7 @@ class StopXform extends BaseXform {
         return true;
       case 'color':
         this.parser = this.map.color;
-        this.parser.parseOpen(node);
+        this.parser.parseOpen?.(node);
         return true;
       default:
         return false;
@@ -45,10 +48,10 @@ class StopXform extends BaseXform {
 
   parseText() {}
 
-  parseClose(name) {
+  parseClose(name: string) {
     if (this.parser) {
-      if (!this.parser.parseClose(name)) {
-        this.model.color = this.parser.model;
+      if (!this.parser.parseClose?.(name)) {
+        this.model!.color = this.parser.model;
         this.parser = undefined;
       }
       return true;
@@ -58,6 +61,9 @@ class StopXform extends BaseXform {
 }
 
 class PatternFillXform extends BaseXform {
+  declare map: { fgColor: ColorXform; bgColor: ColorXform; [key: string]: ColorXform };
+  declare model: { type: string; pattern: string; fgColor?: unknown; bgColor?: unknown; [key: string]: unknown } | undefined;
+
   constructor() {
     super();
 
@@ -75,7 +81,7 @@ class PatternFillXform extends BaseXform {
     return 'patternFill';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: any, model: { pattern: string; fgColor?: unknown; bgColor?: unknown }) {
     xmlStream.openNode('patternFill');
     xmlStream.addAttribute('patternType', model.pattern);
     if (model.fgColor) {
@@ -87,9 +93,9 @@ class PatternFillXform extends BaseXform {
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: { name: string; attributes: Record<string, string> }) {
     if (this.parser) {
-      this.parser.parseOpen(node);
+      this.parser.parseOpen?.(node);
       return true;
     }
     switch (node.name) {
@@ -102,24 +108,24 @@ class PatternFillXform extends BaseXform {
       default:
         this.parser = this.map[node.name];
         if (this.parser) {
-          this.parser.parseOpen(node);
+          this.parser.parseOpen?.(node);
           return true;
         }
         return false;
     }
   }
 
-  parseText(text) {
+  parseText(text: string) {
     if (this.parser) {
-      this.parser.parseText(text);
+      this.parser.parseText?.(text);
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string) {
     if (this.parser) {
-      if (!this.parser.parseClose(name)) {
+      if (!this.parser.parseClose?.(name)) {
         if (this.parser.model) {
-          this.model[name] = this.parser.model;
+          this.model![name] = this.parser.model;
         }
         this.parser = undefined;
       }
@@ -130,24 +136,15 @@ class PatternFillXform extends BaseXform {
 }
 
 class GradientFillXform extends BaseXform {
+  declare map: { stop: StopXform };
+  declare model: { stops: unknown[]; gradient?: string; degree?: number; center?: { left?: number; top?: number; right?: number; bottom?: number } } | undefined;
+
   constructor() {
     super();
 
     this.map = {
       stop: new StopXform(),
     };
-    // if (model) {
-    //   this.gradient = model.gradient;
-    //   if (model.center) {
-    //     this.center = model.center;
-    //   }
-    //   if (model.degree !== undefined) {
-    //     this.degree = model.degree;
-    //   }
-    //   this.stops = model.stops.map(function(stop) { return new StopXform(stop); });
-    // } else {
-    //   this.stops = [];
-    // }
   }
 
   get name() {
@@ -158,7 +155,7 @@ class GradientFillXform extends BaseXform {
     return 'gradientFill';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: any, model: { gradient: string; degree?: number; center?: { left?: number; top?: number; right?: number; bottom?: number }; stops: { position: number; color?: unknown }[] }) {
     xmlStream.openNode('gradientFill');
     switch (model.gradient) {
       case 'angle':
@@ -166,22 +163,22 @@ class GradientFillXform extends BaseXform {
         break;
       case 'path':
         xmlStream.addAttribute('type', 'path');
-        if (model.center.left) {
+        if (model.center?.left) {
           xmlStream.addAttribute('left', model.center.left);
           if (model.center.right === undefined) {
             xmlStream.addAttribute('right', model.center.left);
           }
         }
-        if (model.center.right) {
+        if (model.center?.right) {
           xmlStream.addAttribute('right', model.center.right);
         }
-        if (model.center.top) {
+        if (model.center?.top) {
           xmlStream.addAttribute('top', model.center.top);
           if (model.center.bottom === undefined) {
             xmlStream.addAttribute('bottom', model.center.top);
           }
         }
-        if (model.center.bottom) {
+        if (model.center?.bottom) {
           xmlStream.addAttribute('bottom', model.center.bottom);
         }
         break;
@@ -198,16 +195,17 @@ class GradientFillXform extends BaseXform {
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: { name: string; attributes: Record<string, string> }) {
     if (this.parser) {
-      this.parser.parseOpen(node);
+      this.parser.parseOpen?.(node);
       return true;
     }
     switch (node.name) {
       case 'gradientFill': {
-        const model = (this.model = {
+        const model: { stops: unknown[]; gradient?: string; degree?: number; center?: { left?: number; top?: number; right?: number; bottom?: number } } = {
           stops: [],
-        });
+        };
+        this.model = model;
         if (node.attributes.degree) {
           model.gradient = 'angle';
           model.degree = parseInt(node.attributes.degree, 10);
@@ -229,7 +227,7 @@ class GradientFillXform extends BaseXform {
 
       case 'stop':
         this.parser = this.map.stop;
-        this.parser.parseOpen(node);
+        this.parser.parseOpen?.(node);
         return true;
 
       default:
@@ -237,16 +235,16 @@ class GradientFillXform extends BaseXform {
     }
   }
 
-  parseText(text) {
+  parseText(text: string) {
     if (this.parser) {
-      this.parser.parseText(text);
+      this.parser.parseText?.(text);
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string) {
     if (this.parser) {
-      if (!this.parser.parseClose(name)) {
-        this.model.stops.push(this.parser.model);
+      if (!this.parser.parseClose?.(name)) {
+        this.model!.stops.push(this.parser.model as unknown as { position: number; color?: unknown });
         this.parser = undefined;
       }
       return true;
@@ -257,6 +255,13 @@ class GradientFillXform extends BaseXform {
 
 // Fill encapsulates translation from fill model to/from xlsx
 class FillXform extends BaseXform {
+  declare map: { patternFill: PatternFillXform; gradientFill: GradientFillXform; [key: string]: BaseXform };
+  declare model: { type?: string; [key: string]: unknown } | undefined;
+  static validPatternValues: Record<string, boolean>;
+  static StopXform: typeof StopXform;
+  static PatternFillXform: typeof PatternFillXform;
+  static GradientFillXform: typeof GradientFillXform;
+
   constructor() {
     super();
 
@@ -270,15 +275,15 @@ class FillXform extends BaseXform {
     return 'fill';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: any, model: { type: string; pattern?: string; fgColor?: unknown; bgColor?: unknown; [key: string]: unknown }) {
     xmlStream.addRollback();
     xmlStream.openNode('fill');
     switch (model.type) {
       case 'pattern':
-        this.map.patternFill.render(xmlStream, model);
+        this.map.patternFill.render(xmlStream, model as { pattern: string; fgColor?: unknown; bgColor?: unknown });
         break;
       case 'gradient':
-        this.map.gradientFill.render(xmlStream, model);
+        this.map.gradientFill.render(xmlStream, model as any);
         break;
       default:
         xmlStream.rollback();
@@ -288,9 +293,9 @@ class FillXform extends BaseXform {
     xmlStream.commit();
   }
 
-  parseOpen(node) {
+  parseOpen(node: { name: string; attributes?: Record<string, string> }) {
     if (this.parser) {
-      this.parser.parseOpen(node);
+      this.parser.parseOpen?.(node);
       return true;
     }
     switch (node.name) {
@@ -300,24 +305,24 @@ class FillXform extends BaseXform {
       default:
         this.parser = this.map[node.name];
         if (this.parser) {
-          this.parser.parseOpen(node);
+          this.parser.parseOpen?.(node);
           return true;
         }
         return false;
     }
   }
 
-  parseText(text) {
+  parseText(text: string) {
     if (this.parser) {
-      this.parser.parseText(text);
+      this.parser.parseText?.(text);
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string) {
     if (this.parser) {
-      if (!this.parser.parseClose(name)) {
-        this.model = this.parser.model;
-        this.model.type = this.parser.name;
+      if (!this.parser.parseClose?.(name)) {
+        this.model = this.parser.model as { type?: string; [key: string]: unknown };
+        this.model!.type = (this.parser as any).name;
         this.parser = undefined;
       }
       return true;
@@ -325,7 +330,7 @@ class FillXform extends BaseXform {
     return false;
   }
 
-  validStyle(value) {
+  validStyle(value: string) {
     return FillXform.validPatternValues[value];
   }
 }

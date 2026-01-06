@@ -8,14 +8,40 @@ import StringXform from '../simple/string-xform.ts';
 import UnderlineXform from './underline-xform.ts';
 import _ from '../../../utils/under-dash.ts';
 import BaseXform from '../base-xform.ts';
+import type { SaxNode, XmlStreamWriter } from '../xform-types.ts';
 
 interface FontXformOptions {
   tagName?: string;
   fontNameTag?: string;
 }
 
+interface FontMapEntry {
+  prop: string;
+  xform: BaseXform;
+}
+
+interface FontModel {
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean | string;
+  charset?: number;
+  color?: unknown;
+  condense?: boolean;
+  extend?: boolean;
+  family?: number;
+  outline?: boolean;
+  vertAlign?: string;
+  scheme?: string;
+  shadow?: boolean;
+  strike?: boolean;
+  size?: number;
+  name?: string;
+  [key: string]: unknown;
+}
+
 class FontXform extends BaseXform {
   options: FontXformOptions;
+  fontMap: Record<string, FontMapEntry>;
   static OPTIONS: FontXformOptions;
 
   constructor(options?: FontXformOptions) {
@@ -23,7 +49,7 @@ class FontXform extends BaseXform {
 
     this.options = options || FontXform.OPTIONS;
 
-    this.map = {
+    this.fontMap = {
       b: {prop: 'bold', xform: new BooleanXform({tag: 'b', attr: 'val'})},
       i: {prop: 'italic', xform: new BooleanXform({tag: 'i', attr: 'val'})},
       u: {prop: 'underline', xform: new UnderlineXform()},
@@ -39,34 +65,34 @@ class FontXform extends BaseXform {
       strike: {prop: 'strike', xform: new BooleanXform({tag: 'strike', attr: 'val'})},
       sz: {prop: 'size', xform: new IntegerXform({tag: 'sz', attr: 'val'})},
     };
-    this.map[this.options.fontNameTag] = {
+    this.fontMap[this.options.fontNameTag!] = {
       prop: 'name',
-      xform: new StringXform({tag: this.options.fontNameTag, attr: 'val'}),
+      xform: new StringXform({tag: this.options.fontNameTag!, attr: 'val'}),
     };
   }
 
-  get tag() {
+  get tag(): string | undefined {
     return this.options.tagName;
   }
 
-  render(xmlStream, model) {
-    const {map} = this;
+  render(xmlStream: XmlStreamWriter, model: FontModel): void {
+    const {fontMap} = this;
 
-    xmlStream.openNode(this.options.tagName);
-    _.each(this.map, (defn, tag) => {
-      map[tag].xform.render(xmlStream, model[defn.prop]);
+    xmlStream.openNode(this.options.tagName!);
+    _.each(this.fontMap, (defn: FontMapEntry, tag: string) => {
+      fontMap[tag].xform.render(xmlStream, model[defn.prop]);
     });
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: SaxNode): boolean {
     if (this.parser) {
       this.parser.parseOpen(node);
       return true;
     }
-    if (this.map[node.name]) {
-      this.parser = this.map[node.name].xform;
-      return this.parser.parseOpen(node);
+    if (this.fontMap[node.name]) {
+      this.parser = this.fontMap[node.name].xform;
+      return this.parser.parseOpen(node) as boolean;
     }
     switch (node.name) {
       case this.options.tagName:
@@ -77,17 +103,17 @@ class FontXform extends BaseXform {
     }
   }
 
-  parseText(text) {
+  parseText(text: string): void {
     if (this.parser) {
       this.parser.parseText(text);
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string): boolean {
     if (this.parser && !this.parser.parseClose(name)) {
-      const item = this.map[name];
+      const item = this.fontMap[name];
       if (this.parser.model) {
-        this.model[item.prop] = this.parser.model;
+        (this.model as FontModel)[item.prop] = this.parser.model;
       }
       this.parser = undefined;
       return true;

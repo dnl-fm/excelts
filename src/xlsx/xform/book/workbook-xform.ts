@@ -13,7 +13,19 @@ import WorkbookPropertiesXform from './workbook-properties-xform.ts';
 import WorkbookCalcPropertiesXform from './workbook-calc-properties-xform.ts';
 import WorkbookPivotCacheXform from './workbook-pivot-cache-xform.ts';
 
+type WorkbookModel = {
+  sheets?: unknown;
+  properties?: unknown;
+  views?: unknown;
+  calcProperties?: unknown;
+  definedNames?: unknown;
+};
+
 class WorkbookXform extends BaseXform {
+  declare model: WorkbookModel | undefined;
+  static WORKBOOK_ATTRIBUTES: Record<string, string>;
+  static STATIC_XFORMS: Record<string, BaseXform>;
+  
   constructor() {
     super();
 

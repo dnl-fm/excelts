@@ -1,18 +1,34 @@
-
-
 import colCache from '../../../utils/col-cache.ts';
 import XmlStream from '../../../utils/xml-stream.ts';
 import BaseXform from '../base-xform.ts';
 import TwoCellAnchorXform from './two-cell-anchor-xform.ts';
 import OneCellAnchorXform from './one-cell-anchor-xform.ts';
+import type {XmlStreamWriter, SaxNode} from '../xform-types.ts';
 
-function getAnchorType(model) {
-  const range = typeof model.range === 'string' ? colCache.decode(model.range) : model.range;
+type DrawingModel = {
+  anchors?: Array<Record<string, unknown>>;
+};
 
-  return range.br ? 'xdr:twoCellAnchor' : 'xdr:oneCellAnchor';
+function getAnchorType(model: Record<string, unknown>) {
+  const range = typeof model.range === 'string' 
+    ? colCache.decode(model.range)
+    : model.range as { br?: unknown } | undefined;
+
+  return range && 'br' in range ? 'xdr:twoCellAnchor' : 'xdr:oneCellAnchor';
 }
 
 class DrawingXform extends BaseXform {
+  static DRAWING_ATTRIBUTES: Record<string, string> = {
+    'xmlns:xdr': 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing',
+    'xmlns:a': 'http://schemas.openxmlformats.org/drawingml/2006/main',
+  };
+
+  declare model: DrawingModel | undefined;
+  declare map: {
+    'xdr:twoCellAnchor': TwoCellAnchorXform;
+    'xdr:oneCellAnchor': OneCellAnchorXform;
+  };
+
   constructor() {
     super();
 
@@ -22,11 +38,11 @@ class DrawingXform extends BaseXform {
     };
   }
 
-  prepare(model, _options?) {
+  prepare(model: DrawingModel, _options?: unknown) {
     model.anchors.forEach((item, index) => {
       item.anchorType = getAnchorType(item);
-      const anchor = this.map[item.anchorType];
-      anchor.prepare(item, {index});
+      const anchor = this.map[item.anchorType as keyof typeof this.map];
+      anchor.prepare(item as any, {index});
     });
   }
 
@@ -34,19 +50,19 @@ class DrawingXform extends BaseXform {
     return 'xdr:wsDr';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: DrawingModel) {
     xmlStream.openXml(XmlStream.StdDocAttributes);
     xmlStream.openNode(this.tag, DrawingXform.DRAWING_ATTRIBUTES);
 
     model.anchors.forEach(item => {
-      const anchor = this.map[item.anchorType];
-      anchor.render(xmlStream, item);
+      const anchor = this.map[item.anchorType as keyof typeof this.map];
+      anchor.render(xmlStream, item as any);
     });
 
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: SaxNode) {
     if (this.parser) {
       this.parser.parseOpen(node);
       return true;
@@ -59,7 +75,7 @@ class DrawingXform extends BaseXform {
         };
         break;
       default:
-        this.parser = this.map[node.name];
+        this.parser = this.map[node.name as keyof typeof this.map];
         if (this.parser) {
           this.parser.parseOpen(node);
         }
@@ -68,16 +84,16 @@ class DrawingXform extends BaseXform {
     return true;
   }
 
-  parseText(text) {
+  parseText(text: string) {
     if (this.parser) {
       this.parser.parseText(text);
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string) {
     if (this.parser) {
       if (!this.parser.parseClose(name)) {
-        this.model.anchors.push(this.parser.model);
+        this.model!.anchors.push(this.parser.model as Record<string, unknown>);
         this.parser = undefined;
       }
       return true;
@@ -91,20 +107,16 @@ class DrawingXform extends BaseXform {
     }
   }
 
-  reconcile(model, options) {
+  reconcile(model: DrawingModel, options: unknown) {
     model.anchors.forEach(anchor => {
-      if (anchor.br) {
-        this.map['xdr:twoCellAnchor'].reconcile(anchor, options);
+      const range = anchor.range as { br?: unknown } | undefined;
+      if (range?.br) {
+        this.map['xdr:twoCellAnchor'].reconcile(anchor as any, options);
       } else {
-        this.map['xdr:oneCellAnchor'].reconcile(anchor, options);
+        this.map['xdr:oneCellAnchor'].reconcile(anchor as any, options);
       }
     });
   }
 }
-
-DrawingXform.DRAWING_ATTRIBUTES = {
-  'xmlns:xdr': 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing',
-  'xmlns:a': 'http://schemas.openxmlformats.org/drawingml/2006/main',
-};
 
 export default DrawingXform;

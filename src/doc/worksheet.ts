@@ -45,7 +45,7 @@ export interface WorksheetModel {
   name: string;
   dataValidations: unknown;
   properties: Record<string, unknown>;
-  state: string;
+  state: 'visible' | 'hidden' | 'veryHidden';
   pageSetup: Record<string, unknown>;
   headerFooter: Record<string, unknown>;
   rowBreaks: unknown[];
@@ -57,9 +57,9 @@ export interface WorksheetModel {
   pivotTables: unknown[];
   conditionalFormattings: unknown[];
   cols?: unknown;
-  rows: unknown[];
-  dimensions: Range;
-  merges: string[];
+  rows?: unknown[];
+  dimensions?: Range;
+  merges?: string[];
   mergeCells?: string[];
 }
 
@@ -964,9 +964,9 @@ class Worksheet {
 
   // ===========================================================================
   // Shared/Array Formula
-  fillFormula(range, formula, results, shareType = 'shared') {
+  fillFormula(range: string, formula: string, results?: unknown, shareType = 'shared') {
     // Define formula for top-left cell and share to rest
-    const decoded = colCache.decode(range);
+    const decoded = colCache.decode(range) as { top: number; left: number; bottom: number; right: number };
     const {top, left, bottom, right} = decoded;
     const width = right - left + 1;
     const masterAddress = colCache.encodeAddress(top, left);
@@ -1279,8 +1279,8 @@ Please leave feedback at https://github.com/exceljs/exceljs/discussions/2575`
   // ===========================================================================
   // Model
 
-  get model(): Record<string, unknown> {
-    const model: any = {
+  get model(): WorksheetModel {
+    const model: WorksheetModel = {
       id: this.id,
       name: this.name,
       dataValidations: this.dataValidations.model,

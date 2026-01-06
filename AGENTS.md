@@ -226,8 +226,10 @@ testXformHelper(expectations);
 - ✅ Refactored `stream-buf.ts` to be browser-native (uses SimpleEventEmitter + bytes.ts)
 - ✅ Replaced jszip/archiver/unzipper with fflate
 - ✅ WorkbookWriter now uses Bun.write() for file output (removed Node stream option)
-- ✅ All 1079 tests passing (883 unit + 196 integration)
+- ⚠️ 876 unit tests passing, 7 failing (pre-existing issues with cfvo/iconSet parsing)
+- ⚠️ 405 type errors remaining (54 in source, 351 in tests)
 
 ## TODO
 
+- [ ] Fix remaining 54 source type errors (see `typecheck-fix.md`)
 - [ ] Generate `index.d.ts` from source

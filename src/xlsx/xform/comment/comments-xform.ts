@@ -11,7 +11,7 @@ type CommentModel = {
 };
 
 type CommentsModel = {
-  comments: CommentModel[];
+  comments?: CommentModel[];
   [key: string]: unknown;
 };
 

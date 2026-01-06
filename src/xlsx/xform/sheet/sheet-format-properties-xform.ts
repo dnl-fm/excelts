@@ -2,14 +2,25 @@
 import _ from '../../../utils/under-dash.ts';
 import BaseXform from '../base-xform.ts';
 
+type SheetFormatPropertiesModel = {
+  defaultRowHeight?: number;
+  defaultColWidth?: number;
+  customHeight?: string;
+  dyDescent?: number;
+  outlineLevelRow?: number;
+  outlineLevelCol?: number;
+};
+
 class SheetFormatPropertiesXform extends BaseXform {
+  declare model: SheetFormatPropertiesModel | undefined;
+
   get tag() {
     return 'sheetFormatPr';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream, model: SheetFormatPropertiesModel) {
     if (model) {
-      const attributes = {
+      const attributes: Record<string, unknown> = {
         defaultRowHeight: model.defaultRowHeight,
         outlineLevelRow: model.outlineLevelRow,
         outlineLevelCol: model.outlineLevelCol,

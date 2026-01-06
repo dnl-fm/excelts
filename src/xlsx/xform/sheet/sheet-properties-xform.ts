@@ -4,7 +4,15 @@ import ColorXform from '../style/color-xform.ts';
 import PageSetupPropertiesXform from './page-setup-properties-xform.ts';
 import OutlinePropertiesXform from './outline-properties-xform.ts';
 
+type SheetPropertiesModel = {
+  tabColor?: unknown;
+  pageSetup?: unknown;
+  outlineProperties?: unknown;
+} | null;
+
 class SheetPropertiesXform extends BaseXform {
+  declare model: SheetPropertiesModel | undefined;
+
   constructor() {
     super();
 
@@ -19,21 +27,23 @@ class SheetPropertiesXform extends BaseXform {
     return 'sheetPr';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: unknown, model: Record<string, unknown>): void {
     if (model) {
-      xmlStream.addRollback();
-      xmlStream.openNode('sheetPr');
+      const stream = xmlStream as { addRollback(): void; openNode(name: string): void; closeNode(): void; commit(): void; rollback(): void };
+      stream.addRollback();
+      stream.openNode('sheetPr');
 
-      let inner = false;
-      inner = this.map.tabColor.render(xmlStream, model.tabColor) || inner;
-      inner = this.map.pageSetUpPr.render(xmlStream, model.pageSetup) || inner;
-      inner = this.map.outlinePr.render(xmlStream, model.outlineProperties) || inner;
+      // These render methods return boolean indicating if they rendered content
+      const tabColorRendered = (this.map!.tabColor as { render(s: unknown, m: unknown): boolean }).render(xmlStream, model.tabColor);
+      const pageSetUpPrRendered = (this.map!.pageSetUpPr as { render(s: unknown, m: unknown): boolean }).render(xmlStream, model.pageSetup);
+      const outlinePrRendered = (this.map!.outlinePr as { render(s: unknown, m: unknown): boolean }).render(xmlStream, model.outlineProperties);
+      const inner = tabColorRendered || pageSetUpPrRendered || outlinePrRendered;
 
       if (inner) {
-        xmlStream.closeNode();
-        xmlStream.commit();
+        stream.closeNode();
+        stream.commit();
       } else {
-        xmlStream.rollback();
+        stream.rollback();
       }
     }
   }

@@ -1,12 +1,20 @@
 
 import BaseXform from '../../base-xform.ts';
 
+type XmlStreamLike = {
+  leafNode: (tag: string, attrs: unknown, content: unknown) => void;
+  openNode?: (tag: string, attrs?: Record<string, unknown>) => void;
+  closeNode?: () => void;
+};
+
 class FExtXform extends BaseXform {
+  declare model: string;
+
   get tag() {
     return 'xm:f';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamLike, model: unknown) {
     xmlStream.leafNode(this.tag, null, model);
   }
 
@@ -14,11 +22,11 @@ class FExtXform extends BaseXform {
     this.model = '';
   }
 
-  parseText(text) {
+  parseText(text: string) {
     this.model += text;
   }
 
-  parseClose(name) {
+  parseClose(name: string) {
     return name !== this.tag;
   }
 }

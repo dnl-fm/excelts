@@ -3,7 +3,21 @@
 import CompositeXform from '../../composite-xform.ts';
 import FExtXform from './f-ext-xform.ts';
 
+export type CfvoExtModel = {
+  type: string;
+  value?: number | string;
+};
+
+type XmlStreamLike = {
+  openNode: (tag: string, attrs?: Record<string, unknown>) => void;
+  closeNode: () => void;
+  leafNode: (tag: string, attrs: unknown, content: unknown) => void;
+};
+
 class CfvoExtXform extends CompositeXform {
+  declare model: CfvoExtModel;
+  declare fExtXform: FExtXform;
+
   constructor() {
     super();
 
@@ -16,7 +30,7 @@ class CfvoExtXform extends CompositeXform {
     return 'x14:cfvo';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamLike, model: CfvoExtModel) {
     xmlStream.openNode(this.tag, {
       type: model.type,
     });
@@ -26,13 +40,13 @@ class CfvoExtXform extends CompositeXform {
     xmlStream.closeNode();
   }
 
-  createNewModel(node) {
+  createNewModel(node: { attributes: Record<string, string> }): CfvoExtModel {
     return {
       type: node.attributes.type,
     };
   }
 
-  onParserClose(name, parser) {
+  onParserClose(name: string, parser: { model: string }) {
     switch (name) {
       case 'xm:f':
         this.model.value = parser.model ? parseFloat(parser.model) : 0;

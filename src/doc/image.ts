@@ -32,8 +32,8 @@ class Image {
           imageId: this.imageId,
           hyperlinks: this.range.hyperlinks,
           range: {
-            tl: this.range.tl.model,
-            br: this.range.br && this.range.br.model,
+            tl: (this.range.tl as Anchor)?.model,
+            br: this.range.br && (this.range.br as Anchor).model,
             ext: this.range.ext,
             editAs: this.range.editAs,
           },
@@ -43,22 +43,25 @@ class Image {
     }
   }
 
-  set model({type, imageId, range, hyperlinks}) {
+  set model({type, imageId, range, hyperlinks}: any) {
     this.type = type;
     this.imageId = imageId;
 
     if (type === 'image') {
       if (typeof range === 'string') {
         const decoded = colCache.decode(range);
-        this.range = {
-          tl: new Anchor(this.worksheet, {col: decoded.left, row: decoded.top}, -1),
-          br: new Anchor(this.worksheet, {col: decoded.right, row: decoded.bottom}, 0),
-          editAs: 'oneCell',
-        };
+        // Type guard: RangeLocation has left/top/right/bottom, Address doesn't
+        if ('left' in decoded && 'top' in decoded && 'right' in decoded && 'bottom' in decoded) {
+          this.range = {
+            tl: new Anchor(this.worksheet as any, {col: decoded.left, row: decoded.top}, -1),
+            br: new Anchor(this.worksheet as any, {col: decoded.right, row: decoded.bottom}, 0),
+            editAs: 'oneCell',
+          };
+        }
       } else {
         this.range = {
-          tl: new Anchor(this.worksheet, range.tl, 0),
-          br: range.br && new Anchor(this.worksheet, range.br, 0),
+          tl: new Anchor(this.worksheet as any, range.tl, 0),
+          br: range.br && new Anchor(this.worksheet as any, range.br, 0),
           ext: range.ext,
           editAs: range.editAs,
           hyperlinks: hyperlinks || range.hyperlinks,

@@ -2,28 +2,58 @@
 
 import CompositeXform from '../composite-xform.ts';
 import ConditionalFormattingsExt from './cf-ext/conditional-formattings-ext-xform.ts';
+import BaseXform from '../base-xform.ts';
+import type { XmlStreamWriter } from '../xform-types.ts';
+
+type CfRuleExtModel = {
+  type?: string;
+  x14Id?: string;
+  priority?: number;
+  custom?: boolean;
+  dataBar?: unknown;
+  iconSet?: string;
+  gradient?: boolean;
+  [key: string]: unknown;
+};
+
+type ConditionalFormattingExtModel = {
+  ref?: string;
+  rules: CfRuleExtModel[];
+};
+
+type ConditionalFormattingsModel = ConditionalFormattingExtModel[] & {
+  hasExtContent?: boolean;
+};
+
+interface ExtModel {
+  conditionalFormattings?: ConditionalFormattingsModel;
+  [key: string]: unknown;
+}
 
 class ExtXform extends CompositeXform {
+  conditionalFormattings: ConditionalFormattingsExt;
+
   constructor() {
     super();
+    this.conditionalFormattings = new ConditionalFormattingsExt();
     this.map = {
-      'x14:conditionalFormattings': (this.conditionalFormattings = new ConditionalFormattingsExt()),
+      'x14:conditionalFormattings': this.conditionalFormattings,
     };
   }
 
-  get tag() {
+  get tag(): string {
     return 'ext';
   }
 
-  hasContent(model) {
+  hasContent(model: ExtModel): boolean {
     return this.conditionalFormattings.hasContent(model.conditionalFormattings);
   }
 
-  prepare(model, options) {
+  prepare(model: ExtModel, options: unknown): void {
     this.conditionalFormattings.prepare(model.conditionalFormattings, options);
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: ExtModel): void {
     xmlStream.openNode('ext', {
       uri: '{78C0D931-6437-407d-A8EE-F0AAD7539E65}',
       'xmlns:x14': 'http://schemas.microsoft.com/office/spreadsheetml/2009/9/main',
@@ -34,37 +64,39 @@ class ExtXform extends CompositeXform {
     xmlStream.closeNode();
   }
 
-  createNewModel() {
+  createNewModel(): ExtModel {
     return {};
   }
 
-  onParserClose(name, parser) {
-    this.model[name] = parser.model;
+  onParserClose(name: string, parser: BaseXform): void {
+    (this.model as ExtModel)[name] = parser.model;
   }
 }
 
 class ExtLstXform extends CompositeXform {
+  ext: ExtXform;
+
   constructor() {
     super();
-
+    this.ext = new ExtXform();
     this.map = {
-      ext: (this.ext = new ExtXform()),
+      ext: this.ext,
     };
   }
 
-  get tag() {
+  get tag(): string {
     return 'extLst';
   }
 
-  prepare(model, options) {
+  prepare(model: ExtModel, options: unknown): void {
     this.ext.prepare(model, options);
   }
 
-  hasContent(model) {
+  hasContent(model: ExtModel): boolean {
     return this.ext.hasContent(model);
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: ExtModel): void {
     if (!this.hasContent(model)) {
       return;
     }
@@ -74,12 +106,12 @@ class ExtLstXform extends CompositeXform {
     xmlStream.closeNode();
   }
 
-  createNewModel() {
+  createNewModel(): ExtModel {
     return {};
   }
 
-  onParserClose(name, parser) {
-    Object.assign(this.model, parser.model);
+  onParserClose(_name: string, parser: BaseXform): void {
+    Object.assign(this.model as ExtModel, parser.model);
   }
 }
 

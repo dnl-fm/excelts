@@ -37,7 +37,7 @@ class ListXform extends BaseXform {
     this.maxItems = options.maxItems;
   }
 
-  prepare(model, options) {
+  prepare(model: unknown[] | undefined, options: Record<string, unknown>) {
     const {childXform} = this;
     if (model) {
       model.forEach((childModel, index) => {
@@ -47,7 +47,7 @@ class ListXform extends BaseXform {
     }
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: { openNode: Function; addAttribute: Function; closeNode: Function; leafNode: Function }, model: unknown[] | undefined) {
     if (this.always || (model && model.length)) {
       xmlStream.openNode(this.tag, this.$);
       if (this.count) {
@@ -65,17 +65,18 @@ class ListXform extends BaseXform {
     }
   }
 
-  parseOpen(node) {
+  parseOpen(node: { name: string }) {
     if (this.parser) {
-      this.parser.parseOpen(node);
+      this.parser.parseOpen?.(node);
       return true;
     }
     switch (node.name) {
       case this.tag:
-        this.model = [];
+        this.model = [] as unknown as Record<string, unknown>;
         return true;
       default:
-        if (this.childXform.parseOpen(node)) {
+        this.childXform.parseOpen(node);
+        if (this.childXform.model !== undefined) {
           this.parser = this.childXform;
           return true;
         }
@@ -83,20 +84,21 @@ class ListXform extends BaseXform {
     }
   }
 
-  parseText(text) {
+  parseText(text: string) {
     if (this.parser) {
-      this.parser.parseText(text);
+      this.parser.parseText?.(text);
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string) {
     if (this.parser) {
-      if (!this.parser.parseClose(name)) {
-        this.model.push(this.parser.model);
+      const result = this.parser.parseClose?.(name);
+      if (!result) {
+        (this.model as unknown as unknown[]).push(this.parser.model);
         this.parser = undefined;
 
-        if (this.maxItems && this.model.length > this.maxItems) {
-          throw new Error(`Max ${this.childXform.tag} count (${this.maxItems}) exceeded`);
+        if (this.maxItems && (this.model as unknown as unknown[]).length > this.maxItems) {
+          throw new Error(`Max ${(this.childXform as {tag?: string}).tag} count (${this.maxItems}) exceeded`);
         }
       }
       return true;
@@ -105,7 +107,7 @@ class ListXform extends BaseXform {
     return false;
   }
 
-  reconcile(model, options) {
+  reconcile(model: unknown[] | undefined, options: unknown) {
     if (model) {
       const {childXform} = this;
       model.forEach(childModel => {

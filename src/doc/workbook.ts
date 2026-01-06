@@ -1,6 +1,6 @@
 
-import Worksheet from './worksheet.ts';
-import DefinedNames from './defined-names.ts';
+import Worksheet, { type WorksheetModel } from './worksheet.ts';
+import DefinedNames, { type DefinedNameModel } from './defined-names.ts';
 import XLSX from '../xlsx/xlsx.ts';
 import CSV from '../csv/csv.ts';
 
@@ -34,8 +34,8 @@ export interface WorkbookModel {
   created: Date;
   modified: Date;
   properties: Record<string, unknown>;
-  worksheets: unknown[];
-  sheets: unknown[];
+  worksheets: WorksheetModel[];
+  sheets: Array<{ id: number; rId?: string; name?: string; state?: string }>;
   definedNames: unknown;
   views: unknown[];
   company: string;
@@ -244,14 +244,14 @@ class Workbook {
             tabColor: {argb: options},
           },
         };
-      } else if (options.argb || options.theme || options.indexed) {
+      } else if ((options as { argb?: string; theme?: number; indexed?: number }).argb || (options as { argb?: string; theme?: number; indexed?: number }).theme || (options as { argb?: string; theme?: number; indexed?: number }).indexed) {
         // eslint-disable-next-line no-console
         console.trace(
           'tabColor argument is now deprecated. Please use workbook.addWorksheet(name, {properties: { tabColor: { ... } }'
         );
         options = {
           properties: {
-            tabColor: options,
+            tabColor: options as { argb?: string; theme?: number; indexed?: number },
           },
         };
       }
@@ -465,7 +465,7 @@ class Workbook {
     this._worksheets = [];
     value.worksheets.forEach(worksheetModel => {
       const {id, name, state} = worksheetModel;
-      const orderNo = value.sheets && value.sheets.findIndex(ws => ws.id === id);
+      const orderNo = value.sheets?.findIndex(ws => ws.id === id);
       const worksheet = (this._worksheets[id] = new Worksheet({
         id,
         name,
@@ -476,7 +476,7 @@ class Workbook {
       worksheet.model = worksheetModel;
     });
 
-    this._definedNames.model = value.definedNames;
+    this._definedNames.model = value.definedNames as DefinedNameModel[];
     this.views = value.views;
     this._themes = value.themes;
     this.media = value.media || [];

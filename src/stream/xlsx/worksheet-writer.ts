@@ -91,6 +91,7 @@ class WorksheetWriter {
   id: number;
   name: string;
   state: string;
+  rId?: string;
   _rows: (Row | null)[];
   _columns: Column[] | null;
   _keys: Record<string, unknown>;
@@ -133,8 +134,8 @@ class WorksheetWriter {
     mergesArray.add = function() {};
     this._merges = mergesArray as unknown as Dimensions[];
 
-    this._sheetRelsWriter = new SheetRelsWriter(options as StreamWriterOptions);
-    this._sheetCommentsWriter = new SheetCommentsWriter(this, this._sheetRelsWriter, options as StreamWriterOptions);
+    this._sheetRelsWriter = new SheetRelsWriter({ id: options.id, workbook: options.workbook } as { id: unknown; workbook: { _openStream(path: string): { write(data: string): void; end(): void } } });
+    this._sheetCommentsWriter = new SheetCommentsWriter(this as unknown as { comments?: unknown[] }, this._sheetRelsWriter, { id: options.id, workbook: options.workbook } as { id: unknown; workbook: { _openStream(path: string): { write(data: string): void; end(): void }; commentRefs: Array<{ commentName: string; vmlDrawing: string }> } });
 
     this._dimensions = new Dimensions();
     this._rowZero = 1;
@@ -595,7 +596,7 @@ class WorksheetWriter {
     }
 
     if (row.hasValues || row.height) {
-      const model = row.model;
+      const model = row.model as import('../../xlsx/xform/xform-types.ts').RowModel;
       const workbookRecord = this._workbook as Record<string, unknown>;
       const sheetRelsRecord = this._sheetRelsWriter as any;
       const options: Record<string, unknown> = {
@@ -607,10 +608,10 @@ class WorksheetWriter {
         siFormulae: this._siFormulae,
         comments: [],
       };
-      xform.row.prepare(model, options);
+      xform.row.prepare(model, options as import('../../xlsx/xform/xform-types.ts').RowXformPrepareOptions);
       this.stream.write(xform.row.toXml(model));
 
-      const comments = (options.comments as unknown[]) || [];
+      const comments = (options.comments as Array<{ ref: string; refAddress?: unknown; [key: string]: unknown }>) || [];
       if (comments.length) {
         this.hasComments = true;
         this._sheetCommentsWriter.addComments(comments);

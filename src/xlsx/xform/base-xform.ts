@@ -7,7 +7,7 @@ import XmlStream from '../../utils/xml-stream.ts';
 import type { ReadableStream } from '../../types/index.ts';
 
 /** @internal Interface for xform objects in map */
-interface XformLike {
+export interface XformLike {
   prepare?(_model?: unknown, _options?: unknown): void;
   render?(_xmlStream?: unknown, _model?: unknown, _extra?: unknown): void;
   parseOpen?(_node: unknown): unknown;
@@ -19,16 +19,11 @@ interface XformLike {
   [key: string]: unknown;
 }
 
-/** @internal Model interface for xform parsed data */
-interface XformModel {
-  [key: string]: unknown;
-}
-
 class BaseXform {
-  model?: XformModel;
-  map?: Record<string, XformLike>;
+  model?: unknown;
+  map?: Record<string, XformLike | BaseXform>;
   /** @internal Current parser being delegated to */
-  parser?: BaseXform;
+  parser?: XformLike | BaseXform;
   /** @internal Index signature for dynamic properties */
   [key: string]: unknown;
 

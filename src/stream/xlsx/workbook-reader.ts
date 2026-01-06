@@ -30,6 +30,7 @@ export interface WorkbookReaderOptions {
   hyperlinks?: 'cache' | 'emit' | 'ignore';
   styles?: 'cache' | 'ignore';
   entries?: 'emit' | 'ignore';
+  [key: string]: unknown;
 }
 
 /** Event yielded during parsing */
@@ -46,6 +47,8 @@ type UnzippedFiles = Record<string, Uint8Array>;
  * Uses fflate for ZIP handling (Bun-native, no Node streams).
  */
 class WorkbookReader extends SimpleEventEmitter {
+  static Options: Record<string, string[]>;
+  
   input: unknown;
   options: WorkbookReaderOptions;
   styles: StyleManager;
@@ -201,7 +204,7 @@ class WorkbookReader extends SimpleEventEmitter {
 
   private async _parseRels(stream: AsyncIterable<string>): Promise<void> {
     const xform = new RelationshipsXform();
-    this.workbookRels = await xform.parseStream(stream);
+    this.workbookRels = await xform.parseStream(stream) as unknown[];
   }
 
   private async _parseWorkbook(stream: AsyncIterable<string>): Promise<void> {

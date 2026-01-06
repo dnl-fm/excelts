@@ -3,16 +3,26 @@
 // StutteredPipe - Used to slow down streaming so GC can get a look in
 import events from 'events';
 
+interface ReadableStream {
+  on(event: string, listener: (...args: unknown[]) => void): void;
+  read(size?: number): Buffer | null;
+}
+
+interface WritableStream {
+  write(chunk: Buffer | string): boolean;
+  end(): void;
+}
+
 class StutteredPipe extends events.EventEmitter {
-  readable: unknown;
-  writable: unknown;
+  readable: ReadableStream;
+  writable: WritableStream;
   bufSize: number;
   autoPause: boolean;
   paused: boolean;
   eod: boolean;
   scheduled: ReturnType<typeof setImmediate> | null;
 
-  constructor(readable: unknown, writable: unknown, options?: Record<string, unknown>) {
+  constructor(readable: ReadableStream, writable: WritableStream, options?: Record<string, unknown>) {
     super();
 
     options = options || {};

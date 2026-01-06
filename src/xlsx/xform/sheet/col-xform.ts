@@ -1,20 +1,48 @@
 
 import utils from '../../../utils/utils.ts';
 import BaseXform from '../base-xform.ts';
+import type { SaxNode, XmlStreamWriter } from '../xform-types.ts';
+
+interface ColModel {
+  min: number;
+  max: number;
+  width?: number;
+  styleId?: number;
+  style?: unknown;
+  hidden?: boolean;
+  bestFit?: boolean;
+  outlineLevel?: number;
+  collapsed?: boolean;
+  [key: string]: unknown;
+}
+
+interface ColPrepareOptions {
+  styles: {
+    addStyleModel: (style: unknown) => number | undefined;
+  };
+}
+
+interface ColReconcileOptions {
+  styles: {
+    getStyleModel: (id: number) => unknown;
+  };
+}
 
 class ColXform extends BaseXform {
-  get tag() {
+  declare model: ColModel;
+
+  get tag(): string {
     return 'col';
   }
 
-  prepare(model, options) {
+  prepare(model: ColModel, options: ColPrepareOptions): void {
     const styleId = options.styles.addStyleModel(model.style || {});
     if (styleId) {
       model.styleId = styleId;
     }
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: ColModel): void {
     xmlStream.openNode('col');
     xmlStream.addAttribute('min', model.min);
     xmlStream.addAttribute('max', model.max);
@@ -40,29 +68,30 @@ class ColXform extends BaseXform {
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: SaxNode): boolean {
     if (node.name === 'col') {
-      const model = (this.model = {
-        min: parseInt(node.attributes.min || '0', 10),
-        max: parseInt(node.attributes.max || '0', 10),
+      const attrs = node.attributes as Record<string, string>;
+      const model: ColModel = (this.model = {
+        min: parseInt(attrs.min || '0', 10),
+        max: parseInt(attrs.max || '0', 10),
         width:
-          node.attributes.width === undefined
+          attrs.width === undefined
             ? undefined
-            : parseFloat(node.attributes.width || '0'),
+            : parseFloat(attrs.width || '0'),
       });
-      if (node.attributes.style) {
-        model.styleId = parseInt(node.attributes.style, 10);
+      if (attrs.style) {
+        model.styleId = parseInt(attrs.style, 10);
       }
-      if (utils.parseBoolean(node.attributes.hidden)) {
+      if (utils.parseBoolean(attrs.hidden)) {
         model.hidden = true;
       }
-      if (utils.parseBoolean(node.attributes.bestFit)) {
+      if (utils.parseBoolean(attrs.bestFit)) {
         model.bestFit = true;
       }
-      if (node.attributes.outlineLevel) {
-        model.outlineLevel = parseInt(node.attributes.outlineLevel, 10);
+      if (attrs.outlineLevel) {
+        model.outlineLevel = parseInt(attrs.outlineLevel, 10);
       }
-      if (utils.parseBoolean(node.attributes.collapsed)) {
+      if (utils.parseBoolean(attrs.collapsed)) {
         model.collapsed = true;
       }
       return true;
@@ -70,13 +99,13 @@ class ColXform extends BaseXform {
     return false;
   }
 
-  parseText() {}
+  parseText(): void {}
 
-  parseClose() {
+  parseClose(): boolean {
     return false;
   }
 
-  reconcile(model, options) {
+  reconcile(model: ColModel, options: ColReconcileOptions): void {
     // reconcile column styles
     if (model.styleId) {
       model.style = options.styles.getStyleModel(model.styleId);

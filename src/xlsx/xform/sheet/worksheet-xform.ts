@@ -86,8 +86,40 @@ const mergeConditionalFormattings = (model, extModel) => {
   return model;
 };
 
+const WORKSHEET_ATTRIBUTES = {
+  xmlns: 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
+  'xmlns:r': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
+  'xmlns:mc': 'http://schemas.openxmlformats.org/markup-compatibility/2006',
+  'mc:Ignorable': 'x14ac',
+  'xmlns:x14ac': 'http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac',
+};
+
+type WorkSheetModel = {
+  dimensions?: unknown;
+  cols?: unknown[];
+  rows?: unknown[];
+  mergeCells?: unknown[];
+  hyperlinks?: unknown[];
+  dataValidations?: unknown;
+  properties?: unknown;
+  views?: unknown[];
+  pageSetup?: unknown;
+  headerFooter?: unknown;
+  background?: unknown;
+  drawing?: unknown;
+  tables?: unknown[];
+  conditionalFormattings?: unknown[];
+  autoFilter?: unknown;
+  sheetProtection?: unknown;
+  [key: string]: unknown;
+};
+
 class WorkSheetXform extends BaseXform {
-  constructor(options?) {
+  declare model: WorkSheetModel | undefined;
+  ignoreNodes: string[];
+  declare map: Record<string, any>;
+
+  constructor(options?: { maxRows?: number; maxCols?: number; ignoreNodes?: string[] }) {
     super();
 
     const {maxRows, maxCols, ignoreNodes} = options || {};
@@ -233,7 +265,7 @@ class WorkSheetXform extends BaseXform {
           });
         }
 
-        const anchor = {
+        const anchor: { picture: { rId: string; hyperlinks?: { tooltip: unknown; rId: string } }; range: unknown } = {
           picture: {
             rId: rIdImage,
           },
@@ -293,9 +325,9 @@ class WorkSheetXform extends BaseXform {
 
   render(xmlStream, model) {
     xmlStream.openXml(XmlStream.StdDocAttributes);
-    xmlStream.openNode('worksheet', WorkSheetXform.WORKSHEET_ATTRIBUTES);
+    xmlStream.openNode('worksheet', WORKSHEET_ATTRIBUTES);
 
-    const sheetFormatPropertiesModel = model.properties
+    const sheetFormatPropertiesModel: Record<string, unknown> | undefined = model.properties
       ? {
           defaultRowHeight: model.properties.defaultRowHeight,
           dyDescent: model.properties.dyDescent,
@@ -304,7 +336,7 @@ class WorkSheetXform extends BaseXform {
         }
       : undefined;
     if (model.properties && model.properties.defaultColWidth) {
-      sheetFormatPropertiesModel.defaultColWidth = model.properties.defaultColWidth;
+      sheetFormatPropertiesModel!.defaultColWidth = model.properties.defaultColWidth;
     }
     const sheetPropertiesModel = {
       outlineProperties: model.properties && model.properties.outlineProperties,
@@ -376,7 +408,7 @@ class WorkSheetXform extends BaseXform {
       return true;
     }
 
-    if (this.map[node.name] && !this.ignoreNodes.includes(node.name)) {
+    if (this.map[node.name] && !(this.ignoreNodes as string[]).includes(node.name)) {
       this.parser = this.map[node.name];
       this.parser.parseOpen(node);
     }
@@ -398,18 +430,19 @@ class WorkSheetXform extends BaseXform {
     }
     switch (name) {
       case 'worksheet': {
-        const properties = this.map.sheetFormatPr.model || {};
-        if (this.map.sheetPr.model && this.map.sheetPr.model.tabColor) {
-          properties.tabColor = this.map.sheetPr.model.tabColor;
+        const properties: Record<string, unknown> = (this.map.sheetFormatPr.model as Record<string, unknown>) || {};
+        const sheetPrModel = this.map.sheetPr.model as Record<string, unknown> | undefined;
+        if (sheetPrModel && sheetPrModel.tabColor) {
+          properties.tabColor = sheetPrModel.tabColor;
         }
-        if (this.map.sheetPr.model && this.map.sheetPr.model.outlineProperties) {
-          properties.outlineProperties = this.map.sheetPr.model.outlineProperties;
+        if (sheetPrModel && sheetPrModel.outlineProperties) {
+          properties.outlineProperties = sheetPrModel.outlineProperties;
         }
         const sheetProperties = {
           fitToPage:
-            (this.map.sheetPr.model &&
-              this.map.sheetPr.model.pageSetup &&
-              this.map.sheetPr.model.pageSetup.fitToPage) ||
+            (sheetPrModel &&
+              (sheetPrModel.pageSetup as Record<string, unknown> | undefined) &&
+              (sheetPrModel.pageSetup as Record<string, unknown>).fitToPage) ||
             false,
           margins: this.map.pageMargins.model,
         };
@@ -534,13 +567,5 @@ class WorkSheetXform extends BaseXform {
     delete model.comments;
   }
 }
-
-WorkSheetXform.WORKSHEET_ATTRIBUTES = {
-  xmlns: 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
-  'xmlns:r': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
-  'xmlns:mc': 'http://schemas.openxmlformats.org/markup-compatibility/2006',
-  'mc:Ignorable': 'x14ac',
-  'xmlns:x14ac': 'http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac',
-};
 
 export default WorkSheetXform;

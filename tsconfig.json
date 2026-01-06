@@ -10,7 +10,8 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "strict": false,
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "useDefineForClassFields": false
   },
   "include": [
     "src/**/*.ts",

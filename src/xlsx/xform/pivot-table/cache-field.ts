@@ -1,5 +1,13 @@
+type CacheFieldParams = {
+  name: string;
+  sharedItems: string[] | null;
+};
+
 class CacheField {
-  constructor({name, sharedItems}) {
+  name: string;
+  sharedItems: string[] | null;
+
+  constructor({name, sharedItems}: CacheFieldParams) {
     // string type
     //
     // {

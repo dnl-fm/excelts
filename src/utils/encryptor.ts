@@ -19,7 +19,7 @@ const Encryptor = {
     const normalizedAlgo = algoMap[algorithm.toLowerCase()] || algorithm.toUpperCase();
     
     const combined = concat(buffers);
-    const hashBuffer = await crypto.subtle.digest(normalizedAlgo, combined);
+    const hashBuffer = await crypto.subtle.digest(normalizedAlgo, combined as BufferSource);
     return new Uint8Array(hashBuffer);
   },
 

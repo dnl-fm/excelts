@@ -3,7 +3,14 @@
 import CompositeXform from '../../composite-xform.ts';
 import CfRuleXform from './cf-rule-xform.ts';
 
+type ConditionalFormattingModel = {
+  ref?: string;
+  rules: unknown[];
+};
+
 class ConditionalFormattingXform extends CompositeXform {
+  declare model: ConditionalFormattingModel | undefined;
+
   constructor() {
     super();
 

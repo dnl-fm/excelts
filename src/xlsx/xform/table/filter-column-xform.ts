@@ -5,7 +5,14 @@ import ListXform from '../list-xform.ts';
 import CustomFilterXform from './custom-filter-xform.ts';
 import FilterXform from './filter-xform.ts';
 
+type FilterColumnModel = {
+  filterButton?: boolean;
+  colId?: string;
+  customFilters?: unknown[];
+};
+
 class FilterColumnXform extends BaseXform {
+  declare model: FilterColumnModel | undefined;
   constructor() {
     super();
 
@@ -76,7 +83,7 @@ class FilterColumnXform extends BaseXform {
 
   parseText() {}
 
-  parseClose(name) {
+  parseClose(name: string) {
     if (this.parser) {
       if (!this.parser.parseClose(name)) {
         this.parser = undefined;
@@ -85,7 +92,9 @@ class FilterColumnXform extends BaseXform {
     }
     switch (name) {
       case this.tag:
-        this.model.customFilters = this.map.customFilters.model;
+        if (this.model && this.map.customFilters?.model) {
+          this.model.customFilters = this.map.customFilters.model as unknown[];
+        }
         return false;
       default:
         // could be some unrecognised tags

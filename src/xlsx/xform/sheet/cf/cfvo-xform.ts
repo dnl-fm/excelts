@@ -13,11 +13,14 @@ class CfvoXform extends BaseXform {
     });
   }
 
-  parseOpen(node) {
-    this.model = {
-      type: node.attributes.type,
-      value: BaseXform.toFloatValue(node.attributes.val),
-    };
+  parseOpen(node: { name: string; attributes: Record<string, string> }): boolean {
+    const attrs = node.attributes;
+    const model: { type: string; value?: number } = { type: attrs.type };
+    if (attrs.val !== undefined) {
+      model.value = BaseXform.toFloatValue(attrs.val);
+    }
+    this.model = model;
+    return true;
   }
 
   parseClose(name) {

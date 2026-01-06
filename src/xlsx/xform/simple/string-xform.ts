@@ -1,8 +1,20 @@
 
 import BaseXform from '../base-xform.ts';
+import type { SaxNode, XmlStreamWriter } from '../xform-types.ts';
+
+interface StringXformOptions {
+  tag: string;
+  attr?: string;
+  attrs?: Record<string, string>;
+}
 
 class StringXform extends BaseXform {
-  constructor(options) {
+  declare tag: string;
+  attr?: string;
+  attrs?: Record<string, string>;
+  text?: string[];
+
+  constructor(options: StringXformOptions) {
     super();
 
     this.tag = options.tag;
@@ -10,7 +22,7 @@ class StringXform extends BaseXform {
     this.attrs = options.attrs;
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: string): void {
     if (model !== undefined) {
       xmlStream.openNode(this.tag);
       if (this.attrs) {
@@ -25,25 +37,26 @@ class StringXform extends BaseXform {
     }
   }
 
-  parseOpen(node) {
+  parseOpen(node: SaxNode): boolean {
     if (node.name === this.tag) {
       if (this.attr) {
-        this.model = node.attributes[this.attr];
+        (this as unknown as { model: string }).model = node.attributes[this.attr] as string;
       } else {
         this.text = [];
       }
     }
+    return true;
   }
 
-  parseText(text) {
-    if (!this.attr) {
+  parseText(text: string): void {
+    if (!this.attr && this.text) {
       this.text.push(text);
     }
   }
 
-  parseClose() {
-    if (!this.attr) {
-      this.model = this.text.join('');
+  parseClose(): boolean {
+    if (!this.attr && this.text) {
+      (this as unknown as { model: string }).model = this.text.join('');
     }
     return false;
   }

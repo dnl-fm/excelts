@@ -4,19 +4,14 @@
 import BaseXform from '../base-xform.ts';
 
 class TextXform extends BaseXform {
-  _text: string[] = [];
-
-  constructor() {
-    super();
-    // Delete inherited instance property so our getter is used
-    delete (this as any).model;
-  }
+  declare model: string | undefined;
+  private _text: string[] = [];
 
   get tag() {
     return 't';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: { openNode: (tag: string) => void; addAttribute: (name: string, value: string) => void; writeText: (text: string) => void; closeNode: () => void }, model: string) {
     xmlStream.openNode('t');
     if (/^\s|\n|\s$/.test(model)) {
       xmlStream.addAttribute('xml:space', 'preserve');
@@ -25,13 +20,13 @@ class TextXform extends BaseXform {
     xmlStream.closeNode();
   }
 
-  get model() {
+  private computeModel(): string {
     return this._text
       .join('')
-      .replace(/_x([0-9A-F]{4})_/g, ($0, $1) => String.fromCharCode(parseInt($1, 16)));
+      .replace(/_x([0-9A-F]{4})_/g, (_$0, $1) => String.fromCharCode(parseInt($1, 16)));
   }
 
-  parseOpen(node) {
+  parseOpen(node: { name: string }) {
     switch (node.name) {
       case 't':
         this._text = [];
@@ -41,11 +36,13 @@ class TextXform extends BaseXform {
     }
   }
 
-  parseText(text) {
+  parseText(text: string) {
     this._text.push(text);
   }
 
   parseClose() {
+    // Compute and store model when element closes
+    this.model = this.computeModel();
     return false;
   }
 }

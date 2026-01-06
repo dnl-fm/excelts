@@ -6,7 +6,13 @@ import RelType from '../../xlsx/rel-type.ts';
 import SimpleEventEmitter from '../../utils/event-emitter.ts';
 
 class HyperlinkReader extends SimpleEventEmitter {
-  constructor({workbook, id, iterator, options}) {
+  workbook: unknown;
+  id: string;
+  iterator: AsyncIterable<string | Uint8Array>;
+  options: Record<string, unknown>;
+  hyperlinks?: Record<string, unknown>;
+
+  constructor({workbook, id, iterator, options}: any) {
     super();
 
     this.workbook = workbook;
@@ -15,18 +21,20 @@ class HyperlinkReader extends SimpleEventEmitter {
     this.options = options;
   }
 
-  get count() {
-    return (this.hyperlinks && this.hyperlinks.length) || 0;
+  get count(): number {
+    return (this.hyperlinks && Object.keys(this.hyperlinks).length) || 0;
   }
 
-  each(fn) {
-    return this.hyperlinks.forEach(fn);
+  each(fn: (value: unknown) => void): void {
+    if (this.hyperlinks) {
+      Object.values(this.hyperlinks).forEach(fn);
+    }
   }
 
-  async read() {
+  async read(): Promise<void> {
     const {iterator, options} = this;
     let emitHyperlinks = false;
-    let hyperlinks = null;
+    let hyperlinks: Record<string, unknown> | null = null;
     switch (options.hyperlinks) {
       case 'emit':
         emitHyperlinks = true;

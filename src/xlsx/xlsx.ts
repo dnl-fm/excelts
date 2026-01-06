@@ -61,6 +61,9 @@ import type {
   RelationshipModel,
   CommentModel,
   TableModel,
+  SharedStringsModel,
+  WorksheetItemModel,
+  DrawingModel,
 } from '../types/index.ts';
 
 async function fsReadFileAsync(filename: string, _options?: FsReadFileOptions): Promise<Uint8Array> {
@@ -72,6 +75,8 @@ async function fsReadFileAsync(filename: string, _options?: FsReadFileOptions): 
  * XLSX handles reading and writing XLSX containers for a workbook instance.
  */
 class XLSX {
+  static RelType: typeof _RelType;
+  
   workbook: unknown;
 
   constructor(workbook: unknown) {
@@ -131,7 +136,7 @@ class XLSX {
         (drawing.anchors || []).forEach(anchor => {
           const hyperlinks = anchor.picture && anchor.picture.hyperlinks;
           if (hyperlinks && (drawingOptions.rels as Record<string, unknown>)[hyperlinks.rId!]) {
-            hyperlinks.hyperlink = ((drawingOptions.rels as Record<string, unknown>)[hyperlinks.rId!] as Record<string, unknown>).Target;
+            hyperlinks.hyperlink = ((drawingOptions.rels as Record<string, unknown>)[hyperlinks.rId!] as Record<string, unknown>).Target as string;
             delete hyperlinks.rId;
           }
         });
@@ -181,9 +186,9 @@ class XLSX {
     const worksheet = (await xform.parseStream(stream)) as ParsedWorksheetModel;
     worksheet.sheetNo = sheetNo;
     if (path) {
-      model.worksheetHash[path] = worksheet;
+      model.worksheetHash[path] = worksheet as unknown as WorksheetItemModel;
     }
-    model.worksheets.push(worksheet);
+    model.worksheets.push(worksheet as unknown as WorksheetItemModel);
   }
 
   async _processCommentEntry(stream: ReadableStream, model: XlsxModel, name: string): Promise<void> {
@@ -271,7 +276,7 @@ class XLSX {
   }
 
   async read(stream: ReadableStream, options?: XlsxReadOptions): Promise<unknown> {
-    const streamAsObject = stream as Record<string, unknown>;
+    const streamAsObject = stream as unknown as Record<string | symbol, unknown>;
     if (typeof streamAsObject[Symbol.asyncIterator] !== 'function') {
       throw new Error('Stream must be async iterable. Use readFile() or load() instead.');
     }
@@ -326,7 +331,7 @@ class XLSX {
       }
       switch (entryName) {
           case '_rels/.rels':
-            model.globalRels = await this.parseRels(stream);
+            model.globalRels = (await this.parseRels(stream)) as RelationshipModel[];
             break;
 
           case 'xl/workbook.xml': {
@@ -340,17 +345,17 @@ class XLSX {
           }
 
           case 'xl/_rels/workbook.xml.rels':
-            model.workbookRels = await this.parseRels(stream);
+            model.workbookRels = (await this.parseRels(stream)) as RelationshipModel[];
             break;
 
           case 'xl/sharedStrings.xml':
-            model.sharedStrings = new SharedStringsXform();
-            await model.sharedStrings.parseStream(stream);
+            model.sharedStrings = new SharedStringsXform() as unknown as SharedStringsModel;
+            await (model.sharedStrings as unknown as SharedStringsXform).parseStream(stream);
             break;
 
           case 'xl/styles.xml':
-            model.styles = new StylesXform();
-            await model.styles.parseStream(stream);
+            model.styles = new StylesXform() as unknown as Record<string, unknown>;
+            await (model.styles as unknown as StylesXform).parseStream(stream);
             break;
 
           case 'docProps/app.xml': {
@@ -471,7 +476,7 @@ class XLSX {
     const relsXform = new RelationshipsXform();
 
     model.worksheets.forEach(worksheet => {
-      const drawing = (worksheet as Record<string, unknown>).drawing;
+      const drawing = (worksheet as Record<string, unknown>).drawing as DrawingModel | undefined;
       if (drawing) {
         drawingXform.prepare(drawing, {});
         let xml = drawingXform.toXml(drawing);
@@ -675,10 +680,10 @@ class XLSX {
     model.useSharedStrings = options.useSharedStrings !== undefined ? options.useSharedStrings : true;
     model.useStyles = options.useStyles !== undefined ? options.useStyles : true;
 
-    model.sharedStrings = new SharedStringsXform();
-    const stylesXformRecord = StylesXform as Record<string, unknown>;
+    model.sharedStrings = new SharedStringsXform() as unknown as SharedStringsModel;
+    const stylesXformRecord = StylesXform as unknown as Record<string, unknown>;
     const MockClass = stylesXformRecord.Mock as typeof StylesXform;
-    model.styles = model.useStyles ? new StylesXform(true) : new MockClass();
+    model.styles = (model.useStyles ? new StylesXform(true) : new MockClass()) as unknown as Record<string, unknown>;
 
     const workbookXform = new WorkbookXform();
     const worksheetXform = new WorksheetXform();
@@ -713,9 +718,8 @@ class XLSX {
     const opts = options || {};
     const workbookRecord = this.workbook as Record<string, unknown>;
     const model = (workbookRecord.model || {}) as XlsxModel;
-    const zipStreamRecord = ZipStream as Record<string, unknown>;
-    const ZipWriterClass = zipStreamRecord.ZipWriter as typeof ZipWriter;
-    const zip = new ZipWriterClass(opts.zip) as ZipWriter;
+    const ZipWriterClass = ZipStream.ZipWriter;
+    const zip = new ZipWriterClass(opts.zip as Record<string, unknown>) as ZipWriter;
     zip.pipe(stream);
 
     this.prepareModel(model, opts);
@@ -734,8 +738,8 @@ class XLSX {
         allDrawings.push(drawing);
       }
     });
-    (model as Record<string, unknown>).tables = allTables;
-    (model as Record<string, unknown>).drawings = allDrawings;
+    (model as unknown as Record<string, unknown>).tables = allTables;
+    (model as unknown as Record<string, unknown>).drawings = allDrawings;
 
     await this.addContentTypes(zip, model);
     await this.addOfficeRels(zip);

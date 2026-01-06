@@ -4,6 +4,9 @@ import BaseXform from '../../base-xform.ts';
 import ConditionalFormattingXform from './conditional-formatting-xform.ts';
 
 class ConditionalFormattingsXform extends BaseXform {
+  cfXform: ConditionalFormattingXform;
+  declare model: unknown[] | undefined;
+
   constructor() {
     super();
 
@@ -18,14 +21,14 @@ class ConditionalFormattingsXform extends BaseXform {
     this.model = [];
   }
 
-  prepare(model, options) {
+  prepare(model: any[], options: any) {
     // ensure each rule has a priority value
     let nextPriority = model.reduce(
-      (p, cf) => Math.max(p, ...cf.rules.map(rule => rule.priority || 0)),
+      (p, cf) => Math.max(p, ...cf.rules.map((rule: any) => rule.priority || 0)),
       1
     );
     model.forEach(cf => {
-      cf.rules.forEach(rule => {
+      cf.rules.forEach((rule: any) => {
         if (!rule.priority) {
           rule.priority = nextPriority++;
         }
@@ -37,22 +40,22 @@ class ConditionalFormattingsXform extends BaseXform {
     });
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: any, model: any[]) {
     model.forEach(cf => {
       this.cfXform.render(xmlStream, cf);
     });
   }
 
-  parseOpen(node) {
+  parseOpen(node: { name: string }) {
     if (this.parser) {
-      this.parser.parseOpen(node);
+      this.parser.parseOpen?.(node);
       return true;
     }
 
     switch (node.name) {
       case 'conditionalFormatting':
         this.parser = this.cfXform;
-        this.parser.parseOpen(node);
+        this.parser.parseOpen?.(node);
         return true;
 
       default:
@@ -60,16 +63,16 @@ class ConditionalFormattingsXform extends BaseXform {
     }
   }
 
-  parseText(text) {
+  parseText(text: string) {
     if (this.parser) {
-      this.parser.parseText(text);
+      this.parser.parseText?.(text);
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string) {
     if (this.parser) {
-      if (!this.parser.parseClose(name)) {
-        this.model.push(this.parser.model);
+      if (!this.parser.parseClose?.(name)) {
+        (this.model as unknown[]).push(this.parser.model);
         this.parser = undefined;
         return false;
       }
@@ -78,9 +81,9 @@ class ConditionalFormattingsXform extends BaseXform {
     return false;
   }
 
-  reconcile(model, options) {
+  reconcile(model: any[], options: any) {
     model.forEach(cf => {
-      cf.rules.forEach(rule => {
+      cf.rules.forEach((rule: any) => {
         if (rule.dxfId !== undefined) {
           rule.style = options.styles.getDxfStyle(rule.dxfId);
           delete rule.dxfId;

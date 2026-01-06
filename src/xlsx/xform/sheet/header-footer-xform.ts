@@ -1,12 +1,26 @@
-
 import BaseXform from '../base-xform.ts';
+import type {XmlStreamWriter, SaxNode} from '../xform-types.ts';
+
+type HeaderFooterModel = {
+  differentFirst?: boolean;
+  differentOddEven?: boolean;
+  oddHeader?: string;
+  oddFooter?: string;
+  evenHeader?: string;
+  evenFooter?: string;
+  firstHeader?: string;
+  firstFooter?: string;
+};
 
 class HeaderFooterXform extends BaseXform {
+  currentNode?: string;
+  declare model: HeaderFooterModel | undefined;
+
   get tag() {
     return 'headerFooter';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: HeaderFooterModel) {
     if (model) {
       xmlStream.addRollback();
 
@@ -55,15 +69,15 @@ class HeaderFooterXform extends BaseXform {
     }
   }
 
-  parseOpen(node) {
+  parseOpen(node: SaxNode) {
     switch (node.name) {
       case 'headerFooter':
         this.model = {};
         if (node.attributes.differentFirst) {
-          this.model.differentFirst = parseInt(node.attributes.differentFirst, 0) === 1;
+          this.model.differentFirst = parseInt(node.attributes.differentFirst as string, 0) === 1;
         }
         if (node.attributes.differentOddEven) {
-          this.model.differentOddEven = parseInt(node.attributes.differentOddEven, 0) === 1;
+          this.model.differentOddEven = parseInt(node.attributes.differentOddEven as string, 0) === 1;
         }
         return true;
 
@@ -96,30 +110,30 @@ class HeaderFooterXform extends BaseXform {
     }
   }
 
-  parseText(text) {
+  parseText(text: string) {
     switch (this.currentNode) {
       case 'oddHeader':
-        this.model.oddHeader = text;
+        this.model!.oddHeader = text;
         break;
 
       case 'oddFooter':
-        this.model.oddFooter = text;
+        this.model!.oddFooter = text;
         break;
 
       case 'evenHeader':
-        this.model.evenHeader = text;
+        this.model!.evenHeader = text;
         break;
 
       case 'evenFooter':
-        this.model.evenFooter = text;
+        this.model!.evenFooter = text;
         break;
 
       case 'firstHeader':
-        this.model.firstHeader = text;
+        this.model!.firstHeader = text;
         break;
 
       case 'firstFooter':
-        this.model.firstFooter = text;
+        this.model!.firstFooter = text;
         break;
 
       default:

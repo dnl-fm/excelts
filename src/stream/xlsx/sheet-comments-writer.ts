@@ -5,17 +5,36 @@ import colCache from '../../utils/col-cache.ts';
 import CommentXform from '../../xlsx/xform/comment/comment-xform.ts';
 import VmlShapeXform from '../../xlsx/xform/comment/vml-shape-xform.ts';
 
+interface StreamLike {
+  write(data: string): void;
+  end(): void;
+}
+
+interface WorkbookLike {
+  _openStream(path: string): StreamLike;
+  commentRefs: Array<{ commentName: string; vmlDrawing: string }>;
+}
+
+interface SheetRelsWriterLike {
+  addRelationship(rel: { Type: string; Target: string }): string;
+}
+
+interface WorksheetLike {
+  comments?: unknown[];
+}
+
 class SheetCommentsWriter {
   id: unknown;
   count: number;
-  _worksheet: unknown;
-  _workbook: Record<string, unknown>;
-  _sheetRelsWriter: unknown;
-  _commentsStream?: unknown;
-  _vmlStream?: unknown;
-  vmlRelId?: unknown;
+  _worksheet: WorksheetLike;
+  _workbook: WorkbookLike;
+  _sheetRelsWriter: SheetRelsWriterLike;
+  _commentsStream?: StreamLike;
+  _vmlStream?: StreamLike;
+  vmlRelId?: string;
+  startedData?: boolean;
 
-  constructor(worksheet: unknown, sheetRelsWriter: unknown, options: Record<string, unknown>) {
+  constructor(worksheet: WorksheetLike, sheetRelsWriter: SheetRelsWriterLike, options: { id: unknown; workbook: WorkbookLike }) {
     // in a workbook, each sheet will have a number
     this.id = options.id;
     this.count = 0;
@@ -24,7 +43,7 @@ class SheetCommentsWriter {
     this._sheetRelsWriter = sheetRelsWriter;
   }
 
-  get commentsStream() {
+  get commentsStream(): StreamLike {
     if (!this._commentsStream) {
       // eslint-disable-next-line no-underscore-dangle
       this._commentsStream = this._workbook._openStream(`/xl/comments${this.id}.xml`);
@@ -32,7 +51,7 @@ class SheetCommentsWriter {
     return this._commentsStream;
   }
 
-  get vmlStream() {
+  get vmlStream(): StreamLike {
     if (!this._vmlStream) {
       // eslint-disable-next-line no-underscore-dangle
       this._vmlStream = this._workbook._openStream(`xl/drawings/vmlDrawing${this.id}.vml`);
@@ -81,7 +100,7 @@ class SheetCommentsWriter {
     );
   }
 
-  _writeComment(comment, index) {
+  _writeComment(comment: Record<string, unknown>, index: number) {
     const commentXform = new CommentXform();
     const commentsXmlStream = new XmlStream();
     commentXform.render(commentsXmlStream, comment);
@@ -89,7 +108,8 @@ class SheetCommentsWriter {
 
     const vmlShapeXform = new VmlShapeXform();
     const vmlXmlStream = new XmlStream();
-    vmlShapeXform.render(vmlXmlStream, comment, index);
+    // Comment object is expected to have VmlShapeModel properties when used for VML
+    vmlShapeXform.render(vmlXmlStream, comment as any, index);
     this.vmlStream.write(vmlXmlStream.xml);
   }
 
@@ -98,7 +118,7 @@ class SheetCommentsWriter {
     this.vmlStream.write('</xml>');
   }
 
-  addComments(comments) {
+  addComments(comments: Array<{ ref: string; refAddress?: unknown; [key: string]: unknown }> | undefined) {
     if (comments && comments.length) {
       if (!this.startedData) {
         this._worksheet.comments = [];

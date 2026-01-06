@@ -1,5 +1,3 @@
-
-
 import BaseXform from '../../base-xform.ts';
 
 // Use Web Crypto API for UUID generation (browser-compatible)
@@ -9,14 +7,27 @@ function randomUUID(): string {
 import CompositeXform from '../../composite-xform.ts';
 import DatabarExtXform from './databar-ext-xform.ts';
 import IconSetExtXform from './icon-set-ext-xform.ts';
+import type {XmlStreamWriter, SaxNode} from '../../xform-types.ts';
 
-const extIcons = {
+const extIcons: Record<string, boolean> = {
   '3Triangles': true,
   '3Stars': true,
   '5Boxes': true,
 };
 
+type CfRuleExtModel = {
+  type?: string;
+  x14Id?: string;
+  priority?: number;
+  custom?: boolean;
+  iconSet?: string;
+  gradient?: boolean;
+};
+
 class CfRuleExtXform extends CompositeXform {
+  databarXform: DatabarExtXform;
+  iconSetXform: IconSetExtXform;
+
   constructor() {
     super();
 
@@ -30,26 +41,26 @@ class CfRuleExtXform extends CompositeXform {
     return 'x14:cfRule';
   }
 
-  static isExt(rule) {
+  static isExt(rule: CfRuleExtModel) {
     // is this rule primitive?
     if (rule.type === 'dataBar') {
       return DatabarExtXform.isExt(rule);
     }
     if (rule.type === 'iconSet') {
-      if (rule.custom || extIcons[rule.iconSet]) {
+      if (rule.custom || (rule.iconSet && extIcons[rule.iconSet])) {
         return true;
       }
     }
     return false;
   }
 
-  prepare(model) {
+  prepare(model: CfRuleExtModel, _options?: unknown) {
     if (CfRuleExtXform.isExt(model)) {
       model.x14Id = `{${randomUUID()}}`.toUpperCase();
     }
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: XmlStreamWriter, model: CfRuleExtModel) {
     if (!CfRuleExtXform.isExt(model)) {
       return;
     }
@@ -64,30 +75,30 @@ class CfRuleExtXform extends CompositeXform {
     }
   }
 
-  renderDataBar(xmlStream, model) {
+  renderDataBar(xmlStream: XmlStreamWriter, model: CfRuleExtModel) {
     xmlStream.openNode(this.tag, {
       type: 'dataBar',
       id: model.x14Id,
     });
 
-    this.databarXform.render(xmlStream, model);
+    this.databarXform.render(xmlStream, model as any);
 
     xmlStream.closeNode();
   }
 
-  renderIconSet(xmlStream, model) {
+  renderIconSet(xmlStream: XmlStreamWriter, model: CfRuleExtModel) {
     xmlStream.openNode(this.tag, {
       type: 'iconSet',
       priority: model.priority,
       id: model.x14Id || `{${randomUUID()}}`,
     });
 
-    this.iconSetXform.render(xmlStream, model);
+    this.iconSetXform.render(xmlStream, model as any);
 
     xmlStream.closeNode();
   }
 
-  createNewModel({attributes}) {
+  createNewModel({attributes}: SaxNode) {
     return {
       type: attributes.type,
       x14Id: attributes.id,
@@ -95,8 +106,8 @@ class CfRuleExtXform extends CompositeXform {
     };
   }
 
-  onParserClose(name, parser) {
-    Object.assign(this.model, parser.model);
+  onParserClose(_name: string, parser: BaseXform) {
+    Object.assign(this.model as object, parser.model as object);
   }
 }
 

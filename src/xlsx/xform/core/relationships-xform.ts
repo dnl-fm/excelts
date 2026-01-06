@@ -4,7 +4,14 @@ import XmlStream from '../../../utils/xml-stream.ts';
 import BaseXform from '../base-xform.ts';
 import RelationshipXform from './relationship-xform.ts';
 
+const RELATIONSHIPS_ATTRIBUTES = {
+  xmlns: 'http://schemas.openxmlformats.org/package/2006/relationships',
+};
+
 class RelationshipsXform extends BaseXform {
+  declare model: unknown[] | undefined;
+  declare map: Record<string, BaseXform>;
+
   constructor() {
     super();
 
@@ -13,21 +20,21 @@ class RelationshipsXform extends BaseXform {
     };
   }
 
-  render(xmlStream, model) {
-    model = model || this._values;
+  render(xmlStream: XmlStream, model?: unknown[]) {
+    model = model || (this as any)._values;
     xmlStream.openXml(XmlStream.StdDocAttributes);
-    xmlStream.openNode('Relationships', RelationshipsXform.RELATIONSHIPS_ATTRIBUTES);
+    xmlStream.openNode('Relationships', RELATIONSHIPS_ATTRIBUTES);
 
-    model.forEach(relationship => {
+    (model || []).forEach(relationship => {
       this.map.Relationship.render(xmlStream, relationship);
     });
 
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: { name: string; attributes?: Record<string, string> }) {
     if (this.parser) {
-      this.parser.parseOpen(node);
+      this.parser.parseOpen?.(node);
       return true;
     }
     switch (node.name) {
@@ -37,23 +44,23 @@ class RelationshipsXform extends BaseXform {
       default:
         this.parser = this.map[node.name];
         if (this.parser) {
-          this.parser.parseOpen(node);
+          this.parser.parseOpen?.(node);
           return true;
         }
         throw new Error(`Unexpected xml node in parseOpen: ${JSON.stringify(node)}`);
     }
   }
 
-  parseText(text) {
+  parseText(text: string) {
     if (this.parser) {
-      this.parser.parseText(text);
+      this.parser.parseText?.(text);
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string) {
     if (this.parser) {
-      if (!this.parser.parseClose(name)) {
-        this.model.push(this.parser.model);
+      if (!this.parser.parseClose?.(name)) {
+        (this.model as unknown[]).push(this.parser.model);
         this.parser = undefined;
       }
       return true;
@@ -66,9 +73,5 @@ class RelationshipsXform extends BaseXform {
     }
   }
 }
-
-RelationshipsXform.RELATIONSHIPS_ATTRIBUTES = {
-  xmlns: 'http://schemas.openxmlformats.org/package/2006/relationships',
-};
 
 export default RelationshipsXform;

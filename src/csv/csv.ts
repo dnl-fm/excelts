@@ -167,7 +167,7 @@ class CSV {
     // Infer schema and parse
     const schema = inferSchema(csvString, schemaOpts);
     // Don't treat first row as header - we want all rows as data
-    schema.skip = 0;
+    (schema as unknown as Record<string, unknown>).skip = 0;
     const parser = initParser(schema);
     
     // Parse to string arrays (we'll do our own type conversion with map)
@@ -204,7 +204,7 @@ class CSV {
     const escape = formatterOpts.escape || '"';
     const rowDelimiter = formatterOpts.rowDelimiter || '\n';
 
-    const workbookRecord = this.workbook as Record<string, unknown>;
+    const workbookRecord = this.workbook as unknown as Record<string, unknown>;
     const worksheet = (workbookRecord.getWorksheet as (id?: string | number) => Worksheet | undefined)(
       opts.sheetName || opts.sheetId
     );
@@ -243,7 +243,7 @@ class CSV {
     let lastRow = 1;
 
     if (worksheet) {
-      const worksheetRecord = worksheet as Record<string, unknown>;
+      const worksheetRecord = worksheet as unknown as Record<string, unknown>;
       (worksheetRecord.eachRow as (callback: (row: { values: unknown[] }, rowNumber: number) => void) => void)(
         (row, rowNumber) => {
           if (includeEmptyRows) {

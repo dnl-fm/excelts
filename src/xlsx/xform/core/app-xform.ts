@@ -7,6 +7,10 @@ import AppHeadingPairsXform from './app-heading-pairs-xform.ts';
 import AppTitleOfPartsXform from './app-titles-of-parts-xform.ts';
 
 class AppXform extends BaseXform {
+  static PROPERTY_ATTRIBUTES: Record<string, string>;
+  static DateFormat: (dt: Date) => string;
+  static DateAttrs: Record<string, string>;
+  
   constructor() {
     super();
 

@@ -5,14 +5,51 @@
 import XmlStream from '../../../utils/xml-stream.ts';
 import BaseXform from '../base-xform.ts';
 
+interface MediaItem {
+  type: string;
+  extension: string;
+}
+
+interface WorksheetRef {
+  id: number;
+}
+
+interface TableRef {
+  target: string;
+}
+
+interface DrawingRef {
+  name: string;
+}
+
+interface CommentRef {
+  commentName: string;
+}
+
+interface SharedStringsRef {
+  count: number;
+}
+
+interface ContentTypesModel {
+  media?: MediaItem[];
+  worksheets: WorksheetRef[];
+  pivotTables?: unknown[];
+  sharedStrings?: SharedStringsRef;
+  tables?: TableRef[];
+  drawings?: DrawingRef[];
+  commentRefs?: CommentRef[];
+}
+
 class ContentTypesXform extends BaseXform {
-  render(xmlStream, model) {
+  static PROPERTY_ATTRIBUTES: Record<string, string>;
+  
+  render(xmlStream: XmlStream, model: ContentTypesModel): void {
     xmlStream.openXml(XmlStream.StdDocAttributes);
 
     xmlStream.openNode('Types', ContentTypesXform.PROPERTY_ATTRIBUTES);
 
-    const mediaHash = {};
-    (model.media || []).forEach(medium => {
+    const mediaHash: Record<string, boolean> = {};
+    (model.media || []).forEach((medium: MediaItem) => {
       if (medium.type === 'image') {
         const imageType = medium.extension;
         if (!mediaHash[imageType]) {

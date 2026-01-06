@@ -2,13 +2,25 @@
 import XmlStream from '../../../utils/xml-stream.ts';
 import BaseXform from '../base-xform.ts';
 import SharedStringXform from './shared-string-xform.ts';
+import type { SaxNode, XmlStreamWriter } from '../xform-types.ts';
+
+interface RichTextValue {
+  richText: unknown[];
+}
+
+interface SharedStringsModel {
+  values: unknown[];
+  count: number;
+  [key: string]: unknown;
+}
 
 class SharedStringsXform extends BaseXform {
-  hash: Record<string, unknown>;
-  rich: Record<string, unknown>;
+  declare model: SharedStringsModel;
+  hash: Record<string, number>;
+  rich: Record<string, number>;
   _sharedStringXform?: SharedStringXform;
 
-  constructor(model?: Record<string, unknown>) {
+  constructor(model?: SharedStringsModel) {
     super();
 
     this.model = model || {
@@ -35,15 +47,17 @@ class SharedStringsXform extends BaseXform {
     return this.model.count;
   }
 
-  getString(index) {
+  getString(index: number): unknown {
     return this.model.values[index];
   }
 
-  add(value) {
-    return value.richText ? this.addRichText(value) : this.addText(value);
+  add(value: string | RichTextValue): number {
+    return typeof value === 'object' && value !== null && 'richText' in value
+      ? this.addRichText(value)
+      : this.addText(value as string);
   }
 
-  addText(value) {
+  addText(value: string): number {
     let index = this.hash[value];
     if (index === undefined) {
       index = this.hash[value] = this.model.values.length;
@@ -53,7 +67,7 @@ class SharedStringsXform extends BaseXform {
     return index;
   }
 
-  addRichText(value) {
+  addRichText(value: RichTextValue): number {
     // TODO: add WeakMap here
     const xml = this.sharedStringXform.toXml(value);
     let index = this.rich[xml];
@@ -71,24 +85,24 @@ class SharedStringsXform extends BaseXform {
   //   <si><r><rPr></rPr><t></t></r></si>
   // </sst>
 
-  render(xmlStream, model) {
-    model = model || this._values;
+  render(xmlStream: XmlStreamWriter, model?: SharedStringsModel): void {
+    const m = model || this.model;
     xmlStream.openXml(XmlStream.StdDocAttributes);
 
     xmlStream.openNode('sst', {
       xmlns: 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
-      count: model.count,
-      uniqueCount: model.values.length,
+      count: m.count,
+      uniqueCount: m.values.length,
     });
 
     const sx = this.sharedStringXform;
-    model.values.forEach(sharedString => {
+    m.values.forEach(sharedString => {
       sx.render(xmlStream, sharedString);
     });
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: SaxNode): boolean {
     if (this.parser) {
       this.parser.parseOpen(node);
       return true;
@@ -105,13 +119,13 @@ class SharedStringsXform extends BaseXform {
     }
   }
 
-  parseText(text) {
+  parseText(text: string): void {
     if (this.parser) {
       this.parser.parseText(text);
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string): boolean {
     if (this.parser) {
       if (!this.parser.parseClose(name)) {
         this.model.values.push(this.parser.model);

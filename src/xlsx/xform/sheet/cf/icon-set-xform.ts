@@ -4,7 +4,22 @@ import BaseXform from '../../base-xform.ts';
 import CompositeXform from '../../composite-xform.ts';
 import CfvoXform from './cfvo-xform.ts';
 
+type CfvoModel = {
+  type?: string;
+  value?: unknown;
+};
+
+type IconSetModel = {
+  iconSet?: string;
+  reverse?: boolean;
+  showValue?: boolean;
+  cfvo: CfvoModel[];
+};
+
 class IconSetXform extends CompositeXform {
+  declare model: IconSetModel;
+  declare cfvoXform: CfvoXform;
+
   constructor() {
     super();
 
@@ -17,7 +32,7 @@ class IconSetXform extends CompositeXform {
     return 'iconSet';
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: { openNode: (tag: string, attrs: Record<string, unknown>) => void; closeNode: () => void }, model: IconSetModel) {
     xmlStream.openNode(this.tag, {
       iconSet: BaseXform.toStringAttribute(model.iconSet, '3TrafficLights'),
       reverse: BaseXform.toBoolAttribute(model.reverse, false),
@@ -31,17 +46,20 @@ class IconSetXform extends CompositeXform {
     xmlStream.closeNode();
   }
 
-  createNewModel({attributes}) {
-    return {
-      iconSet: BaseXform.toStringValue(attributes.iconSet, '3TrafficLights'),
-      reverse: BaseXform.toBoolValue(attributes.reverse),
-      showValue: BaseXform.toBoolValue(attributes.showValue),
+  createNewModel({attributes}: { attributes: Record<string, string> }): IconSetModel {
+    const model: IconSetModel = {
+      iconSet: BaseXform.toStringValue(attributes.iconSet, '3TrafficLights') as string,
       cfvo: [],
     };
+    if (attributes.reverse !== undefined) model.reverse = BaseXform.toBoolValue(attributes.reverse);
+    if (attributes.showValue !== undefined) model.showValue = BaseXform.toBoolValue(attributes.showValue);
+    return model;
   }
 
-  onParserClose(name, parser) {
-    this.model[name].push(parser.model);
+  onParserClose(name: string, parser: { model: CfvoModel }) {
+    if (name === 'cfvo') {
+      this.model.cfvo.push(parser.model);
+    }
   }
 }
 

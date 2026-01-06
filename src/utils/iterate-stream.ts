@@ -2,8 +2,8 @@ export default async function* iterateStream(stream) {;
   const contents = [];
   stream.on('data', data => contents.push(data));
 
-  let resolveStreamEndedPromise;
-  const streamEndedPromise = new Promise(resolve => (resolveStreamEndedPromise = resolve));
+  let resolveStreamEndedPromise: () => void;
+  const streamEndedPromise: Promise<void> = new Promise(resolve => (resolveStreamEndedPromise = resolve));
 
   let ended = false;
   stream.on('end', () => {
@@ -32,7 +32,7 @@ export default async function* iterateStream(stream) {;
   resolveStreamEndedPromise();
 };
 
-function once(eventEmitter, type) {
+function once(eventEmitter: any, type: string): Promise<void> {
   // TODO: Use require('events').once when node v10 is dropped
   return new Promise(resolve => {
     let fired = false;

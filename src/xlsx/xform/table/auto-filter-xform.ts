@@ -3,7 +3,13 @@
 import BaseXform from '../base-xform.ts';
 import FilterColumnXform from './filter-column-xform.ts';
 
+type AutoFilterModel = {
+  autoFilterRef?: string;
+  columns: unknown[];
+};
+
 class AutoFilterXform extends BaseXform {
+  declare model: AutoFilterModel | undefined;
   constructor() {
     super();
 
@@ -62,10 +68,12 @@ class AutoFilterXform extends BaseXform {
     }
   }
 
-  parseClose(name) {
+  parseClose(name: string) {
     if (this.parser) {
       if (!this.parser.parseClose(name)) {
-        this.model.columns.push(this.parser.model);
+        if (this.model) {
+          this.model.columns.push(this.parser.model);
+        }
         this.parser = undefined;
       }
       return true;
