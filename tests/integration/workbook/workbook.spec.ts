@@ -373,7 +373,7 @@ describe('Workbook', () => {
       ws.getCell('A1').value = 'World!';
       wb.language = 'Klingon';
       wb.revision = 2;
-      wb.contentStauts = 'Final';
+      wb.contentStatus = 'Final';
       return wb.xlsx
         .writeFile(TEST_XLSX_FILE_NAME)
         .then(() => {
@@ -498,7 +498,6 @@ describe('Workbook', () => {
         sheetName: 'sheet1',
         parserOptions: {
           delimiter: '\t',
-          quote: false,
         },
       };
       const wb = testUtils.createTestBook(new ExcelTS.Workbook(), 'csv');
@@ -611,8 +610,8 @@ describe('Workbook', () => {
           expectArrayMembers(ws2a.getCell('G2').names, ['twice']);
 
           // ranges
-          function rangeCheck(name, members) {
-            const ranges = wb2.definedNames.getRanges(name);
+          function rangeCheck(name: string, members: string[]) {
+            const ranges = wb2.definedNames.getRanges(name) as {name: string; ranges: string[]};
             expect(ranges.name).toBe(name);
             if (members.length) {
               expectArrayMembers(ranges.ranges, members);
@@ -931,11 +930,12 @@ describe('Workbook', () => {
   it('throw an error for wrong data type', async () => {
     const wb = new ExcelTS.Workbook();
     try {
+      // @ts-expect-error - testing runtime error for invalid type
       await wb.xlsx.load({});
-      expect.fail('should fail for given argument');
+      throw new Error('should fail for given argument');
     } catch (e) {
       // fflate throws "invalid zip data" for invalid input
-      expect(e.message).toBe('invalid zip data');
+      expect((e as Error).message).toBe('invalid zip data');
     }
   });
 

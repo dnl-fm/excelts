@@ -1,15 +1,40 @@
 import BaseXform from '../../../../src/xlsx/xform/base-xform.ts';
 
+interface ChildXform {
+  name?: string;
+  tag?: string;
+  xform: {
+    prepare: (model: unknown, options: unknown) => void;
+    render: (xmlStream: unknown, model: unknown) => void;
+    parseOpen: (node: {name: string}) => boolean;
+    parseText: (text: string) => void;
+    parseClose: (name: string) => boolean;
+    model: unknown;
+  };
+}
+
+interface CompyXformOptions {
+  tag: string;
+  attrs?: Record<string, unknown>;
+  children: ChildXform[];
+}
+
 class CompyXform extends BaseXform {
-  constructor(options) {
+  declare tag: string;
+  declare attrs?: Record<string, unknown>;
+  children!: ChildXform[];
+  _map!: Record<string, ChildXform>;
+  _parser?: ChildXform;
+
+  constructor(options: CompyXformOptions) {
     super();
 
     this.tag = options.tag;
     this.attrs = options.attrs;
     this.children = options.children;
-    this.map = this.children.reduce((map, child) => {
-      const name = child.name || child.tag;
-      const tag = child.tag || child.name;
+    this._map = this.children.reduce((map: Record<string, ChildXform>, child) => {
+      const name = child.name || child.tag || '';
+      const tag = child.tag || child.name || '';
       map[tag] = child;
       child.name = name;
       child.tag = tag;
@@ -17,23 +42,23 @@ class CompyXform extends BaseXform {
     }, {});
   }
 
-  prepare(model, options) {
+  prepare(model: Record<string, unknown>, options: unknown) {
     this.children.forEach(child => {
-      child.xform.prepare(model[child.tag], options);
+      child.xform.prepare(model[child.tag!], options);
     });
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: {openNode: (tag: string, attrs?: unknown) => void; closeNode: () => void}, model: Record<string, unknown>) {
     xmlStream.openNode(this.tag, this.attrs);
     this.children.forEach(child => {
-      child.xform.render(xmlStream, model[child.name]);
+      child.xform.render(xmlStream, model[child.name!]);
     });
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
-    if (this.parser) {
-      this.parser.xform.parseOpen(node);
+  parseOpen(node: {name: string}) {
+    if (this._parser) {
+      this._parser.xform.parseOpen(node);
       return true;
     }
     switch (node.name) {
@@ -41,35 +66,35 @@ class CompyXform extends BaseXform {
         this.model = {};
         return true;
       default:
-        this.parser = this.map[node.name];
-        if (this.parser) {
-          this.parser.xform.parseOpen(node);
+        this._parser = this._map[node.name];
+        if (this._parser) {
+          this._parser.xform.parseOpen(node);
           return true;
         }
     }
     return false;
   }
 
-  parseText(text) {
-    if (this.parser) {
-      this.parser.xform.parseText(text);
+  parseText(text: string) {
+    if (this._parser) {
+      this._parser.xform.parseText(text);
     }
   }
 
-  parseClose(name) {
-    if (this.parser) {
-      if (!this.parser.xform.parseClose(name)) {
-        this.model[this.parser.name] = this.parser.xform.model;
-        this.parser = undefined;
+  parseClose(name: string) {
+    if (this._parser) {
+      if (!this._parser.xform.parseClose(name)) {
+        (this.model as Record<string, unknown>)[this._parser.name!] = this._parser.xform.model;
+        this._parser = undefined;
       }
       return true;
     }
     return false;
   }
 
-  reconcile(model, options) {
+  reconcile(model: Record<string, unknown>, options: unknown) {
     this.children.forEach(child => {
-      child.xform.prepare(model[child.tag], options);
+      child.xform.prepare(model[child.tag!], options);
     });
   }
 }

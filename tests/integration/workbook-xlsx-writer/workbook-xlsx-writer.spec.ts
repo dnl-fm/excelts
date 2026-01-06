@@ -2,6 +2,14 @@
 import testUtils from '../../utils/index.ts';
 
 import ExcelTS from '../../../src/index.ts';
+
+interface CellNote {
+  texts?: unknown[];
+  margins?: unknown;
+  protection?: unknown;
+  editAs?: string;
+}
+
 const TEST_XLSX_FILE_NAME = './tests/out/wb.test.xlsx';
 const IMAGE_FILENAME = `${__dirname}/../data/image.png`;
 
@@ -453,10 +461,10 @@ describe('WorkbookWriter', () => {
       expect(ws2.getCell('B2').value).toBe(5);
       expect(ws2.getCell('B2').note).toBe('five');
       expect(ws2.getCell('D2').value).toBe(7);
-      expect(ws2.getCell('D2').note.texts).toEqual(note.texts);
-      expect(ws2.getCell('D2').note.margins).toEqual(note.margins);
-      expect(ws2.getCell('D2').note.protection).toEqual(note.protection);
-      expect(ws2.getCell('D2').note.editAs).toEqual(note.editAs);
+      expect((ws2.getCell('D2').note as CellNote).texts).toEqual(note.texts);
+      expect((ws2.getCell('D2').note as CellNote).margins).toEqual(note.margins);
+      expect((ws2.getCell('D2').note as CellNote).protection).toEqual(note.protection);
+      expect((ws2.getCell('D2').note as CellNote).editAs).toEqual(note.editAs);
     });
 
     it('Cell annotation supports setting margins and protection properties', async () => {
@@ -501,10 +509,10 @@ describe('WorkbookWriter', () => {
       expect(ws2.getCell('B2').note).toBe('five');
 
       expect(ws2.getCell('D2').value).toBe(7);
-      expect(ws2.getCell('D2').note.texts).toEqual(note.texts);
-      expect(ws2.getCell('D2').note.margins).toEqual(note.margins);
-      expect(ws2.getCell('D2').note.protection).toEqual(note.protection);
-      expect(ws2.getCell('D2').note.editAs).toEqual(note.editAs);
+      expect((ws2.getCell('D2').note as CellNote).texts).toEqual(note.texts);
+      expect((ws2.getCell('D2').note as CellNote).margins).toEqual(note.margins);
+      expect((ws2.getCell('D2').note as CellNote).protection).toEqual(note.protection);
+      expect((ws2.getCell('D2').note as CellNote).editAs).toEqual(note.editAs);
     });
 
     it('with background image', async () => {
@@ -527,8 +535,8 @@ describe('WorkbookWriter', () => {
       await wb2.xlsx.readFile(TEST_XLSX_FILE_NAME);
       const ws2 = wb2.getWorksheet('Hello');
 
-      const backgroundId2 = ws2.getBackgroundImageId();
-      const image = wb2.getImage(backgroundId2);
+      const backgroundId2 = ws2.getBackgroundImageId() as number;
+      const image = wb2.getImage(backgroundId2) as {buffer: Uint8Array};
       const imageData = await Bun.file(IMAGE_FILENAME).bytes();
       const imageBuffer = new Uint8Array(image.buffer);
       expect(imageData.length).toBe(imageBuffer.length);
@@ -556,8 +564,8 @@ describe('WorkbookWriter', () => {
       await wb2.xlsx.readFile(TEST_XLSX_FILE_NAME);
       const ws2 = wb2.getWorksheet('Hello');
 
-      const backgroundId2 = ws2.getBackgroundImageId();
-      const image = wb2.getImage(backgroundId2);
+      const backgroundId2 = ws2.getBackgroundImageId() as number;
+      const image = wb2.getImage(backgroundId2) as {buffer: Uint8Array};
       const imageData = await Bun.file(IMAGE_FILENAME).bytes();
       const imageBuffer = new Uint8Array(image.buffer);
       expect(imageData.length).toBe(imageBuffer.length);
@@ -602,7 +610,7 @@ describe('WorkbookWriter', () => {
       const wb2 = new ExcelTS.Workbook();
       await wb2.xlsx.readFile(TEST_XLSX_FILE_NAME);
       const ws2 = wb2.getWorksheet(sheet);
-      const [cf2] = ws2.conditionalFormattings;
+      const [cf2] = ws2.conditionalFormattings as Array<{rules: Array<{style: {numFmt: {id: number; formatCode: string}}}> }>;
 
       // verify that rules from generated file contain styles with valid numFmt
       cf2.rules.forEach(rule => {

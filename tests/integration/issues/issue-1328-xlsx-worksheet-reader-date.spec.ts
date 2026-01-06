@@ -17,7 +17,7 @@ describe('github issues: Date field with cache style', () => {
           }
         );
         workbookReader.read();
-        workbookReader.on('worksheet', worksheet =>
+        workbookReader.on('worksheet', (worksheet: {on: (event: string, callback: (row: {values: unknown[]}) => void) => void}) =>
           worksheet.on('row', row => rows.push(row.values[1]))
         );
         workbookReader.on('end', resolve);

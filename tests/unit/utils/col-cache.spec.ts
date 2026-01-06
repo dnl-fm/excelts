@@ -3,7 +3,7 @@ import colCache from '../../../src/utils/col-cache.ts';
 describe('colCache', () => {
   it('caches values', () => {
     expect(colCache.l2n('A')).toBe(1);
-    expect(colCache._l2n.A).toBe(1);
+    expect((colCache._l2n as Record<string, number>).A).toBe(1);
     expect(colCache._n2l[1]).toBe('A');
 
     // also, because of the fill heuristic A-Z will be there too
@@ -42,7 +42,7 @@ describe('colCache', () => {
 
     // next level
     expect(colCache.n2l(27)).toBe('AA');
-    expect(colCache._l2n.AB).toBe(28);
+    expect((colCache._l2n as Record<string, number>).AB).toBe(28);
     expect(colCache._n2l[28]).toBe('AB');
   });
 

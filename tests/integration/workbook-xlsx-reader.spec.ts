@@ -152,26 +152,27 @@ describe('WorkbookReader', () => {
         }
       });
 
-      expect(ws.getRow(3).font.color.argb).toBe(
-        ws.getRow(6).font.color.argb
+      type FontColor = {color: {argb: string}};
+      expect((ws.getRow(3).font as FontColor).color.argb).toBe(
+        (ws.getRow(6).font as FontColor).color.argb
       );
-      expect(ws.getRow(6).font.color.argb).toBe(
-        ws.getRow(9).font.color.argb
+      expect((ws.getRow(6).font as FontColor).color.argb).toBe(
+        (ws.getRow(9).font as FontColor).color.argb
       );
-      expect(ws.getRow(9).font.color.argb).toBe(
-        ws.getRow(12).font.color.argb
+      expect((ws.getRow(9).font as FontColor).color.argb).toBe(
+        (ws.getRow(12).font as FontColor).color.argb
       );
-      expect(ws.getRow(12).font.color.argb).not.toBe(
-        ws.getRow(15).font.color.argb
+      expect((ws.getRow(12).font as FontColor).color.argb).not.toBe(
+        (ws.getRow(15).font as FontColor).color.argb
       );
-      expect(ws.getRow(15).font.color.argb).not.toBe(
-        ws.getRow(18).font.color.argb
+      expect((ws.getRow(15).font as FontColor).color.argb).not.toBe(
+        (ws.getRow(18).font as FontColor).color.argb
       );
-      expect(ws.getRow(15).font.color.argb).toBe(
-        ws.getRow(10).font.color.argb
+      expect((ws.getRow(15).font as FontColor).color.argb).toBe(
+        (ws.getRow(10).font as FontColor).color.argb
       );
-      expect(ws.getRow(10).font.color.argb).toBe(
-        ws.getRow(5).font.color.argb
+      expect((ws.getRow(10).font as FontColor).color.argb).toBe(
+        (ws.getRow(5).font as FontColor).color.argb
       );
     });
   });

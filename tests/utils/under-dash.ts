@@ -2,7 +2,7 @@ import underDash from '../../src/utils/under-dash.ts';
 
 const _ = Object.assign(
   {
-    get: function get(obj, path, dflt) {
+    get: function get(obj, path, dflt?) {
       if (typeof path === 'string') {
         path = path.split('.');
       }
@@ -17,7 +17,7 @@ const _ = Object.assign(
       return _.get(obj, path, dummy) !== dummy;
     },
 
-    cloneDeep: function cloneDeep(obj, preserveUndefined) {
+    cloneDeep: function cloneDeep(obj: unknown, preserveUndefined?: boolean) {
       if (preserveUndefined === undefined) {
         preserveUndefined = true;
       }

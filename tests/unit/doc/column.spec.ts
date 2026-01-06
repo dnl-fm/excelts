@@ -27,7 +27,7 @@ describe('Column', () => {
     const column = sheet.addColumn(1);
 
     column.key = 'id1';
-    expect(sheet._keys.id1).toBe(column);
+    expect((sheet._keys as Record<string, unknown>).id1).toBe(column);
 
     expect(column.number).toBe(1);
     expect(column.letter).toBe('A');

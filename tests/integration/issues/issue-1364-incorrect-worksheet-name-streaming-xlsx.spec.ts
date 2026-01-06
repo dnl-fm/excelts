@@ -9,7 +9,7 @@ describe('github issues', () => {
       {}
     );
     workbookReader.read();
-    workbookReader.on('worksheet', worksheet => {
+    workbookReader.on('worksheet', (worksheet: {name: string}) => {
       expect(worksheet.name).toBe('Sum Worksheet');
     });
   });

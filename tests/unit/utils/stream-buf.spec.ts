@@ -50,7 +50,7 @@ describe('StreamBuf', () => {
     try {
       // @ts-expect-error Testing invalid input
       await stream.write({});
-      expect.fail('should fail for given argument');
+      throw new Error('should fail for given argument');
     } catch (e) {
       expect((e as Error).message).toBe(
         'Chunk must be one of type String, Uint8Array, ArrayBuffer or StringBuf.'

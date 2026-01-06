@@ -7,9 +7,8 @@ describe('Workbook Writer', () => {
     const stream = new Stream.Writable({
       write: function noop() {},
     });
-    const wb = new Excel.stream.xlsx.WorkbookWriter({
-      stream,
-    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const wb = new Excel.stream.xlsx.WorkbookWriter({stream} as any);
     wb.addWorksheet('first');
     expect(wb.getWorksheet('w00t')).toBe(undefined);
   });

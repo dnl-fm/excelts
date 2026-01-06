@@ -9,14 +9,14 @@ describe('github issues', () => {
     const ws = wb.addWorksheet('wheee');
     ws.getCell('A1').value = HEBREW_TEST_STRING;
 
-    const options = {
-      encoding: 'UTF-8',
+    const writeOptions = {
+      encoding: 'utf8' as BufferEncoding,
     };
     return wb.csv
-      .writeFile(TEST_CSV_FILE_NAME, options)
+      .writeFile(TEST_CSV_FILE_NAME, writeOptions)
       .then(() => {
         const ws2 = new ExcelTS.Workbook();
-        return ws2.csv.readFile(TEST_CSV_FILE_NAME, options);
+        return ws2.csv.readFile(TEST_CSV_FILE_NAME, {});
       })
       .then(ws2 => {
         expect(ws2.getCell('A1').value).toBe(HEBREW_TEST_STRING);

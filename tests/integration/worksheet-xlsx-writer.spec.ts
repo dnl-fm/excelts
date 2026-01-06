@@ -2,6 +2,7 @@
 import testutils from '../utils/index.ts';
 
 import ExcelTS from '../../src/index.ts';
+import type { FormulaCellValue, HyperlinkCellValue } from '../../src/types/index.ts';
 const CONCATENATE_HELLO_WORLD = 'CONCATENATE("Hello", ", ", "World!")';
 
 describe('WorksheetWriter', () => {
@@ -51,19 +52,19 @@ describe('WorksheetWriter', () => {
       expect(ws.getCell('C1').value).toBe(3.14);
       expect(ws.getCell('D1').value).toBe(now);
       expect(ws.getCell('E1').value).toBe('Hello, World!');
-      expect(ws.getCell('F1').value.text).toBe('www.google.com');
-      expect(ws.getCell('F1').value.hyperlink).toBe(
+      expect((ws.getCell('F1').value as HyperlinkCellValue).text).toBe('www.google.com');
+      expect((ws.getCell('F1').value as HyperlinkCellValue).hyperlink).toBe(
         'http://www.google.com'
       );
 
-      expect(ws.getCell('A2').value.formula).toBe('A1');
-      expect(ws.getCell('A2').value.result).toBe(7);
+      expect((ws.getCell('A2').value as FormulaCellValue).formula).toBe('A1');
+      expect((ws.getCell('A2').value as FormulaCellValue).result).toBe(7);
 
-      expect(ws.getCell('B2').value.formula).toBe(CONCATENATE_HELLO_WORLD);
-      expect(ws.getCell('B2').value.result).toBe('Hello, World!');
+      expect((ws.getCell('B2').value as FormulaCellValue).formula).toBe(CONCATENATE_HELLO_WORLD);
+      expect((ws.getCell('B2').value as FormulaCellValue).result).toBe('Hello, World!');
 
-      expect(ws.getCell('C2').value.formula).toBe('D1');
-      expect(ws.getCell('C2').value.result).toBe(now);
+      expect((ws.getCell('C2').value as FormulaCellValue).formula).toBe('D1');
+      expect((ws.getCell('C2').value as FormulaCellValue).result).toBe(now);
     });
 
     it('stores shared string values properly', () => {
@@ -87,7 +88,7 @@ describe('WorksheetWriter', () => {
       expect(ws.getCell('A1').value).toBe(ws.getCell('A3').value);
 
       // A1 and C2 should not reference the same object
-      expect(ws.getCell('A1').value).toBe(ws.getCell('C2').value.result);
+      expect(ws.getCell('A1').value).toBe((ws.getCell('C2').value as FormulaCellValue).result);
     });
 
     it('assigns cell types properly', () => {

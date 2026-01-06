@@ -27,7 +27,8 @@ describe('typescript', () => {
     const stream = new PassThrough();
     const readPromise = wb2.xlsx.read(stream);
 
-    await wb.xlsx.write(stream);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await wb.xlsx.write(stream as any);
     stream.end();
 
     await readPromise;

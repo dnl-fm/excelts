@@ -3,6 +3,7 @@ import simpleWorkbookModel from '../data/simpleWorkbook.json';
 import testUtils from '../../utils/index.ts';
 
 import Excel from '../../../src/index.ts';
+import type { FormulaCellValue } from '../../../src/types/index.ts';
 // =============================================================================
 // Helpers
 
@@ -77,7 +78,7 @@ describe('Workbook', () => {
     expect(ws.getCell('A1').value).toBe(ws.getCell('A3').value);
 
     // A1 and C2 should not reference the same object
-    expect(ws.getCell('A1').value).toBe(ws.getCell('C2').value.result);
+    expect(ws.getCell('A1').value).toBe((ws.getCell('C2').value as FormulaCellValue).result);
   });
 
   it('assigns cell types properly', () => {
@@ -191,7 +192,8 @@ describe('Workbook', () => {
   // Skipped: Model structure has evolved, test data needs complete rewrite
   it.skip('serialises to model', () => {
     const wb = createSimpleWorkbook();
-    expect(wb.model).toEqual(simpleWorkbookModel);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(wb.model as any).toEqual(simpleWorkbookModel as any);
   });
 
   it('returns undefined for non-existant sheet', () => {

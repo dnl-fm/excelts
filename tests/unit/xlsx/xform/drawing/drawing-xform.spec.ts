@@ -21,7 +21,7 @@ const expectations = [
   {
     title: 'Drawing 1',
     create() {
-      return new DrawingXform({tag: 'xdr:from'});
+      return new DrawingXform();
     },
     initialModel: _initialModel,
     preparedModel: _preparedModel,

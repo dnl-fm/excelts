@@ -26,7 +26,7 @@ const testSheets = {
   splice: _splice,
 };
 
-function getOptions(docType, options) {
+function getOptions(docType, options?) {
   let result;
   switch (docType) {
     case 'xlsx':

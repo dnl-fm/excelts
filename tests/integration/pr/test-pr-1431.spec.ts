@@ -23,7 +23,7 @@ describe('github issues', () => {
 
     await workbook.commit();
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       const workbookReader = new ExcelTS.stream.xlsx.WorkbookReader(
         './test.xlsx',
         {
@@ -35,7 +35,7 @@ describe('github issues', () => {
         }
       );
 
-      workbookReader.on('worksheet', worksheet =>
+      workbookReader.on('worksheet', (worksheet: {on: (event: string, callback: (row: {values: unknown[]}) => void) => void}) =>
         worksheet.on('row', row => {
           expect(row.values[1]).toEqual(rowData[0]);
           expect(row.values[2]).toBe(rowData[1]);

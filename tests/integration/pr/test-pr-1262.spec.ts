@@ -25,6 +25,6 @@ describe('github issues', () => {
     await checkBook.xlsx.readFile('./test.xlsx');
 
     const checkSheet = checkBook.getWorksheet('data');
-    expect(checkSheet.sheetProtection.spinCount).toBe(1);
+    expect((checkSheet.sheetProtection as {spinCount: number}).spinCount).toBe(1);
   });
 });

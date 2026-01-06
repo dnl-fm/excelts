@@ -8,6 +8,17 @@ import pageSetupJson from './data/page-setup.json';
 
 import utils from '../../src/utils/utils.ts';
 import ExcelTS from '../../src/index.ts';
+
+interface StreamCell {
+  value: unknown;
+  type: number;
+}
+
+interface StreamRow {
+  number: number;
+  height?: number;
+  getCell: (col: string) => StreamCell;
+}
 const testValues = tools.fix(sheetValuesJson);
 
 function fillFormula(f) {
@@ -29,19 +40,19 @@ export default {
   properties: tools.fix(sheetPropertiesJson),
   pageSetup: tools.fix(pageSetupJson),
 
-  checkBook(filename) {
-    const wb = new ExcelTS.stream.xlsx.WorkbookReader();
+  checkBook(filename: string) {
+    const wb = new ExcelTS.stream.xlsx.WorkbookReader(filename);
 
     // expectations
     const dateAccuracy = 0.00001;
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       let rowCount = 0;
 
-      wb.on('worksheet', ws => {
+      wb.on('worksheet', (ws: {on: (event: string, cb: (row: StreamRow) => void) => void}) => {
         // Sheet name stored in workbook. Not guaranteed here
         // expect(ws.name).toBe('blort');
-        ws.on('row', row => {
+        ws.on('row', (row: StreamRow) => {
           rowCount++;
           try {
             switch (row.number) {
@@ -55,7 +66,7 @@ export default {
                   ExcelTS.ValueType.String
                 );
                 expect(
-                  Math.abs(row.getCell('C').value - streamedValues.C1)
+                  Math.abs((row.getCell('C').value as number) - streamedValues.C1)
                 ).toBeLessThan(dateAccuracy);
                 expect(row.getCell('C').type).toBe(
                   ExcelTS.ValueType.Number
@@ -132,14 +143,14 @@ export default {
                   ExcelTS.ValueType.String
                 );
 
-                expect(Math.abs(row.getCell('D').value - 1.6)).toBeLessThan(
+                expect(Math.abs((row.getCell('D').value as number) - 1.6)).toBeLessThan(
                   0.00000001
                 );
                 expect(row.getCell('D').type).toBe(
                   ExcelTS.ValueType.Number
                 );
 
-                expect(Math.abs(row.getCell('E').value - 1.6)).toBeLessThan(
+                expect(Math.abs((row.getCell('E').value as number) - 1.6)).toBeLessThan(
                   0.00000001
                 );
                 expect(row.getCell('E').type).toBe(
@@ -147,7 +158,7 @@ export default {
                 );
 
                 expect(
-                  Math.abs(row.getCell('F').value - streamedValues.C1)
+                  Math.abs((row.getCell('F').value as number) - streamedValues.C1)
                 ).toBeLessThan(dateAccuracy);
                 expect(row.getCell('F').type).toBe(
                   ExcelTS.ValueType.Number

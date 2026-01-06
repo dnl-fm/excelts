@@ -104,7 +104,7 @@ describe('Workbook', () => {
       return wb.xlsx.read(bufferStream).then(() => {
         const ws = wb.worksheets[0];
         expect(ws.getCell('A1').value).toEqual(richTextSampleA1);
-        expect(ws.getCell('A1').text).toBe(ws.getCell('A2').value);
+        expect(ws.getCell('A1').text).toBe(ws.getCell('A2').value as string);
       });
     });
 

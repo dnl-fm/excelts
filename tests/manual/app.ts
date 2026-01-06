@@ -4,6 +4,7 @@ import fs from 'fs';
 import express from 'express';
 import path from 'path';
 import StreamBuf from '../../src/utils/stream-buf.ts';
+import ExcelTS from '../../src/index.ts';
 
 console.log('Copying bundle.js to public folder');
 fs.createReadStream(`${__dirname}/../../dist/exceljs.min.js`).pipe(
@@ -35,8 +36,9 @@ app.post('/api/upload', (req, res) => {
       ws.getCell('A2').value = 14;
 
       const outStream = new StreamBuf();
-      wb.xlsx.write(outStream).then(() => {
-        const b = outStream.read();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (wb.xlsx.write as any)(outStream).then(() => {
+        const b = outStream.read() as Buffer;
         const s = b.toString('base64');
         res.write(s);
         res.end();
