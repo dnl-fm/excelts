@@ -1,6 +1,6 @@
 {
   "name": "excelts",
-  "version": "5.1.0",
+  "version": "5.1.1",
   "description": "Excel Workbook Manager - Bun-first TypeScript fork of ExcelJS for XLSX and CSV.",
   "private": true,
   "type": "module",
@@ -39,11 +39,9 @@
     "index.d.ts"
   ],
   "scripts": {
-    "build": "bun run clean && bun run build:browser && bun run build:browser:min && bun run build:bare && bun run build:bare:min && bun run build:license",
+    "build": "bun run clean && bun run build:browser && bun run build:browser:min && bun run build:license",
     "build:browser": "bun build --target=browser --format=iife --sourcemap=linked --outdir=dist --entry-naming=excelts.js src/excelts.browser.ts",
     "build:browser:min": "bun build --target=browser --format=iife --sourcemap=linked --minify --outdir=dist --entry-naming=excelts.min.js src/excelts.browser.ts",
-    "build:bare": "bun build --target=browser --format=iife --sourcemap=linked --outdir=dist --entry-naming=excelts.bare.js src/excelts.bare.ts",
-    "build:bare:min": "bun build --target=browser --format=iife --sourcemap=linked --minify --outdir=dist --entry-naming=excelts.bare.min.js src/excelts.bare.ts",
     "build:license": "mkdir -p dist && cp LICENSE dist/LICENSE",
     "clean": "rm -rf dist",
     "lint": "oxlint --config oxlint.json --deny-warnings --ignore-path .gitignore src tests",

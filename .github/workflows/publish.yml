@@ -45,8 +45,4 @@ jobs:
             dist/excelts.js.map
             dist/excelts.min.js
             dist/excelts.min.js.map
-            dist/excelts.bare.js
-            dist/excelts.bare.js.map
-            dist/excelts.bare.min.js
-            dist/excelts.bare.min.js.map
           generate_release_notes: true
