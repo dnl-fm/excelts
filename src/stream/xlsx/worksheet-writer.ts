@@ -10,6 +10,7 @@ import StringBuf from '../../utils/string-buf.ts';
 import Row from '../../doc/row.ts';
 import Column from '../../doc/column.ts';
 import Cell from '../../doc/cell.ts';
+import { ColumnDefinition } from '../../doc/worksheet.ts';
 import SheetRelsWriter from './sheet-rels-writer.ts';
 import SheetCommentsWriter from './sheet-comments-writer.ts';
 import DataValidations from '../../doc/data-validations.ts';
@@ -302,17 +303,17 @@ class WorksheetWriter {
     return this._columns;
   }
 
-  set columns(value: Column[]) {
+  set columns(value: ColumnDefinition[]) {
     const headerCount = value.reduce((pv, cv) => {
-      const count = (cv.header && 1) || (cv.headers?.length) || 0;
+      const count = (cv.header && 1) || ((cv as {headers?: string[]}).headers?.length) || 0;
       return Math.max(pv, count);
     }, 0);
     this._headerRowCount = headerCount;
 
     let count = 1;
     const columns = (this._columns = []);
-    value.forEach((defn: Column) => {
-      const column = new Column(this as any, count++, defn as any);
+    value.forEach((defn: ColumnDefinition) => {
+      const column = new Column(this as unknown as Column['_worksheet'], count++, defn as Record<string, unknown>);
       columns.push(column);
     });
   }
@@ -431,10 +432,10 @@ class WorksheetWriter {
     return row ? row.findCell(address.column) : undefined;
   }
 
-  getCell(r: number | string, c?: number): unknown {
+  getCell(r: number | string, c?: number): Cell {
     const address = colCache.getAddress(r, c);
     const row = this.getRow(address.row);
-    return row?.getCellEx(address);
+    return row.getCellEx(address);
   }
 
   mergeCells(...cells: unknown[]): void {
