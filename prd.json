@@ -10,7 +10,7 @@
         "read ~/Buildspace/dnl/libs/excelts/typecheck-fix.md",
         "run bunx tsc --noEmit"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }
