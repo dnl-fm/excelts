@@ -1,4 +1,5 @@
 import StringBuf from '../../../src/utils/string-buf.ts';
+import { toString } from '../../../src/utils/bytes.ts';
 
 describe('StringBuf', () => {
   // StringBuf is a lightweight string-builder used by the streaming writers to build
@@ -7,7 +8,7 @@ describe('StringBuf', () => {
     const sb = new StringBuf({size: 64});
     sb.addText('Hello, World!');
     const chunk = sb.toBuffer();
-    expect(chunk.toString('UTF8')).toBe('Hello, World!');
+    expect(toString(chunk, 'utf8')).toBe('Hello, World!');
   });
 
   it('grows properly', () => {
@@ -33,7 +34,7 @@ describe('StringBuf', () => {
 
     // after all that - the string should be intact
     const chunk = sb.toBuffer();
-    expect(chunk.toString('UTF8')).toBe('Hello, World! Hello.');
+    expect(toString(chunk, 'utf8')).toBe('Hello, World! Hello.');
   });
 
   it('resets', () => {
@@ -48,6 +49,6 @@ describe('StringBuf', () => {
     expect(sb.length).toBe(6);
 
     const chunk = sb.toBuffer();
-    expect(chunk.toString('UTF8')).toBe('World!');
+    expect(toString(chunk, 'utf8')).toBe('World!');
   });
 });

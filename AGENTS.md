@@ -198,7 +198,7 @@ testXformHelper(expectations);
 
 ## Dependencies
 
-**Production**: archiver, dayjs, jszip, saxes, udsv, unzipper
+**Production**: fflate, dayjs, saxes, udsv
 
 **Dev**: @types/bun, express, oxfmt, oxlint, typescript
 
@@ -207,11 +207,10 @@ testXformHelper(expectations);
 - `readable-stream` → Custom async iterables + SimpleBuffer
 - `tmp` → `Bun.env.TMPDIR` + manual cleanup
 - `fast-csv` → `udsv` (10x faster, no Node streams)
+- `Buffer` → `Uint8Array` + `src/utils/bytes.ts` helpers
+- `jszip/archiver/unzipper` → `fflate` (smaller, faster, browser-native)
 
-**Node compatibility** (still needed for some features):
-- Streaming reader/writer for large files uses Node streams
-- Sheet encryption uses Node crypto (beyond Web Crypto)
-- Legacy utility files (stream-buf.ts, stream-base64.ts) not used in main path
+**Node compatibility**: None required. Fully Bun-native.
 
 ## Status
 
@@ -223,18 +222,12 @@ testXformHelper(expectations);
 - ✅ CSV module is Bun-native (uses udsv, Bun.file)
 - ✅ Streaming module uses Bun file I/O with Node stream bridge for ZIP libs
 - ✅ Created SimpleBuffer, SimpleEventEmitter for Bun-native code
-- ✅ Fixed `outlineLevel` redeclaration in `src/doc/row.ts`
-- ✅ Fixed SharedString parsing (TextXform model getter shadowing)
-- ✅ Fixed cell-xform null check for model.value.richText
-- ✅ Fixed xlsx.ts stream handling (theme, media, drawing, raw XML entries)
-- ✅ Fixed defined-names.ts matrix variable bug
-- ⚠️ 2 unit tests failing (DefinedNames horizontal range consolidation)
-- ⚠️ 60 integration tests failing (various pre-existing issues)
-- ⚠️ 10 Node imports remain (mostly for archiver/unzipper stream compatibility)
+- ✅ Replaced Buffer with Uint8Array throughout (`src/utils/bytes.ts`)
+- ✅ Refactored `stream-buf.ts` to be browser-native (uses SimpleEventEmitter + bytes.ts)
+- ✅ Replaced jszip/archiver/unzipper with fflate
+- ✅ WorkbookWriter now uses Bun.write() for file output (removed Node stream option)
+- ✅ All 1079 tests passing (883 unit + 196 integration)
 
 ## TODO
 
-- [ ] Fix DefinedNames horizontal range consolidation algorithm
-- [ ] Investigate remaining integration test failures
 - [ ] Generate `index.d.ts` from source
-- [ ] Consider replacing remaining deps (archiver/unzipper consolidation with jszip)

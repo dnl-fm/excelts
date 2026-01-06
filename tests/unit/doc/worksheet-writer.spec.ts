@@ -2,6 +2,8 @@ import {expect, describe, it} from 'bun:test';
 
 import WorksheetWriter from '../../../src/stream/xlsx/worksheet-writer.ts';
 import StreamBuf from '../../../src/utils/stream-buf.ts';
+import { toString } from '../../../src/utils/bytes.ts';
+
 /**
  * Basic XML validity check
  */
@@ -21,7 +23,7 @@ describe('Workbook Writer', () => {
       };
       mockWorkbook.stream.on('finish', () => {
         try {
-          const xml = mockWorkbook.stream.read().toString();
+          const xml = toString(mockWorkbook.stream.read(), 'utf8');
           expectXmlValid(xml);
           resolve();
         } catch (error) {

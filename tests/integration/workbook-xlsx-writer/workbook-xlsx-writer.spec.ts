@@ -1,13 +1,9 @@
 
-
-import fs from 'fs';
 import testUtils from '../../utils/index.ts';
-import { promisify } from 'util';
 
 import ExcelTS from '../../../src/index.ts';
 const TEST_XLSX_FILE_NAME = './tests/out/wb.test.xlsx';
 const IMAGE_FILENAME = `${__dirname}/../data/image.png`;
-const fsReadFileAsync = promisify(fs.readFile);
 
 describe('WorkbookWriter', () => {
   it('creates sheets with correct names', () => {
@@ -294,7 +290,7 @@ describe('WorkbookWriter', () => {
 
     it('addRow', () => {
       const options = {
-        stream: fs.createWriteStream(TEST_XLSX_FILE_NAME, {flags: 'w'}),
+        filename: TEST_XLSX_FILE_NAME,
         useStyles: true,
         useSharedStrings: true,
       };
@@ -533,8 +529,10 @@ describe('WorkbookWriter', () => {
 
       const backgroundId2 = ws2.getBackgroundImageId();
       const image = wb2.getImage(backgroundId2);
-      const imageData = await fsReadFileAsync(IMAGE_FILENAME);
-      expect(Buffer.compare(imageData, image.buffer)).toBe(0);
+      const imageData = await Bun.file(IMAGE_FILENAME).bytes();
+      const imageBuffer = new Uint8Array(image.buffer);
+      expect(imageData.length).toBe(imageBuffer.length);
+      expect(imageBuffer.every((b, i) => b === imageData[i])).toBe(true);
     });
 
     it('with background image where worksheet is commited in advance', async () => {
@@ -560,8 +558,10 @@ describe('WorkbookWriter', () => {
 
       const backgroundId2 = ws2.getBackgroundImageId();
       const image = wb2.getImage(backgroundId2);
-      const imageData = await fsReadFileAsync(IMAGE_FILENAME);
-      expect(Buffer.compare(imageData, image.buffer)).toBe(0);
+      const imageData = await Bun.file(IMAGE_FILENAME).bytes();
+      const imageBuffer = new Uint8Array(image.buffer);
+      expect(imageData.length).toBe(imageBuffer.length);
+      expect(imageBuffer.every((b, i) => b === imageData[i])).toBe(true);
     });
 
     it('with conditional formatting', async () => {

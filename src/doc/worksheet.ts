@@ -9,6 +9,7 @@ import Image from './image.ts';
 import Table from './table.ts';
 import DataValidations from './data-validations.ts';
 import Encryptor from '../utils/encryptor.ts';
+import { toString as bytesToString } from '../utils/bytes.ts';
 import { makePivotTable } from './pivot-table.ts';
 import copyStyle from '../utils/copy-style.ts';
 import type Workbook from './workbook.ts';
@@ -1105,7 +1106,7 @@ class Worksheet {
       }
       if (password) {
         this.sheetProtection.algorithmName = 'SHA-512';
-        this.sheetProtection.saltValue = Encryptor.randomBytes(16).toString('base64');
+        this.sheetProtection.saltValue = bytesToString(Encryptor.randomBytes(16), 'base64');
         this.sheetProtection.spinCount = options && 'spinCount' in options ? options.spinCount : 100000; // allow user specified spinCount
         this.sheetProtection.hashValue = Encryptor.convertPasswordToHash(
           password,

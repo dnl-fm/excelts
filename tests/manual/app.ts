@@ -3,7 +3,6 @@
 import fs from 'fs';
 import express from 'express';
 import path from 'path';
-import ExcelJS from '../../src/index.ts';
 import StreamBuf from '../../src/utils/stream-buf.ts';
 
 console.log('Copying bundle.js to public folder');

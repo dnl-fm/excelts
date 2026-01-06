@@ -1,5 +1,6 @@
 // Browser tests - using Bun environment instead of Jasmine
 import ExcelTS from '../../src/index.ts';
+import { toString as bytesToString, fromString } from '../../src/utils/bytes.ts';
 
 function unexpectedError(done) {
   return function(error) {
@@ -47,10 +48,15 @@ describe('ExcelTS', () => {
     ws.getCell('A2').value = 7;
 
     wb.xlsx
-      .writeBuffer(options)
+      .writeBuffer()
       .then(buffer => {
+        // Convert Uint8Array to base64 string
+        const base64String = bytesToString(buffer, 'base64');
+        // Convert base64 string back to Uint8Array for load
+        const base64Buffer = fromString(base64String, 'utf8');
+        
         const wb2 = new ExcelTS.Workbook();
-        return wb2.xlsx.load(buffer.toString('base64'), options).then(() => {
+        return wb2.xlsx.load(base64Buffer, options).then(() => {
           const ws2 = wb2.getWorksheet('blort');
           expect(ws2).toBeTruthy();
 
@@ -76,7 +82,7 @@ describe('ExcelTS', () => {
     wb.csv
       .writeBuffer()
       .then(buffer => {
-        expect(buffer.toString().trim()).toEqual(
+        expect(bytesToString(buffer, 'utf8').trim()).toEqual(
           '"Hello, World!",What time is it?\n7,12pm'
         );
         done();

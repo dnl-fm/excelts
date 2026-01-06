@@ -1,7 +1,6 @@
 /**
  * WorkbookWriter streams XLSX output with optional shared strings and styles.
  */
-import { Writable, PassThrough } from 'stream';
 import { zipSync, strToU8 } from 'fflate';
 import { isBytes } from '../../utils/bytes.ts';
 import StreamBuf from '../../utils/stream-buf.ts';
@@ -20,7 +19,6 @@ import theme1Xml from '../../xlsx/xml/theme1.ts';
 
 /** Options for WorkbookWriter */
 export interface WorkbookWriterOptions {
-  stream?: Writable;
   filename?: string;
   useSharedStrings?: boolean;
   useStyles?: boolean;
@@ -145,7 +143,7 @@ class WorkbookWriter {
   media: unknown[];
   commentRefs: unknown[];
   zip: ZipBuilder;
-  stream: Writable | StreamBuf;
+  stream: StreamBuf;
   promise: Promise<unknown[]>;
   zipOptions?: Record<string, unknown>;
   private _definedNames: DefinedNames;
@@ -180,14 +178,10 @@ class WorkbookWriter {
     this.commentRefs = [];
 
     this.zip = new ZipBuilder();
-    if (options.stream) {
-      this.stream = options.stream;
-    } else if (options.filename) {
+    if (options.filename) {
       this._filename = options.filename;
-      this.stream = new StreamBuf();
-    } else {
-      this.stream = new StreamBuf();
     }
+    this.stream = new StreamBuf();
 
     // these bits can be added right now
     this.promise = Promise.all([this.addThemes(), this.addOfficeRels()]);
@@ -469,20 +463,10 @@ class WorkbookWriter {
     if (this._filename) {
       // Write directly to file with Bun
       await Bun.write(this._filename, buffer);
-    } else if (this.stream instanceof StreamBuf) {
-      // Write to StreamBuf
+    } else {
+      // Write to in-memory StreamBuf
       this.stream.write(buffer);
       this.stream.end();
-    } else {
-      // Write to provided stream
-      await new Promise<void>((resolve, reject) => {
-        this.stream.write(buffer, (err: Error | null | undefined) => {
-          if (err) reject(err);
-          else {
-            (this.stream as Writable).end(() => resolve());
-          }
-        });
-      });
     }
     
     return this;

@@ -27,7 +27,7 @@ const Encryptor = {
    * Synchronous hash using SubtleCrypto (for compatibility)
    * Note: This is async internally but wrapped for sync interface
    */
-  hashSync(algorithm: string, ...buffers: Uint8Array[]): Uint8Array {
+  hashSync(_algorithm: string, ..._buffers: Uint8Array[]): Uint8Array {
     // For browser compatibility, we need async crypto
     // This is a placeholder that will be called in async context
     throw new Error('Use async hash() method instead of hashSync()');

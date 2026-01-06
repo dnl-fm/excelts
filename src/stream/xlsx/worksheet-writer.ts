@@ -4,6 +4,7 @@ import _ from '../../utils/under-dash.ts';
 import RelType from '../../xlsx/rel-type.ts';
 import colCache from '../../utils/col-cache.ts';
 import Encryptor from '../../utils/encryptor.ts';
+import { toString as bytesToString } from '../../utils/bytes.ts';
 import Dimensions from '../../doc/range.ts';
 import StringBuf from '../../utils/string-buf.ts';
 import Row from '../../doc/row.ts';
@@ -490,7 +491,7 @@ class WorksheetWriter {
       }
       if (password) {
         this.sheetProtection.algorithmName = 'SHA-512';
-        this.sheetProtection.saltValue = Encryptor.randomBytes(16).toString('base64');
+        this.sheetProtection.saltValue = bytesToString(Encryptor.randomBytes(16), 'base64');
         this.sheetProtection.spinCount = options && 'spinCount' in options ? (options.spinCount as number) : 100000;
         this.sheetProtection.hashValue = Encryptor.convertPasswordToHash(
           password,

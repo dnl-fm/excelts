@@ -1,11 +1,16 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ESNext",
     "sourceMap": true,
-    "types": ["bun-types"],
+    "types": ["bun-types", "bun-types/test-globals"],
     "skipLibCheck": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "strict": false,
+    "noImplicitAny": false
   },
   "include": [
     "src/**/*.ts",
