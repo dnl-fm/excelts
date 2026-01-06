@@ -2,7 +2,7 @@
 import { SaxesParser } from 'saxes';
 import { bufferToString } from './browser-buffer-decode.ts';
 
-export default async function* (iterable: AsyncIterable<string | Buffer>) {
+export default async function* (iterable: AsyncIterable<string | Uint8Array>) {
   if (!iterable[Symbol.asyncIterator]) {
     throw new Error('parseSax requires an async iterable');
   }

@@ -1,6 +1,8 @@
 /**
  * Browser entrypoint that exposes ExcelTS on the global scope.
+ * No Node.js polyfills required - uses native browser APIs.
  */
+
 import Enums from './doc/enums.ts';
 import _Workbook from './doc/workbook.ts';
 

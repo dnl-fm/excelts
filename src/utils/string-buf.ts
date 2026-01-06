@@ -1,8 +1,17 @@
+import { alloc } from './bytes.ts';
+
+const textEncoder = new TextEncoder();
+
 // StringBuf - a way to keep string memory operations to a minimum
 // while building the strings for the xml files
 class StringBuf {
-  constructor(options) {
-    this._buf = Buffer.alloc((options && options.size) || 16384);
+  _buf: Uint8Array;
+  _encoding: string;
+  _inPos: number;
+  _buffer: Uint8Array | undefined;
+
+  constructor(options?: { size?: number; encoding?: string }) {
+    this._buf = alloc((options && options.size) || 16384);
     this._encoding = (options && options.encoding) || 'utf8';
 
     // where in the buffer we are at
@@ -12,68 +21,65 @@ class StringBuf {
     this._buffer = undefined;
   }
 
-  get length() {
+  get length(): number {
     return this._inPos;
   }
 
-  get capacity() {
+  get capacity(): number {
     return this._buf.length;
   }
 
-  get buffer() {
+  get buffer(): Uint8Array {
     return this._buf;
   }
 
-  toBuffer() {
+  toBuffer(): Uint8Array {
     // return the current data as a single enclosing buffer
     if (!this._buffer) {
-      this._buffer = Buffer.alloc(this.length);
-      this._buf.copy(this._buffer, 0, 0, this.length);
+      this._buffer = alloc(this.length);
+      this._buffer.set(this._buf.subarray(0, this.length));
     }
     return this._buffer;
   }
 
-  reset(position) {
+  reset(position?: number): void {
     position = position || 0;
     this._buffer = undefined;
     this._inPos = position;
   }
 
-  _grow(min) {
+  _grow(min: number): void {
     let size = this._buf.length * 2;
     while (size < min) {
       size *= 2;
     }
-    const buf = Buffer.alloc(size);
-    this._buf.copy(buf, 0);
+    const buf = alloc(size);
+    buf.set(this._buf);
     this._buf = buf;
   }
 
-  addText(text) {
+  addText(text: string): void {
     this._buffer = undefined;
 
-    let inPos = this._inPos + this._buf.write(text, this._inPos, this._encoding);
-
+    const encoded = textEncoder.encode(text);
+    
     // if we've hit (or nearing capacity), grow the buf
-    while (inPos >= this._buf.length - 4) {
-      this._grow(this._inPos + text.length);
-
-      // keep trying to write until we've completely written the text
-      inPos = this._inPos + this._buf.write(text, this._inPos, this._encoding);
+    while (this._inPos + encoded.length >= this._buf.length - 4) {
+      this._grow(this._inPos + encoded.length + 4);
     }
 
-    this._inPos = inPos;
+    this._buf.set(encoded, this._inPos);
+    this._inPos += encoded.length;
   }
 
-  addStringBuf(inBuf) {
+  addStringBuf(inBuf: StringBuf): void {
     if (inBuf.length) {
       this._buffer = undefined;
 
       if (this.length + inBuf.length > this.capacity) {
         this._grow(this.length + inBuf.length);
       }
-      // eslint-disable-next-line no-underscore-dangle
-      inBuf._buf.copy(this._buf, this._inPos, 0, inBuf.length);
+      this._buf.set(inBuf._buf.subarray(0, inBuf.length), this._inPos);
       this._inPos += inBuf.length;
     }
   }

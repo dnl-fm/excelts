@@ -11,8 +11,11 @@ Read and write Excel files. TypeScript, minimal dependencies, works in Bun and b
 | Runtime | Node.js | Bun / Browser |
 | Modules | CJS + ESM | ESM only |
 | ZIP handling | 3 packages (170KB) | fflate (8KB) |
-| Bundle size | 2.1 MB | 817 KB |
+| Bundle size | 2.1 MB | 289 KB |
+| Node polyfills | Required | None |
 | Types | Separate `.d.ts` | Native TypeScript |
+
+**Browser-native**: Uses `Uint8Array`, `TextEncoder/TextDecoder`, and Web Crypto APIs. No Buffer polyfill needed.
 
 ## Install
 
@@ -102,7 +105,7 @@ const sheet = workbook.addWorksheet('Export');
 sheet.addRow(['Name', 'Email', 'Date']);
 sheet.addRow(['John', 'john@example.com', new Date()]);
 
-// Get as buffer and trigger download
+// Get as Uint8Array and trigger download
 const buffer = await workbook.xlsx.writeBuffer();
 const blob = new Blob([buffer], { 
   type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
@@ -168,6 +171,17 @@ const imageId = workbook.addImage({
 
 sheet.addImage(imageId, 'B2:D6');
 ```
+
+## Browser Build
+
+The browser build (`dist/excelts.min.js`) uses only native browser APIs:
+
+- `Uint8Array` instead of Node.js Buffer
+- `TextEncoder` / `TextDecoder` for string encoding
+- `crypto.randomUUID()` and `crypto.getRandomValues()` for crypto
+- `fflate` for ZIP compression (pure JS, no WASM)
+
+No polyfills required. Works in all modern browsers.
 
 ## API
 

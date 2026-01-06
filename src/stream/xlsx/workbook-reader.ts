@@ -1,5 +1,6 @@
 
 import { unzipSync, strFromU8 } from 'fflate';
+import { concat, isBytes, toBytes } from '../../utils/bytes.ts';
 import parseSax from '../../utils/parse-sax.ts';
 import StyleManager from '../../xlsx/xform/style/styles-xform.ts';
 import WorkbookXform from '../../xlsx/xform/book/workbook-xform.ts';
@@ -81,17 +82,15 @@ class WorkbookReader extends SimpleEventEmitter {
       buffer = new Uint8Array(arrayBuffer);
     } else if (input instanceof ArrayBuffer) {
       buffer = new Uint8Array(input);
-    } else if (input instanceof Uint8Array) {
+    } else if (isBytes(input)) {
       buffer = input;
-    } else if (Buffer.isBuffer(input)) {
-      buffer = new Uint8Array(input);
-    } else if (input && typeof (input as AsyncIterable<Buffer>)[Symbol.asyncIterator] === 'function') {
+    } else if (input && typeof (input as AsyncIterable<Uint8Array>)[Symbol.asyncIterator] === 'function') {
       // Async iterable - collect chunks
-      const chunks: Buffer[] = [];
-      for await (const chunk of input as AsyncIterable<Buffer>) {
-        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      const chunks: Uint8Array[] = [];
+      for await (const chunk of input as AsyncIterable<Uint8Array | string>) {
+        chunks.push(isBytes(chunk) ? chunk : toBytes(chunk as string));
       }
-      buffer = new Uint8Array(Buffer.concat(chunks));
+      buffer = concat(chunks);
     } else {
       throw new Error(`Could not recognise input: ${input}`);
     }

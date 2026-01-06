@@ -1,9 +1,9 @@
-
 // =============================================================================
 // The ZipWriter class
 // Packs streamed data into an output zip stream using fflate
 import { zipSync, strToU8 } from 'fflate';
 import SimpleBuffer from './simple-buffer.ts';
+import { isBytes } from './bytes.ts';
 
 type EventHandler = (...args: unknown[]) => void;
 
@@ -36,7 +36,7 @@ class ZipWriter {
     return false;
   }
 
-  append(data: string | Buffer | Uint8Array, options: { name: string; base64?: boolean }): void {
+  append(data: string | Uint8Array, options: { name: string; base64?: boolean }): void {
     let bytes: Uint8Array;
     
     if (options.base64) {
@@ -48,10 +48,10 @@ class ZipWriter {
       }
     } else if (typeof data === 'string') {
       bytes = strToU8(data);
-    } else if (Buffer.isBuffer(data)) {
-      bytes = new Uint8Array(data);
-    } else {
+    } else if (isBytes(data)) {
       bytes = data;
+    } else {
+      bytes = new Uint8Array(data as ArrayBuffer);
     }
     
     this.files.set(options.name, bytes);
@@ -65,46 +65,47 @@ class ZipWriter {
     }
     
     const zipped = zipSync(filesObj, { level: 6 });
-    this.stream.end(Buffer.from(zipped));
+    this.stream.end(new Uint8Array(zipped));
     this.emit('finish');
   }
 
   // ==========================================================================
   // Stream.Readable interface
-  read(size?: number): Buffer | null {
+  read(size?: number): Uint8Array | null {
     return this.stream.read(size);
   }
 
-  setEncoding(encoding: BufferEncoding): SimpleBuffer {
-    return this.stream.setEncoding(encoding);
+  setEncoding(encoding: string): void {
+    this.stream.setEncoding(encoding);
   }
 
-  pause(): SimpleBuffer {
-    return this.stream.pause();
+  pause(): void {
+    this.stream.pause();
   }
 
-  resume(): SimpleBuffer {
-    return this.stream.resume();
+  resume(): void {
+    this.stream.resume();
   }
 
   isPaused(): boolean {
     return this.stream.isPaused();
   }
 
-  pipe<T>(destination: T, options?: { end?: boolean }): T {
-    return this.stream.pipe(destination, options);
+  pipe<T>(destination: T, _options?: { end?: boolean }): T {
+    this.stream.pipe(destination as unknown as { write(chunk: Uint8Array | string, callback?: () => void): void; end(): void; });
+    return destination;
   }
 
-  unpipe(destination?: unknown): SimpleBuffer {
-    return this.stream.unpipe(destination);
+  unpipe(destination?: unknown): void {
+    this.stream.unpipe(destination as { write(chunk: Uint8Array | string, callback?: () => void): void; end(): void; });
   }
 
-  unshift(chunk: Buffer): void {
-    return this.stream.unshift(chunk);
+  unshift(_chunk: Uint8Array): void {
+    // Not implemented for SimpleBuffer
   }
 
-  wrap(stream: unknown): SimpleBuffer {
-    return this.stream.wrap(stream);
+  wrap(_stream: unknown): void {
+    // Not implemented for SimpleBuffer
   }
 }
 

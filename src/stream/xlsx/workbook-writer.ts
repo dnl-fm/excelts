@@ -3,6 +3,7 @@
  */
 import { Writable, PassThrough } from 'stream';
 import { zipSync, strToU8 } from 'fflate';
+import { isBytes } from '../../utils/bytes.ts';
 import StreamBuf from '../../utils/stream-buf.ts';
 import RelType from '../../xlsx/rel-type.ts';
 import StylesXform from '../../xlsx/xform/style/styles-xform.ts';
@@ -93,8 +94,8 @@ class ZipBuilder {
       }
     } else if (typeof data === 'string') {
       bytes = strToU8(data);
-    } else if (Buffer.isBuffer(data)) {
-      bytes = new Uint8Array(data);
+    } else if (isBytes(data)) {
+      bytes = data;
     } else {
       bytes = data;
     }
@@ -463,7 +464,7 @@ class WorkbookWriter {
 
   private async _finalize(): Promise<WorkbookWriter> {
     const zipped = this.zip.finalize();
-    const buffer = Buffer.from(zipped);
+    const buffer = new Uint8Array(zipped);
     
     if (this._filename) {
       // Write directly to file with Bun

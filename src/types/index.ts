@@ -5,13 +5,13 @@
 /**
  * Stream types - async iterable interface for Bun-native streaming
  */
-export type ReadableStream = AsyncIterable<Buffer | string>;
+export type ReadableStream = AsyncIterable<Uint8Array | string>;
 
 /**
  * Writable stream interface
  */
 export interface WritableStream {
-  write(chunk: Buffer | string, callback?: (err?: Error) => void): boolean;
+  write(chunk: Uint8Array | string, callback?: (err?: Error) => void): boolean;
   end(callback?: () => void): void;
   on?(event: string, listener: (...args: unknown[]) => void): void;
 }
@@ -120,7 +120,7 @@ export interface MediaModel {
   type: string;
   name: string;
   extension: string;
-  buffer?: Buffer;
+  buffer?: Uint8Array;
   filename?: string;
   base64?: string;
 }
@@ -326,7 +326,7 @@ export interface ParsedCorePropertiesModel {
 export interface ZipEntry {
   name: string;
   dir: boolean;
-  async(type: 'nodebuffer'): Promise<Buffer>;
+  async(type: 'uint8array'): Promise<Uint8Array>;
   async(type: 'string'): Promise<string>;
   on?(event: 'error', handler: (error: Error) => void): void;
   pipe?(destination: WritableStream): void;
@@ -337,7 +337,7 @@ export interface ZipEntry {
  */
 export interface ZipWriter {
   pipe(destination: WritableStream): ZipWriter;
-  append(data: string | Buffer, options: { name: string; base64?: boolean }): Promise<void> | void;
+  append(data: string | Uint8Array, options: { name: string; base64?: boolean }): Promise<void> | void;
   finalize(): Promise<void> | void;
   on(event: 'finish' | 'error', handler: (...args: unknown[]) => void): void;
 }

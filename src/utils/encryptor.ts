@@ -1,54 +1,84 @@
+import { concat, fromString, toString, alloc } from './bytes.ts';
 
-import crypto from 'crypto';
-
+// Browser-compatible crypto using SubtleCrypto
 const Encryptor = {
   /**
    * Calculate a hash of the concatenated buffers with the given algorithm.
-   * @param {string} algorithm - The hash algorithm.
-   * @returns {Buffer} The hash
+   * @param algorithm - The hash algorithm (e.g., 'SHA-256', 'SHA-512')
+   * @param buffers - The buffers to hash
+   * @returns The hash as Uint8Array
    */
-  hash(algorithm, ...buffers) {
-    const hash = crypto.createHash(algorithm);
-    hash.update(Buffer.concat(buffers));
-    return hash.digest();
+  async hash(algorithm: string, ...buffers: Uint8Array[]): Promise<Uint8Array> {
+    // Normalize algorithm name for SubtleCrypto
+    const algoMap: Record<string, string> = {
+      'sha1': 'SHA-1',
+      'sha256': 'SHA-256',
+      'sha384': 'SHA-384',
+      'sha512': 'SHA-512',
+    };
+    const normalizedAlgo = algoMap[algorithm.toLowerCase()] || algorithm.toUpperCase();
+    
+    const combined = concat(buffers);
+    const hashBuffer = await crypto.subtle.digest(normalizedAlgo, combined);
+    return new Uint8Array(hashBuffer);
   },
+
+  /**
+   * Synchronous hash using SubtleCrypto (for compatibility)
+   * Note: This is async internally but wrapped for sync interface
+   */
+  hashSync(algorithm: string, ...buffers: Uint8Array[]): Uint8Array {
+    // For browser compatibility, we need async crypto
+    // This is a placeholder that will be called in async context
+    throw new Error('Use async hash() method instead of hashSync()');
+  },
+
   /**
    * Convert a password into an encryption key
-   * @param {string} password - The password
-   * @param {string} hashAlgorithm - The hash algoritm
-   * @param {string} saltValue - The salt value
-   * @param {number} spinCount - The spin count
-   * @param {number} keyBits - The length of the key in bits
-   * @param {Buffer} blockKey - The block key
-   * @returns {Buffer} The encryption key
+   * @param password - The password
+   * @param hashAlgorithm - The hash algorithm
+   * @param saltValue - The salt value (base64 encoded)
+   * @param spinCount - The spin count
+   * @returns The encryption key as base64 string
    */
-  convertPasswordToHash(password, hashAlgorithm, saltValue, spinCount) {
-    hashAlgorithm = hashAlgorithm.toLowerCase();
-    const hashes = crypto.getHashes();
-    if (hashes.indexOf(hashAlgorithm) < 0) {
-      throw new Error(`Hash algorithm '${hashAlgorithm}' not supported!`);
-    }
-
-    // Password must be in unicode buffer
-    const passwordBuffer = Buffer.from(password, 'utf16le');
+  async convertPasswordToHash(
+    password: string,
+    hashAlgorithm: string,
+    saltValue: string,
+    spinCount: number
+  ): Promise<string> {
+    // Password must be in unicode buffer (UTF-16LE)
+    const passwordBuffer = fromString(password, 'utf16le');
+    
+    // Decode salt from base64
+    const saltBuffer = fromString(saltValue, 'base64');
+    
     // Generate the initial hash
-    let key = this.hash(hashAlgorithm, Buffer.from(saltValue, 'base64'), passwordBuffer);
+    let key = await this.hash(hashAlgorithm, saltBuffer, passwordBuffer);
+    
     // Now regenerate until spin count
     for (let i = 0; i < spinCount; i++) {
-      const iterator = Buffer.alloc(4);
-      // this is the 'special' element of Excel password hashing
-      // that stops us from using crypto.pbkdf2()
-      iterator.writeUInt32LE(i, 0);
-      key = this.hash(hashAlgorithm, key, iterator);
+      const iterator = alloc(4);
+      // Write little-endian uint32
+      iterator[0] = i & 0xff;
+      iterator[1] = (i >> 8) & 0xff;
+      iterator[2] = (i >> 16) & 0xff;
+      iterator[3] = (i >> 24) & 0xff;
+      key = await this.hash(hashAlgorithm, key, iterator);
     }
-    return key.toString('base64');
+    
+    return toString(key, 'base64');
   },
+
   /**
    * Generates cryptographically strong pseudo-random data.
    * @param size The size argument is a number indicating the number of bytes to generate.
    */
-  randomBytes(size) {
-    return crypto.randomBytes(size);
+  randomBytes(size: number): Uint8Array {
+    const bytes = new Uint8Array(size);
+    crypto.getRandomValues(bytes);
+    return bytes;
   },
 };
+
 export default Encryptor;

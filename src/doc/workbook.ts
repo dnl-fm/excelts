@@ -6,7 +6,7 @@ import CSV from '../csv/csv.ts';
 
 /** Image data for adding to workbook */
 export interface WorkbookImage {
-  buffer?: Buffer | ArrayBuffer;
+  buffer?: Uint8Array | ArrayBuffer;
   base64?: string;
   filename?: string;
   extension: 'png' | 'jpeg' | 'gif';

@@ -1,34 +1,36 @@
 /**
- * SimpleBuffer - A Bun-native buffer accumulator
+ * SimpleBuffer - A browser-native buffer accumulator
  * Replaces StreamBuf for simple write/read use cases without Node streams
  */
 
+import { concat, alloc, toBytes, isBytes } from './bytes.ts';
+
 type PipeDestination = {
-  write(chunk: Buffer | string, callback?: () => void): void;
+  write(chunk: Uint8Array | string, callback?: () => void): void;
   end(): void;
 };
 
 class SimpleBuffer {
-  private chunks: Buffer[] = [];
+  private chunks: Uint8Array[] = [];
   private pipes: PipeDestination[] = [];
   private finished = false;
 
   /**
    * Write data to the buffer
    */
-  write(data: Buffer | string | ArrayBuffer, encoding?: string, callback?: () => void): boolean {
+  write(data: Uint8Array | string | ArrayBuffer, encoding?: string, callback?: () => void): boolean {
     if (typeof encoding === 'function') {
       callback = encoding;
       encoding = undefined;
     }
 
-    let chunk: Buffer;
-    if (data instanceof Buffer) {
+    let chunk: Uint8Array;
+    if (isBytes(data)) {
       chunk = data;
     } else if (data instanceof ArrayBuffer) {
-      chunk = Buffer.from(data);
+      chunk = new Uint8Array(data);
     } else if (typeof data === 'string') {
-      chunk = Buffer.from(data, (encoding as BufferEncoding) || 'utf8');
+      chunk = toBytes(data, (encoding as 'utf8' | 'base64' | 'utf16le') || 'utf8');
     } else {
       throw new Error('Unsupported data type');
     }
@@ -47,7 +49,7 @@ class SimpleBuffer {
   /**
    * Signal end of writing
    */
-  end(data?: Buffer | string, encoding?: string, callback?: () => void): void {
+  end(data?: Uint8Array | string, encoding?: string, callback?: () => void): void {
     if (data) {
       this.write(data, encoding, callback);
     }
@@ -60,18 +62,18 @@ class SimpleBuffer {
   }
 
   /**
-   * Read accumulated data as Buffer
+   * Read accumulated data as Uint8Array
    */
-  read(): Buffer {
-    if (this.chunks.length === 0) return Buffer.alloc(0);
+  read(): Uint8Array {
+    if (this.chunks.length === 0) return alloc(0);
     if (this.chunks.length === 1) return this.chunks[0];
-    return Buffer.concat(this.chunks);
+    return concat(this.chunks);
   }
 
   /**
-   * Get accumulated data as Buffer (alias for read)
+   * Get accumulated data as Uint8Array (alias for read)
    */
-  toBuffer(): Buffer {
+  toBuffer(): Uint8Array {
     return this.read();
   }
 

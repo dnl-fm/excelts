@@ -1,12 +1,12 @@
 
-
 import { unzipSync, strFromU8 } from 'fflate';
+import { concat, toBytes, isBytes, toString as bytesToString } from '../utils/bytes.ts';
 
 /**
- * Create an async iterable from content (string or Buffer) for streaming parsers.
+ * Create an async iterable from content (string or Uint8Array) for streaming parsers.
  * Yields content in chunks to simulate streaming behavior.
  */
-function createAsyncIterable(content: string | Buffer, chunkSize = 16 * 1024): AsyncIterable<string | Buffer> {
+function createAsyncIterable(content: string | Uint8Array, chunkSize = 16 * 1024): AsyncIterable<string | Uint8Array> {
   return {
     async *[Symbol.asyncIterator]() {
       if (typeof content === 'string') {
@@ -63,9 +63,9 @@ import type {
   TableModel,
 } from '../types/index.ts';
 
-async function fsReadFileAsync(filename: string, _options?: FsReadFileOptions): Promise<Buffer> {
+async function fsReadFileAsync(filename: string, _options?: FsReadFileOptions): Promise<Uint8Array> {
   const arrayBuffer = await Bun.file(filename).arrayBuffer();
-  return Buffer.from(arrayBuffer);
+  return new Uint8Array(arrayBuffer);
 }
 
 /**
@@ -88,7 +88,7 @@ class XLSX {
       throw new Error(`File not found: ${filename}`);
     }
     const arrayBuffer = await Bun.file(filename).arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const buffer = new Uint8Array(arrayBuffer);
     return this.load(buffer, options);
   }
 
@@ -210,11 +210,11 @@ class XLSX {
     if (lastDot >= 1) {
       const extension = filename.substr(lastDot + 1);
       const name = filename.substr(0, lastDot);
-      const chunks: Buffer[] = [];
-      for await (const chunk of stream as AsyncIterable<Buffer>) {
-        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      const chunks: Uint8Array[] = [];
+      for await (const chunk of stream as AsyncIterable<Uint8Array>) {
+        chunks.push(isBytes(chunk) ? chunk : toBytes(chunk as unknown as string));
       }
-      const buffer = Buffer.concat(chunks);
+      const buffer = concat(chunks);
       model.mediaIndex[filename] = model.media.length;
       model.mediaIndex[name] = model.media.length;
       const medium = {
@@ -247,16 +247,16 @@ class XLSX {
 
   async _processThemeEntry(stream: ReadableStream, model: XlsxModel, name: string): Promise<void> {
     const chunks: string[] = [];
-    for await (const chunk of stream as AsyncIterable<Buffer | string>) {
-      chunks.push(typeof chunk === 'string' ? chunk : chunk.toString());
+    for await (const chunk of stream as AsyncIterable<Uint8Array | string>) {
+      chunks.push(typeof chunk === 'string' ? chunk : bytesToString(chunk));
     }
     model.themes[name] = chunks.join('');
   }
 
   async _processRawXmlEntry(stream: ReadableStream, bucket: Record<string, string>, name: string): Promise<void> {
     const chunks: string[] = [];
-    for await (const chunk of stream as AsyncIterable<Buffer | string>) {
-      chunks.push(typeof chunk === 'string' ? chunk : chunk.toString());
+    for await (const chunk of stream as AsyncIterable<Uint8Array | string>) {
+      chunks.push(typeof chunk === 'string' ? chunk : bytesToString(chunk));
     }
     bucket[name] = chunks.join('');
   }
@@ -275,17 +275,17 @@ class XLSX {
     if (typeof streamAsObject[Symbol.asyncIterator] !== 'function') {
       throw new Error('Stream must be async iterable. Use readFile() or load() instead.');
     }
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream as AsyncIterable<Buffer>) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as unknown as string));
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of stream as AsyncIterable<Uint8Array>) {
+      chunks.push(isBytes(chunk) ? chunk : toBytes(chunk as unknown as string));
     }
-    return this.load(Buffer.concat(chunks), options);
+    return this.load(concat(chunks), options);
   }
 
-  async load(data: Buffer, options?: XlsxReadOptions): Promise<unknown> {
-    let buffer: Buffer;
+  async load(data: Uint8Array, options?: XlsxReadOptions): Promise<unknown> {
+    let buffer: Uint8Array;
     if (options && options.base64) {
-      buffer = Buffer.from(data.toString(), 'base64');
+      buffer = toBytes(bytesToString(data), 'base64');
     } else {
       buffer = data;
     }
@@ -314,12 +314,12 @@ class XLSX {
       if (entryName[0] === '/') {
         entryName = entryName.substr(1);
       }
-      let stream: AsyncIterable<string | Buffer>;
+      let stream: AsyncIterable<string | Uint8Array>;
       if (
         entryName.match(/xl\/media\//) ||
         entryName.match(/xl\/theme\/([a-zA-Z0-9]+)[.]xml/)
       ) {
-        stream = createAsyncIterable(Buffer.from(data));
+        stream = createAsyncIterable(new Uint8Array(data));
       } else {
         const content = strFromU8(data);
         stream = createAsyncIterable(content);
@@ -757,7 +757,7 @@ class XLSX {
     await Bun.write(filename, buffer);
   }
 
-  async writeBuffer(options?: XlsxWriteOptions): Promise<Buffer> {
+  async writeBuffer(options?: XlsxWriteOptions): Promise<Uint8Array> {
     const buffer = new SimpleBuffer();
     await this.write(buffer as unknown as WritableStream, options);
     return buffer.read();

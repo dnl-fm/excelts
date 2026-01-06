@@ -268,14 +268,14 @@ class CSV {
     await Bun.write(filename, buffer);
   }
 
-  async writeBuffer(options?: CSVWriteOptions): Promise<Buffer> {
+  async writeBuffer(options?: CSVWriteOptions): Promise<Uint8Array> {
     const chunks: string[] = [];
     const target = {
       write: (data: string) => chunks.push(data),
       end: () => {},
     };
     await this.write(target, options);
-    return Buffer.from(chunks.join(''));
+    return new TextEncoder().encode(chunks.join(''));
   }
 }
 

@@ -1,7 +1,11 @@
 
 
-import { randomUUID } from 'crypto';
 import BaseXform from '../../base-xform.ts';
+
+// Use Web Crypto API for UUID generation (browser-compatible)
+function randomUUID(): string {
+  return crypto.randomUUID();
+}
 import CompositeXform from '../../composite-xform.ts';
 import DatabarExtXform from './databar-ext-xform.ts';
 import IconSetExtXform from './icon-set-ext-xform.ts';

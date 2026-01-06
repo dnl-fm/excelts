@@ -1,16 +1,10 @@
-// eslint-disable-next-line node/no-unsupported-features/node-builtins
-import { Buffer } from 'buffer';
+import { toBytes } from './bytes.ts';
 
-const textEncoder = typeof TextEncoder === 'undefined' ? null : new TextEncoder('utf-8');
-
-function stringToBuffer(str) {
+function stringToBuffer(str: string | Uint8Array): Uint8Array {
   if (typeof str !== 'string') {
     return str;
   }
-  if (textEncoder) {
-    return Buffer.from(textEncoder.encode(str).buffer);
-  }
-  return Buffer.from(str);
+  return toBytes(str, 'utf8');
 }
 
 export { stringToBuffer };
