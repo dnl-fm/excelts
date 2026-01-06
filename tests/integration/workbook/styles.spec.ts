@@ -1,5 +1,5 @@
 
-import stream from 'readable-stream';
+import stream from 'stream';
 import testUtils from '../../utils/index.ts';
 import richTextSample from '../data/rich-text-sample.ts';
 import richTextSampleA1 from '../data/rich-text-sample-a1.json';

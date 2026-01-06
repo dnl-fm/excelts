@@ -1,5 +1,5 @@
 import {describe, it, beforeAll, afterAll} from 'bun:test';
-import {PassThrough} from 'readable-stream';
+import {PassThrough} from 'stream';
 import express from 'express';
 import testutils from '../utils/index.ts';
 

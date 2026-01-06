@@ -1,5 +1,5 @@
 
-import Stream from 'readable-stream';
+import Stream from 'stream';
 
 import Excel from '../../../src/index.ts';
 describe('Workbook Writer', () => {

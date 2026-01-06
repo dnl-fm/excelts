@@ -1,6 +1,6 @@
 
 import CompyXform from './compy-xform.ts';
-import { PassThrough } from 'readable-stream';
+import { PassThrough } from 'stream';
 import _ from '../../../utils/under-dash.ts';
 
 import parseSax from '../../../../src/utils/parse-sax.ts';
