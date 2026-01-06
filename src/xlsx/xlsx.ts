@@ -767,6 +767,33 @@ class XLSX {
     await this.write(buffer as unknown as WritableStream, options);
     return buffer.read();
   }
+
+  /**
+   * Write workbook to a Blob (browser-friendly).
+   * Useful for custom download handling or form uploads.
+   */
+  async writeBlob(options?: XlsxWriteOptions): Promise<Blob> {
+    const buffer = await this.writeBuffer(options);
+    return new Blob([buffer as BlobPart], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+  }
+
+  /**
+   * Download workbook as a file in the browser.
+   * Creates a temporary link and triggers download automatically.
+   */
+  async download(filename: string, options?: XlsxWriteOptions): Promise<void> {
+    const blob = await this.writeBlob(options);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 }
 
 XLSX.RelType = _RelType;

@@ -105,19 +105,11 @@ const sheet = workbook.addWorksheet('Export');
 sheet.addRow(['Name', 'Email', 'Date']);
 sheet.addRow(['John', 'john@example.com', new Date()]);
 
-// Get as Uint8Array and trigger download
-const buffer = await workbook.xlsx.writeBuffer();
-const blob = new Blob([buffer], { 
-  type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-});
-const url = URL.createObjectURL(blob);
+// One-liner download
+await workbook.xlsx.download('export.xlsx');
 
-const a = document.createElement('a');
-a.href = url;
-a.download = 'export.xlsx';
-a.click();
-
-URL.revokeObjectURL(url);
+// Or get Blob for custom handling (uploads, etc.)
+const blob = await workbook.xlsx.writeBlob();
 ```
 
 ### Stream large files

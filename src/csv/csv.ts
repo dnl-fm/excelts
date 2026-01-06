@@ -277,6 +277,33 @@ class CSV {
     await this.write(target, options);
     return new TextEncoder().encode(chunks.join(''));
   }
+
+  /**
+   * Write worksheet to a Blob (browser-friendly).
+   * Useful for custom download handling or form uploads.
+   */
+  async writeBlob(options?: CSVWriteOptions): Promise<Blob> {
+    const buffer = await this.writeBuffer(options);
+    return new Blob([buffer as BlobPart], {
+      type: 'text/csv;charset=utf-8',
+    });
+  }
+
+  /**
+   * Download worksheet as a CSV file in the browser.
+   * Creates a temporary link and triggers download automatically.
+   */
+  async download(filename: string, options?: CSVWriteOptions): Promise<void> {
+    const blob = await this.writeBlob(options);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename.endsWith('.csv') ? filename : `${filename}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 }
 
 export default CSV;
