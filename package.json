@@ -56,7 +56,7 @@
     "test:end-to-end": "bun test tests/end-to-end --timeout 20000",
     "test:browser": "bun test tests/browser --timeout 20000",
     "test:dist": "bun test tests/dist --timeout 20000",
-    "test:typescript": "bun test tests/typescript --timeout 20000",
+    "test:typescript": "bun test tests/typescript --timeout 20000"
   },
   "keywords": [
     "xlsx",
