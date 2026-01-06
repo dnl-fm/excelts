@@ -1,6 +1,6 @@
 {
   "name": "excelts",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "Excel Workbook Manager - Bun-first TypeScript fork of ExcelJS for XLSX and CSV.",
   "private": true,
   "type": "module",
