@@ -2,6 +2,103 @@
  * Core types for ExcelTS XLSX I/O operations
  */
 
+// =============================================================================
+// Cell Value Types
+// =============================================================================
+
+/**
+ * Rich text segment for formatted cell content
+ */
+export interface RichTextSegment {
+  text: string;
+  font?: {
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean | 'single' | 'double' | 'singleAccounting' | 'doubleAccounting';
+    strike?: boolean;
+    color?: { argb?: string; theme?: number; tint?: number };
+    name?: string;
+    size?: number;
+    vertAlign?: 'superscript' | 'subscript';
+  };
+}
+
+/**
+ * Rich text cell value
+ */
+export interface RichTextCellValue {
+  richText: RichTextSegment[];
+}
+
+/**
+ * Hyperlink cell value
+ */
+export interface HyperlinkCellValue {
+  text: string;
+  hyperlink: string;
+  tooltip?: string;
+}
+
+/**
+ * Formula cell value
+ */
+export interface FormulaCellValue {
+  formula: string;
+  result?: CellPrimitiveValue | RichTextCellValue | HyperlinkCellValue | ErrorCellValue;
+  formulaType?: number;
+  sharedFormula?: string;
+  ref?: string;
+  shareType?: string;
+}
+
+/**
+ * Error cell value
+ */
+export interface ErrorCellValue {
+  error: string;
+}
+
+/**
+ * Primitive cell values
+ */
+export type CellPrimitiveValue = null | number | string | boolean | Date;
+
+/**
+ * All possible cell value types that can be read from or written to a cell.
+ *
+ * @example
+ * ```ts
+ * // Primitive values
+ * cell.value = 42;
+ * cell.value = 'Hello';
+ * cell.value = new Date();
+ * cell.value = true;
+ *
+ * // Formula
+ * cell.value = { formula: 'SUM(A1:A10)', result: 55 };
+ *
+ * // Hyperlink
+ * cell.value = { text: 'Click here', hyperlink: 'https://example.com' };
+ *
+ * // Rich text
+ * cell.value = { richText: [{ text: 'Bold', font: { bold: true } }] };
+ *
+ * // Error
+ * cell.value = { error: '#N/A' };
+ * ```
+ */
+export type CellValueType =
+  | CellPrimitiveValue
+  | RichTextCellValue
+  | HyperlinkCellValue
+  | FormulaCellValue
+  | ErrorCellValue
+  | Record<string, unknown>; // For JSON values and edge cases
+
+// =============================================================================
+// Stream Types
+// =============================================================================
+
 /**
  * Stream types - async iterable interface for Bun-native streaming
  */

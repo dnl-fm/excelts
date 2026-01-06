@@ -4,6 +4,7 @@ import Enums from './enums.ts';
 import colCache from '../utils/col-cache.ts';
 import Cell from './cell.ts';
 import type Worksheet from './worksheet.ts';
+import type { CellValueType } from '../types/index.ts';
 
 /**
  * Represents a row in a worksheet.
@@ -299,7 +300,7 @@ class Row {
             address: colCache.encodeAddress(this._number, index + offset),
             row: this._number,
             col: index + offset,
-          }).value = item;
+          }).value = item as CellValueType;
         }
       });
     } else {
@@ -310,7 +311,7 @@ class Row {
             address: colCache.encodeAddress(this._number, column.number),
             row: this._number,
             col: column.number,
-          }).value = value[key];
+          }).value = value[key] as CellValueType;
         }
       });
     }

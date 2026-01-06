@@ -4,13 +4,13 @@
   "features": [
     {
       "id": "9b92e834",
-      "description": "fix typechecks",
+      "description": "fix all typecheck errors (bunx tsc --noEmit)",
       "category": "functional",
       "steps": [
         "read ~/Buildspace/dnl/libs/excelts/typecheck-fix.md",
         "run bunx tsc --noEmit"
       ],
-      "passes": true
+      "passes": false
     }
   ]
 }

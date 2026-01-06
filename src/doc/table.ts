@@ -2,6 +2,7 @@
 
 import colCache from '../utils/col-cache.ts';
 import type Worksheet from './worksheet.ts';
+import type { CellValueType } from '../types/index.ts';
 
 export interface TableColumnModel {
   name: string;
@@ -241,7 +242,7 @@ class Table {
       const r = worksheet.getRow(row + count++);
       data.forEach((value, j) => {
         const cell = r.getCell(col + j);
-        cell.value = value;
+        cell.value = value as CellValueType;
 
         assignStyle(cell, table.columns[j].style);
       });
@@ -252,14 +253,14 @@ class Table {
       table.columns.forEach((column, j) => {
         const cell = r.getCell(col + j);
         if (j === 0) {
-          cell.value = column.totalsRowLabel;
+          cell.value = column.totalsRowLabel as CellValueType;
         } else {
           const formula = this.getFormula(column);
           if (formula) {
             cell.value = {
               formula: column.totalsRowFormula,
               result: column.totalsRowResult,
-            };
+            } as CellValueType;
           } else {
             cell.value = null;
           }
@@ -279,14 +280,14 @@ class Table {
       const r = worksheet.getRow(row + count++);
       table.columns.forEach((column, j) => {
         const cell = r.getCell(col + j);
-        cell.value = column.name;
+        cell.value = column.name as CellValueType;
       });
     }
     table.rows.forEach(data => {
       const r = worksheet.getRow(row + count++);
       data.forEach((value, j) => {
         const cell = r.getCell(col + j);
-        cell.value = value;
+        cell.value = value as CellValueType;
       });
     });
 
@@ -295,14 +296,14 @@ class Table {
       table.columns.forEach((column, j) => {
         const cell = r.getCell(col + j);
         if (j === 0) {
-          cell.value = column.totalsRowLabel;
+          cell.value = column.totalsRowLabel as CellValueType;
         } else {
           const formula = this.getFormula(column);
           if (formula) {
             cell.value = {
               formula: column.totalsRowFormula,
               result: column.totalsRowResult,
-            };
+            } as CellValueType;
           }
         }
       });

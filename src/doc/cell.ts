@@ -8,6 +8,7 @@ import type Row from './row.ts';
 import type Column from './column.ts';
 import type Worksheet from './worksheet.ts';
 import type Workbook from './workbook.ts';
+import type { CellValueType } from '../types/index.ts';
 
 /** @internal Interface for cell value types */
 interface CellValue {
@@ -392,11 +393,11 @@ class Cell {
    * };
    * ```
    */
-  get value(): unknown {
-    return this._value.value;
+  get value(): CellValueType {
+    return this._value.value as CellValueType;
   }
 
-  set value(v: unknown) {
+  set value(v: CellValueType) {
     // special case - merge cells set their master's value
     if (this.type === Cell.Types.Merge) {
       this._value.master.value = v;

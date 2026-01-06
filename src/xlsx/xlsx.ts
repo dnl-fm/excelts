@@ -42,6 +42,8 @@ import CommentsXform from './xform/comment/comments-xform.ts';
 import VmlNotesXform from './xform/comment/vml-notes-xform.ts';
 import theme1Xml from './xml/theme1.ts';
 import _RelType from './rel-type.ts';
+import type Workbook from '../doc/workbook.ts';
+import type { WorkbookModel } from '../doc/workbook.ts';
 import type {
   ReadableStream,
   XlsxReadOptions,
@@ -77,9 +79,9 @@ async function fsReadFileAsync(filename: string, _options?: FsReadFileOptions): 
 class XLSX {
   static RelType: typeof _RelType;
   
-  workbook: unknown;
+  workbook: Workbook;
 
-  constructor(workbook: unknown) {
+  constructor(workbook: Workbook) {
     this.workbook = workbook;
   }
 
@@ -88,7 +90,7 @@ class XLSX {
   // =========================================================================
   // Read
 
-  async readFile(filename: string, options?: XlsxReadOptions): Promise<unknown> {
+  async readFile(filename: string, options?: XlsxReadOptions): Promise<Workbook> {
     if (!(await utils.fs.exists(filename))) {
       throw new Error(`File not found: ${filename}`);
     }
@@ -287,7 +289,7 @@ class XLSX {
     return this.load(concat(chunks), options);
   }
 
-  async load(data: Uint8Array, options?: XlsxReadOptions): Promise<unknown> {
+  async load(data: Uint8Array, options?: XlsxReadOptions): Promise<Workbook> {
     let buffer: Uint8Array;
     if (options && options.base64) {
       buffer = toBytes(bytesToString(data), 'base64');
@@ -441,7 +443,7 @@ class XLSX {
     this.reconcile(model, options);
 
     // apply model
-    (this.workbook as Record<string, unknown>).model = model;
+    this.workbook.model = model as unknown as WorkbookModel;
     return this.workbook;
   }
 
@@ -716,8 +718,7 @@ class XLSX {
 
   async write(stream: WritableStream, options?: XlsxWriteOptions): Promise<XLSX> {
     const opts = options || {};
-    const workbookRecord = this.workbook as Record<string, unknown>;
-    const model = (workbookRecord.model || {}) as XlsxModel;
+    const model = ((this.workbook.model as unknown) || {}) as XlsxModel;
     const ZipWriterClass = ZipStream.ZipWriter;
     const zip = new ZipWriterClass(opts.zip as Record<string, unknown>) as ZipWriter;
     zip.pipe(stream);

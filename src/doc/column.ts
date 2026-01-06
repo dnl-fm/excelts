@@ -4,6 +4,7 @@ import Enums from './enums.ts';
 import colCache from '../utils/col-cache.ts';
 import type Worksheet from './worksheet.ts';
 import type Cell from './cell.ts';
+import type { CellValueType } from '../types/index.ts';
 
 const DEFAULT_COLUMN_WIDTH = 9;
 
@@ -132,7 +133,7 @@ class Column {
     if (value !== undefined) {
       this._header = value;
       this.headers.forEach((text, index) => {
-        this._worksheet.getCell(index + 1, this.number).value = text;
+        this._worksheet.getCell(index + 1, this.number).value = text as CellValueType;
       });
     } else {
       this._header = undefined;
@@ -294,7 +295,7 @@ class Column {
       offset = 1;
     }
     v.forEach((value, index) => {
-      this._worksheet.getCell(index + offset, colNumber).value = value;
+      this._worksheet.getCell(index + offset, colNumber).value = value as CellValueType;
     });
   }
 
