@@ -1,7 +1,7 @@
 {
   "name": "@dnl-fm/excelts",
   "version": "5.0.0",
-  "exports": "./src/excelts.nodejs.ts",
+  "exports": "./src/index.ts",
   "publish": {
     "include": ["src/**/*.ts", "README.md", "LICENSE"],
     "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
