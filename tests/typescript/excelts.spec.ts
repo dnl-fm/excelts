@@ -1,6 +1,6 @@
 import {PassThrough} from 'stream';
 import {expect, describe, it} from 'bun:test';
-import ExcelJS from '../../src/index.ts';
+import ExcelTS from '../../src/index.ts';
 
 describe('typescript', () => {
   it('can create and buffer xlsx', async () => {

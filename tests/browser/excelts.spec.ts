@@ -1,5 +1,5 @@
 // Browser tests - using Bun environment instead of Jasmine
-import ExcelJS from '../../src/index.ts';
+import ExcelTS from '../../src/index.ts';
 
 function unexpectedError(done) {
   return function(error) {
@@ -10,7 +10,7 @@ function unexpectedError(done) {
   };
 }
 
-describe('ExcelJS', () => {
+describe('ExcelTS', () => {
   it('should read and write xlsx via binary buffer', done => {
     const wb = new ExcelTS.Workbook();
     const ws = wb.addWorksheet('blort');
@@ -76,7 +76,7 @@ describe('ExcelJS', () => {
     wb.csv
       .writeBuffer()
       .then(buffer => {
-        expect(buffer.toString()).toEqual(
+        expect(buffer.toString().trim()).toEqual(
           '"Hello, World!",What time is it?\n7,12pm'
         );
         done();
