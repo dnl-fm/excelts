@@ -1,7 +1,10 @@
 // StringBuilder - a way to keep string memory operations to a minimum
 // while building the strings for the xml files
 class StringBuilder {
+  _buf: string[];
+
   constructor() {
+    this._buf = [];
     this.reset();
   }
 
@@ -13,7 +16,7 @@ class StringBuilder {
     return this._buf.join('');
   }
 
-  reset(position) {
+  reset(position?: number) {
     if (position) {
       while (this._buf.length > position) {
         this._buf.pop();

@@ -5,7 +5,7 @@ import colCache from '../../../utils/col-cache.ts';
 import BaseXform from '../base-xform.ts';
 import Range from '../../../doc/range.ts';
 
-function assign(definedName, attributes, name, defaultValue) {
+function assign(definedName, attributes, name, defaultValue?) {
   const value = attributes[name];
   if (value !== undefined) {
     definedName[name] = value;
@@ -14,7 +14,7 @@ function assign(definedName, attributes, name, defaultValue) {
   }
 }
 
-function assignBool(definedName, attributes, name, defaultValue) {
+function assignBool(definedName, attributes, name, defaultValue?) {
   const value = attributes[name];
   if (value !== undefined) {
     definedName[name] = utils.parseBoolean(value);

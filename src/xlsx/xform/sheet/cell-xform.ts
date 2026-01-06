@@ -197,7 +197,7 @@ class CellXform extends BaseXform {
     }
   }
 
-  render(xmlStream, model) {
+  render(xmlStream, model, _options?) {
     if (model.type === Enums.ValueType.Null && !model.styleId) {
       // if null and no style, exit
       return;

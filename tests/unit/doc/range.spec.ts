@@ -13,7 +13,7 @@ describe('Range', () => {
     left,
     bottom,
     right,
-    sheetName
+    sheetName?
   ) {
     expect(d.range).toBe(range);
     expect(d.$range).toBe($range);

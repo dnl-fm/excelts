@@ -3,7 +3,9 @@
 import BaseXform from '../base-xform.ts';
 
 class ColorXform extends BaseXform {
-  constructor(name) {
+  name: string;
+
+  constructor(name?: string) {
     super();
 
     // this.name controls the xm node name

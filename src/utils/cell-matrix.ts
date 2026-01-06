@@ -3,7 +3,10 @@ import _ from './under-dash.ts';
 import colCache from './col-cache.ts';
 
 class CellMatrix {
-  constructor(template) {
+  template?: unknown;
+  sheets: Record<string, unknown[][]>;
+
+  constructor(template?: unknown) {
     this.template = template;
     this.sheets = {};
   }
@@ -42,7 +45,7 @@ class CellMatrix {
     return this.findCellEx(address, true);
   }
 
-  findCellEx(address, create) {
+  findCellEx(address, create?) {
     const sheet = this.findSheet(address, create);
     const row = this.findSheetRow(sheet, address, create);
     return this.findRowCell(row, address, create);
@@ -103,7 +106,7 @@ class CellMatrix {
     return results;
   }
 
-  findSheet(address, create) {
+  findSheet(address, create?) {
     const name = address.sheetName;
     if (this.sheets[name]) {
       return this.sheets[name];
@@ -114,7 +117,7 @@ class CellMatrix {
     return undefined;
   }
 
-  findSheetRow(sheet, address, create) {
+  findSheetRow(sheet, address, create?) {
     const {row} = address;
     if (sheet && sheet[row]) {
       return sheet[row];
@@ -125,7 +128,7 @@ class CellMatrix {
     return undefined;
   }
 
-  findRowCell(row, address, create) {
+  findRowCell(row, address, create?) {
     const {col} = address;
     if (row && row[col]) {
       return row[col];

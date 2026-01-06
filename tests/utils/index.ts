@@ -70,7 +70,7 @@ export function createSheetMock() {
       outlineLevelRow: 0,
     },
 
-    addColumn(colNumber, defn) {
+    addColumn(colNumber, defn?) {
       const newColumn = new Column(this, colNumber, defn);
       this.columns[colNumber - 1] = newColumn;
       return newColumn;
@@ -134,7 +134,7 @@ export default {
   conditionalFormatting: tools.fix(conditionalFormattingJson),
   headerFooter: tools.fix(headerFooterJson),
 
-  createTestBook(workbook, docType, sheets) {
+  createTestBook(workbook, docType, sheets?, _options?) {
     const options = getOptions(docType);
     sheets = sheets || ['values'];
 
@@ -150,7 +150,7 @@ export default {
     return workbook;
   },
 
-  checkTestBook(workbook, docType, sheets, options) {
+  checkTestBook(workbook, docType, sheets?, options?) {
     options = getOptions(docType, options);
     sheets = sheets || ['values'];
 

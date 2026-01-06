@@ -261,7 +261,7 @@ class Worksheet {
       name = name.substring(0, 31);
     }
 
-    if (this._workbook._worksheets.find(ws => ws && ws.name.toLowerCase() === name.toLowerCase())) {
+    if (this._workbook.worksheets.find(ws => ws && ws.name.toLowerCase() === name.toLowerCase())) {
       throw new Error(`Worksheet name already exists: ${name}`);
     }
 
@@ -329,7 +329,10 @@ class Worksheet {
   set columns(value: ColumnDefinition[]) {
     // calculate max header row count
     this._headerRowCount = value.reduce((pv, cv) => {
-      const headerCount = (cv.header && 1) || (cv.headers && cv.headers.length) || 0;
+      let headerCount = 0;
+      if (cv.header) {
+        headerCount = typeof cv.header === 'string' ? 1 : cv.header.length;
+      }
       return Math.max(pv, headerCount);
     }, 0);
 
@@ -337,9 +340,8 @@ class Worksheet {
     let count = 1;
     const columns = (this._columns = []);
     value.forEach(defn => {
-      const column = new Column(this, count++, false);
+      const column = new Column(this, count++, defn as Record<string, unknown>);
       columns.push(column);
-      column.defn = defn;
     });
   }
 
@@ -376,24 +378,27 @@ class Worksheet {
    * ```
    */
   getColumn(c: number | string): Column {
+    let colNum: number;
     if (typeof c === 'string') {
       // if it matches a key'd column, return that
       const col = this._keys[c];
       if (col) return col;
 
       // otherwise, assume letter
-      c = colCache.l2n(c);
+      colNum = colCache.l2n(c);
+    } else {
+      colNum = c;
     }
     if (!this._columns) {
       this._columns = [];
     }
-    if (c > this._columns.length) {
+    if (colNum > this._columns.length) {
       let n = this._columns.length + 1;
-      while (n <= c) {
+      while (n <= colNum) {
         this._columns.push(new Column(this, n++));
       }
     }
-    return this._columns[c - 1];
+    return this._columns[colNum - 1];
   }
 
   spliceColumns(start: number, count: number, ...inserts: unknown[][]): void {
@@ -471,7 +476,7 @@ class Worksheet {
   // =========================================================================
   // Rows
 
-  _commitRow(): void {
+  _commitRow(_row?: unknown): void {
     // nop - allows streaming reader to fill a document
   }
 
@@ -754,7 +759,7 @@ class Worksheet {
     for (i = 0; i < nInserts; i++) {
       const rDst = this.getRow(start + i);
       rDst.style = {};
-      rDst.values = inserts[i];
+      rDst.values = inserts[i] as unknown[] | Record<string, unknown> | undefined;
     }
 
     // account for defined names
@@ -780,7 +785,7 @@ class Worksheet {
    * });
    * ```
    */
-  eachRow(options, iteratee) {
+  eachRow(options, iteratee?) {
     if (!iteratee) {
       iteratee = options;
       options = undefined;
@@ -884,7 +889,7 @@ class Worksheet {
     this._mergeCellsInternal(dimensions, true);
   }
 
-  _mergeCellsInternal(dimensions, ignoreStyle) {
+  _mergeCellsInternal(dimensions, ignoreStyle?) {
     // check cells aren't already merged
     _.each(this._merges, merge => {
       if (merge.intersects(dimensions)) {
@@ -1068,7 +1073,7 @@ class Worksheet {
    */
   getBackgroundImageId(): string | number | undefined {
     const image = this._media.find(m => m.type === 'background');
-    return image && image.imageId;
+    return image ? (image.imageId as string | number) : undefined;
   }
 
   // =========================================================================
@@ -1093,36 +1098,35 @@ class Worksheet {
    * });
    * ```
    */
-  protect(password?: string, options?: Record<string, unknown>): Promise<void> {
+  async protect(password?: string, options?: Record<string, unknown>): Promise<void> {
     // TODO: make this function truly async
     // perhaps marshal to worker thread or something
-    return new Promise(resolve => {
-      this.sheetProtection = {
-        sheet: true,
-      };
-      if (options && 'spinCount' in options) {
-        // force spinCount to be integer >= 0
-        options.spinCount = Number.isFinite(options.spinCount) ? Math.round(Math.max(0, options.spinCount)) : 100000;
+    const protection: Record<string, unknown> = {
+      sheet: true,
+    };
+    if (options && 'spinCount' in options) {
+      // force spinCount to be integer >= 0
+      options.spinCount = Number.isFinite(options.spinCount as number) ? Math.round(Math.max(0, options.spinCount as number)) : 100000;
+    }
+    if (password) {
+      protection.algorithmName = 'SHA-512';
+      protection.saltValue = bytesToString(Encryptor.randomBytes(16), 'base64');
+      protection.spinCount = options && 'spinCount' in options ? (options.spinCount as number) : 100000; // allow user specified spinCount
+      protection.hashValue = await Encryptor.convertPasswordToHash(
+        password,
+        'SHA512',
+        protection.saltValue as string,
+        protection.spinCount as number
+      );
+    }
+    if (options) {
+      this.sheetProtection = Object.assign(protection, options);
+      if (!password && 'spinCount' in options) {
+        delete (this.sheetProtection as Record<string, unknown>).spinCount;
       }
-      if (password) {
-        this.sheetProtection.algorithmName = 'SHA-512';
-        this.sheetProtection.saltValue = bytesToString(Encryptor.randomBytes(16), 'base64');
-        this.sheetProtection.spinCount = options && 'spinCount' in options ? options.spinCount : 100000; // allow user specified spinCount
-        this.sheetProtection.hashValue = Encryptor.convertPasswordToHash(
-          password,
-          'SHA512',
-          this.sheetProtection.saltValue,
-          this.sheetProtection.spinCount
-        );
-      }
-      if (options) {
-        this.sheetProtection = Object.assign(this.sheetProtection, options);
-        if (!password && 'spinCount' in options) {
-          delete this.sheetProtection.spinCount;
-        }
-      }
-      resolve();
-    });
+    } else {
+      this.sheetProtection = protection;
+    }
   }
 
   /**
@@ -1160,7 +1164,7 @@ class Worksheet {
    * ```
    */
   addTable(model: Record<string, unknown>): Table {
-    const table = new Table(this, model);
+    const table = new Table(this, model as any);
     this.tables[model.name as string] = table;
     return table;
   }
@@ -1205,8 +1209,8 @@ Please leave feedback at https://github.com/exceljs/exceljs/discussions/2575`
     const pivotTable = makePivotTable(this, model);
 
     this.pivotTables.push(pivotTable);
-    (this.workbook as Record<string, unknown>).pivotTables = [
-      ...((this.workbook as Record<string, unknown>).pivotTables as unknown[] || []),
+    (this.workbook as any).pivotTables = [
+      ...((this.workbook as any).pivotTables as unknown[] || []),
       pivotTable
     ];
 
@@ -1276,7 +1280,7 @@ Please leave feedback at https://github.com/exceljs/exceljs/discussions/2575`
   // Model
 
   get model(): Record<string, unknown> {
-    const model = {
+    const model: any = {
       id: this.id,
       name: this.name,
       dataValidations: this.dataValidations.model,
@@ -1300,15 +1304,17 @@ Please leave feedback at https://github.com/exceljs/exceljs/discussions/2575`
 
     // ==========================================================
     // Rows
-    const rows = (model.rows = []);
-    const dimensions = (model.dimensions = new Range());
+    const rows: unknown[] = [];
+    const dimensions = new Range();
     this._rows.forEach(row => {
       const rowModel = row && row.model;
       if (rowModel) {
-        dimensions.expand(rowModel.number, rowModel.min, rowModel.number, rowModel.max);
+        dimensions.expand(rowModel.number as number, rowModel.min as number, rowModel.number as number, rowModel.max as number);
         rows.push(rowModel);
       }
     });
+    model.rows = rows;
+    model.dimensions = dimensions;
 
     // ==========================================================
     // Merges
@@ -1323,38 +1329,39 @@ Please leave feedback at https://github.com/exceljs/exceljs/discussions/2575`
   _parseRows(model: WorksheetModel): void {
     this._rows = [];
     (model.rows as unknown[]).forEach((rowModel: unknown) => {
-      const row = new Row(this, rowModel.number);
+      const rm = rowModel as Record<string, unknown>;
+      const row = new Row(this, rm.number as number);
       this._rows[row.number - 1] = row;
-      row.model = rowModel;
+      row.model = rowModel as Record<string, unknown>;
     });
   }
 
   _parseMergeCells(model: WorksheetModel): void {
-    _.each(model.mergeCells, (merge: unknown) => {
+    _.each(model.merges, (merge: unknown) => {
       this.mergeCellsWithoutStyle(merge as string);
     });
   }
 
   set model(value: WorksheetModel) {
     this.name = value.name;
-    this._columns = Column.fromModel(this, value.cols);
+    this._columns = Column.fromModel(this, value.cols as unknown[]);
     this._parseRows(value);
 
     this._parseMergeCells(value);
-    this.dataValidations = new DataValidations(value.dataValidations);
-    this.properties = value.properties;
+    this.dataValidations = new DataValidations(value.dataValidations as Record<string, unknown> | undefined);
+    this.properties = value.properties as Record<string, unknown>;
     this.pageSetup = value.pageSetup;
     this.headerFooter = value.headerFooter;
     this.views = value.views;
     this.autoFilter = value.autoFilter;
     this._media = (value.media as unknown[]).map(medium => new Image(this, medium));
     this.sheetProtection = value.sheetProtection;
-    this.tables = (value.tables as unknown[]).reduce((tables: Record<string, Table>, table: unknown) => {
+    this.tables = ((value.tables as unknown[]).reduce((tables: Record<string, Table>, table: unknown) => {
       const t = new Table();
-      (t as Record<string, unknown>).model = table;
+      (t as any).model = table;
       tables[(table as Record<string, unknown>).name as string] = t;
       return tables;
-    }, {});
+    }, {} as Record<string, Table>)) as Record<string, Table>;
     this.pivotTables = value.pivotTables;
     this.conditionalFormattings = value.conditionalFormattings;
   }

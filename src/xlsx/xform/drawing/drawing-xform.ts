@@ -22,7 +22,7 @@ class DrawingXform extends BaseXform {
     };
   }
 
-  prepare(model) {
+  prepare(model, _options?) {
     model.anchors.forEach((item, index) => {
       item.anchorType = getAnchorType(item);
       const anchor = this.map[item.anchorType];

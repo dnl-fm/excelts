@@ -9,8 +9,16 @@ import UnderlineXform from './underline-xform.ts';
 import _ from '../../../utils/under-dash.ts';
 import BaseXform from '../base-xform.ts';
 
+interface FontXformOptions {
+  tagName?: string;
+  fontNameTag?: string;
+}
+
 class FontXform extends BaseXform {
-  constructor(options) {
+  options: FontXformOptions;
+  static OPTIONS: FontXformOptions;
+
+  constructor(options?: FontXformOptions) {
     super();
 
     this.options = options || FontXform.OPTIONS;

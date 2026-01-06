@@ -14,9 +14,11 @@ export interface RangeModel {
 
 class Range {
   model?: RangeModel;
+  /** @internal Index signature for dynamic property access */
+  [key: string]: unknown;
 
-  constructor() {
-    this.decode(arguments);
+  constructor(...args: unknown[]) {
+    this.decode(args as unknown as IArguments);
   }
 
   setTLBR(t: number | string, l: number | string, b?: number | string, r?: number | string, s?: string): void {

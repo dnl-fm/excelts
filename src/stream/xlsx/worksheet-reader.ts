@@ -8,13 +8,31 @@ import Dimensions from '../../doc/range.ts';
 import Row from '../../doc/row.ts';
 import Column from '../../doc/column.ts';
 import SimpleEventEmitter from '../../utils/event-emitter.ts';
+import type { ReadableStream } from '../../types/index.ts';
+
+interface WorksheetReaderOptions {
+  workbook?: unknown;
+  id?: number;
+  iterator?: unknown;
+  options?: Record<string, unknown>;
+}
 
 class WorksheetReader extends SimpleEventEmitter {
-  constructor({workbook, id, iterator, options}) {
+  workbook: unknown;
+  id: number;
+  iterator: unknown;
+  options: Record<string, unknown>;
+  name: string;
+  _columns: Column[] | null;
+  _keys: Record<string, Column>;
+  _dimensions: Dimensions;
+  hyperlinks?: Record<string, unknown>;
+
+  constructor({workbook, id, iterator, options}: WorksheetReaderOptions) {
     super();
 
     this.workbook = workbook;
-    this.id = id;
+    this.id = id || 0;
     this.iterator = iterator;
     this.options = options || {};
 
@@ -50,7 +68,8 @@ class WorksheetReader extends SimpleEventEmitter {
 
   // get a single column by col number. If it doesn't exist, it and any gaps before it
   // are created.
-  getColumn(c) {
+  getColumn(c: number | string): Column {
+    let colNum: number;
     if (typeof c === 'string') {
       // if it matches a key'd column, return that
       const col = this._keys[c];
@@ -59,33 +78,35 @@ class WorksheetReader extends SimpleEventEmitter {
       }
 
       // otherise, assume letter
-      c = colCache.l2n(c);
+      colNum = colCache.l2n(c);
+    } else {
+      colNum = c;
     }
     if (!this._columns) {
       this._columns = [];
     }
-    if (c > this._columns.length) {
+    if (colNum > this._columns.length) {
       let n = this._columns.length + 1;
-      while (n <= c) {
-        this._columns.push(new Column(this, n++));
+      while (n <= colNum) {
+        this._columns.push(new Column(this as any, n++));
       }
     }
-    return this._columns[c - 1];
+    return this._columns[colNum - 1];
   }
 
-  getColumnKey(key) {
+  getColumnKey(key: string): Column | undefined {
     return this._keys[key];
   }
 
-  setColumnKey(key, value) {
+  setColumnKey(key: string, value: Column): void {
     this._keys[key] = value;
   }
 
-  deleteColumnKey(key) {
+  deleteColumnKey(key: string): void {
     delete this._keys[key];
   }
 
-  eachColumnKey(f) {
+  eachColumnKey(f: (column: Column, key: string) => void): void {
     _.each(this._keys, f);
   }
 
@@ -141,7 +162,7 @@ class WorksheetReader extends SimpleEventEmitter {
     }
 
     // references
-    const {sharedStrings, styles, properties} = this.workbook;
+    const {sharedStrings, styles, properties} = (this.workbook as any) || {};
 
     // xml position
     let inCols = false;
@@ -153,7 +174,7 @@ class WorksheetReader extends SimpleEventEmitter {
     let row = null;
     let c = null;
     let current = null;
-    for await (const events of parseSax(iterator)) {
+    for await (const events of parseSax(this.iterator as ReadableStream)) {
       const worksheetEvents = [];
       for (const {eventType, value} of events) {
         if (eventType === 'opentag') {
@@ -182,7 +203,7 @@ class WorksheetReader extends SimpleEventEmitter {
               case 'row':
                 if (inRows) {
                   const r = parseInt(node.attributes.r, 10);
-                  row = new Row(this, r);
+                  row = new Row(this as any, r);
                   if (node.attributes.ht) {
                     row.height = parseFloat(node.attributes.ht);
                   }
@@ -288,7 +309,7 @@ class WorksheetReader extends SimpleEventEmitter {
                   }
 
                   if (c.f) {
-                    const cellValue = {
+                    const cellValue: any = {
                       formula: c.f.text,
                     };
                     if (c.v) {

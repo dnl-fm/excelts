@@ -183,7 +183,7 @@ const colCache = {
   },
 
   // convert r,c into structure (if only 1 arg, assume r is address string)
-  getAddress(r, c) {
+  getAddress(r, c?) {
     if (c) {
       const address = this.n2l(c) + r;
       return this.decodeAddress(address);
@@ -262,14 +262,14 @@ const colCache = {
   },
 
   // convert row,col into string address or t,l,b,r into range
-  encode() {
-    switch (arguments.length) {
+  encode(...args: number[]) {
+    switch (args.length) {
       case 2:
-        return colCache.encodeAddress(arguments[0], arguments[1]);
+        return colCache.encodeAddress(args[0], args[1]);
       case 4:
-        return `${colCache.encodeAddress(arguments[0], arguments[1])}:${colCache.encodeAddress(
-          arguments[2],
-          arguments[3]
+        return `${colCache.encodeAddress(args[0], args[1])}:${colCache.encodeAddress(
+          args[2],
+          args[3]
         )}`;
       default:
         throw new Error('Can only encode with 2 or 4 arguments');

@@ -63,8 +63,9 @@ class SimpleBuffer {
 
   /**
    * Read accumulated data as Uint8Array
+   * @param _size - ignored, reads all data
    */
-  read(): Uint8Array {
+  read(_size?: number): Uint8Array {
     if (this.chunks.length === 0) return alloc(0);
     if (this.chunks.length === 1) return this.chunks[0];
     return concat(this.chunks);

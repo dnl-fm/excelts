@@ -4,15 +4,23 @@
 import events from 'events';
 
 class StutteredPipe extends events.EventEmitter {
-  constructor(readable, writable, options) {
+  readable: unknown;
+  writable: unknown;
+  bufSize: number;
+  autoPause: boolean;
+  paused: boolean;
+  eod: boolean;
+  scheduled: ReturnType<typeof setImmediate> | null;
+
+  constructor(readable: unknown, writable: unknown, options?: Record<string, unknown>) {
     super();
 
     options = options || {};
 
     this.readable = readable;
     this.writable = writable;
-    this.bufSize = options.bufSize || 16384;
-    this.autoPause = options.autoPause || false;
+    this.bufSize = (options.bufSize as number) || 16384;
+    this.autoPause = (options.autoPause as boolean) || false;
 
     this.paused = false;
     this.eod = false;

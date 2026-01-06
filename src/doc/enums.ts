@@ -10,6 +10,7 @@ export const ValueType = {
   RichText: 8,
   Boolean: 9,
   Error: 10,
+  JSON: 11,
 };
 
 export const FormulaType = {

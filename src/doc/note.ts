@@ -5,7 +5,10 @@
 import _ from '../utils/under-dash.ts';
 
 class Note {
-  constructor(note) {
+  note: unknown;
+  static DEFAULT_CONFIGS: Record<string, unknown>;
+
+  constructor(note?: unknown) {
     this.note = note;
   }
 
@@ -64,6 +67,6 @@ Note.DEFAULT_CONFIGS = {
     },
     editAs: 'absolute',
   },
-};
+} as Record<string, unknown>;
 
 export default Note;

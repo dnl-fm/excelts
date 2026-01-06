@@ -6,8 +6,16 @@ import colCache from '../utils/col-cache.ts';
 import Anchor from './anchor.ts';
 
 class Image {
-  constructor(worksheet, model) {
+  worksheet: unknown;
+  type: string;
+  imageId: unknown;
+  range: Record<string, unknown>;
+
+  constructor(worksheet: unknown, model: unknown) {
     this.worksheet = worksheet;
+    this.type = '';
+    this.imageId = undefined;
+    this.range = {};
     this.model = model;
   }
 

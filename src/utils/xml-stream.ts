@@ -25,10 +25,20 @@ function pushAttributes(xml, attributes) {
 }
 
 class XmlStream {
+  _xml: string[];
+  _stack: string[];
+  _rollbacks: unknown[];
+  open: boolean;
+  leaf: boolean;
+
+  static StdDocAttributes: Record<string, string>;
+
   constructor() {
     this._xml = [];
     this._stack = [];
     this._rollbacks = [];
+    this.open = false;
+    this.leaf = false;
   }
 
   get tos() {
@@ -48,7 +58,7 @@ class XmlStream {
     xml.push('?>\n');
   }
 
-  openNode(name, attributes) {
+  openNode(name, attributes?) {
     const parent = this.tos;
     const xml = this._xml;
     if (parent && this.open) {

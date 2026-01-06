@@ -52,11 +52,11 @@ const utils = {
     });
   },
   inherits,
-  dateToExcel(d, date1904) {
+  dateToExcel(d, date1904?) {
     // eslint-disable-next-line no-mixed-operators
     return 25569 + d.getTime() / (24 * 3600 * 1000) - (date1904 ? 1462 : 0);
   },
-  excelToDate(v, date1904) {
+  excelToDate(v, date1904?) {
     // eslint-disable-next-line no-mixed-operators
     const millisecondSinceEpoch = Math.round((v - 25569 + (date1904 ? 1462 : 0)) * 24 * 3600 * 1000);
     return new Date(millisecondSinceEpoch);

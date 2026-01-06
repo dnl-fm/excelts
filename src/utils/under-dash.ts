@@ -152,13 +152,13 @@ const _ = {
     return toString.call(val) === '[object Object]';
   },
 
-  deepMerge() {
-    const target = arguments[0] || {};
-    const {length} = arguments;
+  deepMerge(...args: unknown[]) {
+    const target = (args[0] || {}) as Record<string, unknown>;
+    const {length} = args;
     // eslint-disable-next-line one-var
-    let src, clone, copyIsArray;
+    let src: unknown, clone: unknown, copyIsArray: boolean;
 
-    function assignValue(val, key) {
+    function assignValue(val: unknown, key: string) {
       src = target[key];
       copyIsArray = Array.isArray(val);
       if (_.isObject(val) || copyIsArray) {
@@ -175,7 +175,7 @@ const _ = {
     }
 
     for (let i = 0; i < length; i++) {
-      _.each(arguments[i], assignValue);
+      _.each(args[i], assignValue);
     }
     return target;
   },

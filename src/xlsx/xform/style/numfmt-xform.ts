@@ -18,7 +18,13 @@ const defaultFmtHash = hashDefaultFormats();
 
 // NumFmt encapsulates translation between number format and xlsx
 class NumFmtXform extends BaseXform {
-  constructor(id, formatCode) {
+  id?: number;
+  formatCode?: string;
+
+  static getDefaultFmtId: (fmt: string) => number;
+  static getDefaultFmtCode: (id: number) => string;
+
+  constructor(id?: number, formatCode?: string) {
     super();
 
     this.id = id;

@@ -182,7 +182,7 @@ class CfRuleXform extends CompositeXform {
       priority: model.priority,
       percent: BaseXform.toBoolAttribute(model.percent, false),
       bottom: BaseXform.toBoolAttribute(model.bottom, false),
-      rank: BaseXform.toIntValue(model.rank, 10, true),
+      rank: BaseXform.toIntAttribute(model.rank, 10, true),
     });
   }
 

@@ -16,7 +16,12 @@ import FontXform from '../style/font-xform.ts';
 import BaseXform from '../base-xform.ts';
 
 class RichTextXform extends BaseXform {
-  constructor(model) {
+  _textXform?: TextXform;
+  _fontXform?: FontXform;
+
+  static FONT_OPTIONS: Record<string, unknown>;
+
+  constructor(model?: unknown) {
     super();
 
     this.model = model;

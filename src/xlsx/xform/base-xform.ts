@@ -6,12 +6,34 @@ import parseSax from '../../utils/parse-sax.ts';
 import XmlStream from '../../utils/xml-stream.ts';
 import type { ReadableStream } from '../../types/index.ts';
 
-class BaseXform {
+/** @internal Interface for xform objects in map */
+interface XformLike {
+  prepare?(_model?: unknown, _options?: unknown): void;
+  render?(_xmlStream?: unknown, _model?: unknown, _extra?: unknown): void;
+  parseOpen?(_node: unknown): unknown;
+  parseText?(_text: string): void;
+  parseClose?(_name: string): boolean | undefined;
+  reconcile?(_model: unknown, _options?: unknown): void;
+  reset?(): void;
   model?: unknown;
-  map?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+/** @internal Model interface for xform parsed data */
+interface XformModel {
+  [key: string]: unknown;
+}
+
+class BaseXform {
+  model?: XformModel;
+  map?: Record<string, XformLike>;
+  /** @internal Current parser being delegated to */
+  parser?: BaseXform;
+  /** @internal Index signature for dynamic properties */
+  [key: string]: unknown;
 
   prepare(_model?: unknown, _options?: unknown): void {}
-  render(_xmlStream?: unknown, _model?: unknown): void {}
+  render(_xmlStream?: unknown, _model?: unknown, _extra?: unknown): void {}
   parseOpen(_node: unknown): void {}
   parseText(_text: string): void {}
   parseClose(_name: string): boolean | undefined { return undefined; }
@@ -101,7 +123,7 @@ class BaseXform {
     return undefined;
   }
 
-  static toBoolValue(attr: string | undefined, dflt: boolean): boolean {
+  static toBoolValue(attr: string | undefined, dflt = false): boolean {
     return attr === undefined ? dflt : attr === '1';
   }
 
@@ -109,7 +131,7 @@ class BaseXform {
     return BaseXform.toAttribute(value, dflt, always);
   }
 
-  static toIntValue(attr: string | undefined, dflt: number): number {
+  static toIntValue(attr: string | undefined, dflt = 0): number | undefined {
     return attr === undefined ? dflt : parseInt(attr, 10);
   }
 
@@ -117,7 +139,7 @@ class BaseXform {
     return BaseXform.toAttribute(value, dflt, always);
   }
 
-  static toFloatValue(attr: string | undefined, dflt: number): number {
+  static toFloatValue(attr: string | undefined, dflt = 0): number {
     return attr === undefined ? dflt : parseFloat(attr);
   }
 }

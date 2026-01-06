@@ -28,21 +28,25 @@ export interface NumFmtModel {
 
 export interface StylesModel {
   styles: unknown[];
-  numFmts: NumFmtModel[];
+  numFmts: (NumFmtModel | string)[];
   fonts: unknown[];
   borders: unknown[];
   fills: unknown[];
   dxfs: unknown[];
+  [key: string]: unknown;
 }
 
 const NUMFMT_BASE = 164;
 
 class StylesXform extends BaseXform {
   declare model: StylesModel | undefined;
-  map?: Record<string, unknown>;
   index?: Record<string, unknown>;
-  parser?: unknown;
   weakMap?: WeakMap<object, unknown>;
+  _dateStyleId?: number;
+
+  static STYLESHEET_ATTRIBUTES: Record<string, string>;
+  static STATIC_XFORMS: Record<string, BaseXform>;
+  static Mock: typeof StylesXformMock;
 
   constructor(initialise?: boolean) {
     super();
@@ -120,84 +124,87 @@ class StylesXform extends BaseXform {
     this.weakMap = new WeakMap();
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: unknown, model?: unknown): void {
     model = model || this.model;
     //
     //   <fonts count="2" x14ac:knownFonts="1">
-    xmlStream.openXml(XmlStream.StdDocAttributes);
+    (xmlStream as any).openXml(XmlStream.StdDocAttributes);
 
-    xmlStream.openNode('styleSheet', StylesXform.STYLESHEET_ATTRIBUTES);
+    (xmlStream as any).openNode('styleSheet', StylesXform.STYLESHEET_ATTRIBUTES);
 
     if (this.index) {
       // model has been built by style manager role (contains xml)
-      if (model.numFmts && model.numFmts.length) {
-        xmlStream.openNode('numFmts', {count: model.numFmts.length});
-        model.numFmts.forEach(numFmtXml => {
-          xmlStream.writeXml(numFmtXml);
+      const m = model as StylesModel;
+      if (m.numFmts && m.numFmts.length) {
+        (xmlStream as any).openNode('numFmts', {count: m.numFmts.length});
+        m.numFmts.forEach(numFmtXml => {
+          (xmlStream as any).writeXml(numFmtXml);
         });
-        xmlStream.closeNode();
+        (xmlStream as any).closeNode();
       }
 
-      if (!model.fonts.length) {
+      if (!m.fonts.length) {
         // default (zero) font
         this._addFont({size: 11, color: {theme: 1}, name: 'Calibri', family: 2, scheme: 'minor'});
       }
-      xmlStream.openNode('fonts', {count: model.fonts.length, 'x14ac:knownFonts': 1});
-      model.fonts.forEach(fontXml => {
-        xmlStream.writeXml(fontXml);
+      (xmlStream as any).openNode('fonts', {count: m.fonts.length, 'x14ac:knownFonts': 1});
+      m.fonts.forEach(fontXml => {
+        (xmlStream as any).writeXml(fontXml);
       });
-      xmlStream.closeNode();
+      (xmlStream as any).closeNode();
 
-      xmlStream.openNode('fills', {count: model.fills.length});
-      model.fills.forEach(fillXml => {
-        xmlStream.writeXml(fillXml);
+      (xmlStream as any).openNode('fills', {count: m.fills.length});
+      m.fills.forEach(fillXml => {
+        (xmlStream as any).writeXml(fillXml);
       });
-      xmlStream.closeNode();
+      (xmlStream as any).closeNode();
 
-      xmlStream.openNode('borders', {count: model.borders.length});
-      model.borders.forEach(borderXml => {
-        xmlStream.writeXml(borderXml);
+      (xmlStream as any).openNode('borders', {count: m.borders.length});
+      m.borders.forEach(borderXml => {
+        (xmlStream as any).writeXml(borderXml);
       });
-      xmlStream.closeNode();
+      (xmlStream as any).closeNode();
 
-      this.map.cellStyleXfs.render(xmlStream, [{numFmtId: 0, fontId: 0, fillId: 0, borderId: 0, xfId: 0}]);
+      (this.map!.cellStyleXfs as BaseXform).render(xmlStream, [{numFmtId: 0, fontId: 0, fillId: 0, borderId: 0, xfId: 0}]);
 
-      xmlStream.openNode('cellXfs', {count: model.styles.length});
-      model.styles.forEach(styleXml => {
-        xmlStream.writeXml(styleXml);
+      (xmlStream as any).openNode('cellXfs', {count: m.styles.length});
+      m.styles.forEach(styleXml => {
+        (xmlStream as any).writeXml(styleXml);
       });
-      xmlStream.closeNode();
+      (xmlStream as any).closeNode();
     } else {
       // model is plain JSON and needs to be xformed
-      this.map.numFmts.render(xmlStream, model.numFmts);
-      this.map.fonts.render(xmlStream, model.fonts);
-      this.map.fills.render(xmlStream, model.fills);
-      this.map.borders.render(xmlStream, model.borders);
-      this.map.cellStyleXfs.render(xmlStream, [{numFmtId: 0, fontId: 0, fillId: 0, borderId: 0, xfId: 0}]);
-      this.map.cellXfs.render(xmlStream, model.styles);
+      const m = model as StylesModel;
+      (this.map!.numFmts as BaseXform).render(xmlStream, m.numFmts);
+      (this.map!.fonts as BaseXform).render(xmlStream, m.fonts);
+      (this.map!.fills as BaseXform).render(xmlStream, m.fills);
+      (this.map!.borders as BaseXform).render(xmlStream, m.borders);
+      (this.map!.cellStyleXfs as BaseXform).render(xmlStream, [{numFmtId: 0, fontId: 0, fillId: 0, borderId: 0, xfId: 0}]);
+      (this.map!.cellXfs as BaseXform).render(xmlStream, m.styles);
     }
 
     StylesXform.STATIC_XFORMS.cellStyles.render(xmlStream);
 
-    this.map.dxfs.render(xmlStream, model.dxfs);
+    (this.map!.dxfs as BaseXform).render(xmlStream, (model as StylesModel).dxfs);
 
     StylesXform.STATIC_XFORMS.tableStyles.render(xmlStream);
     StylesXform.STATIC_XFORMS.extLst.render(xmlStream);
 
-    xmlStream.closeNode();
+    (xmlStream as any).closeNode();
   }
 
   parseOpen(node: unknown): boolean {
     if ((this as any).parser) {
-      ((this as any).parser as any).parseOpen(node);
+      ((this as any).parser as BaseXform).parseOpen(node);
       return true;
     }
-    switch ((node as any).name) {
+    const nodeName = (node as any).name;
+    switch (nodeName) {
       case 'styleSheet':
         this.initIndex();
         return true;
       default:
-        this.parser = this.map[node.name];
+        this.parser = this.map![nodeName] as BaseXform | undefined;
         if (this.parser) {
           this.parser.parseOpen(node);
         }
@@ -220,24 +227,24 @@ class StylesXform extends BaseXform {
     }
     switch (name) {
       case 'styleSheet': {
-        this.model = {};
-        const add = (propName: string, xform: unknown) => {
+        this.model = {} as StylesModel;
+        const add = (propName: string, xform: BaseXform) => {
           const xformModel = (xform as any)?.model;
           if (xformModel?.length) {
             (this.model as any)[propName] = xformModel;
           }
         };
-        add('numFmts', this.map.numFmts);
-        add('fonts', this.map.fonts);
-        add('fills', this.map.fills);
-        add('borders', this.map.borders);
-        add('styles', this.map.cellXfs);
-        add('dxfs', this.map.dxfs);
+        add('numFmts', this.map!.numFmts as BaseXform);
+        add('fonts', this.map!.fonts as BaseXform);
+        add('fills', this.map!.fills as BaseXform);
+        add('borders', this.map!.borders as BaseXform);
+        add('styles', this.map!.cellXfs as BaseXform);
+        add('dxfs', this.map!.dxfs as BaseXform);
 
         // index numFmts
         this.index = {
-          model: [],
-          numFmt: [],
+          model: [] as unknown[],
+          numFmt: {} as Record<number | string, unknown>,
         };
         if (this.model.numFmts) {
           const numFmtIndex = this.index.numFmt;
@@ -263,21 +270,22 @@ class StylesXform extends BaseXform {
     }
 
     // if we have no default font, add it here now
-    if (!this.model.fonts.length) {
+    if (!this.model!.fonts.length) {
       // default (zero) font
       this._addFont({size: 11, color: {theme: 1}, name: 'Calibri', family: 2, scheme: 'minor'});
     }
 
     // if we have seen this style object before, assume it has the same styleId
-    if (this.weakMap && this.weakMap.has(model)) {
-      return this.weakMap.get(model);
+    if (this.weakMap && this.weakMap.has(model as object)) {
+      return this.weakMap.get(model as object) as number;
     }
 
-    const style = {};
+    const style: StyleModel = {};
     cellType = cellType || Enums.ValueType.Number;
 
-    if (model.numFmt) {
-      style.numFmtId = this._addNumFmtStr(model.numFmt);
+    const m = model as Record<string, unknown>;
+    if (m.numFmt) {
+      style.numFmtId = this._addNumFmtStr(m.numFmt as string);
     } else {
       switch (cellType) {
         case Enums.ValueType.Number:
@@ -291,29 +299,29 @@ class StylesXform extends BaseXform {
       }
     }
 
-    if (model.font) {
-      style.fontId = this._addFont(model.font);
+    if (m.font) {
+      style.fontId = this._addFont(m.font);
     }
 
-    if (model.border) {
-      style.borderId = this._addBorder(model.border);
+    if (m.border) {
+      style.borderId = this._addBorder(m.border);
     }
 
-    if (model.fill) {
-      style.fillId = this._addFill(model.fill);
+    if (m.fill) {
+      style.fillId = this._addFill(m.fill);
     }
 
-    if (model.alignment) {
-      style.alignment = model.alignment;
+    if (m.alignment) {
+      style.alignment = m.alignment;
     }
 
-    if (model.protection) {
-      style.protection = model.protection;
+    if (m.protection) {
+      style.protection = m.protection;
     }
 
     const styleId = this._addStyle(style);
     if (this.weakMap) {
-      this.weakMap.set(model, styleId);
+      this.weakMap.set(model as object, styleId);
     }
     return styleId;
   }
@@ -321,20 +329,20 @@ class StylesXform extends BaseXform {
   // given a styleId (i.e. s="n"), get the cell's style model
   // objects are shared where possible.
   getStyleModel(id: number): unknown {
-    const style = this.model?.styles?.[id];
+    const style = (this.model?.styles?.[id]) as StyleModel | undefined;
     if (!style) return null;
 
     // have we built this model before?
-    let model = this.index.model[id];
+    let model = this.index!.model![id] as Record<string, unknown> | undefined;
     if (model) return model;
 
     // build a new model
-    model = this.index.model[id] = {};
+    model = this.index!.model![id] = {} as Record<string, unknown>;
 
     // -------------------------------------------------------
     // number format
     if (style.numFmtId) {
-      const numFmt = this.index.numFmt[style.numFmtId] || NumFmtXform.getDefaultFmtCode(style.numFmtId);
+      const numFmt = this.index!.numFmt![style.numFmtId] || NumFmtXform.getDefaultFmtCode(style.numFmtId);
       if (numFmt) {
         model.numFmt = numFmt;
       }
@@ -344,14 +352,14 @@ class StylesXform extends BaseXform {
       if (styleId !== undefined) {
         const part = (group as any)?.[styleId];
         if (part) {
-          (model as any)[name] = part;
+          model![name] = part;
         }
       }
     }
 
-    addStyle('font', this.model.fonts, style.fontId);
-    addStyle('border', this.model.borders, style.borderId);
-    addStyle('fill', this.model.fills, style.fillId);
+    addStyle('font', this.model!.fonts, style.fontId);
+    addStyle('border', this.model!.borders, style.borderId);
+    addStyle('fill', this.model!.fills, style.fillId);
 
     // -------------------------------------------------------
     // alignment
@@ -369,13 +377,14 @@ class StylesXform extends BaseXform {
   }
 
   addDxfStyle(style: unknown): number {
-    if (style.numFmt) {
+    const s = style as Record<string, unknown>;
+    if (s.numFmt) {
       // register numFmtId to use it during dxf-xform rendering
-      style.numFmtId = this._addNumFmtStr(style.numFmt);
+      s.numFmtId = this._addNumFmtStr(s.numFmt as string);
     }
 
-    this.model.dxfs.push(style);
-    return this.model.dxfs.length - 1;
+    this.model!.dxfs.push(style);
+    return this.model!.dxfs.length - 1;
   }
 
   getDxfStyle(id: number): unknown {
@@ -385,11 +394,11 @@ class StylesXform extends BaseXform {
   // =========================================================================
   // Private Interface
   _addStyle(style: unknown): number {
-    const xml = this.map.style.toXml(style);
-    let index = this.index.style[xml];
+    const xml = (this.map!.style as BaseXform).toXml(style);
+    let index = (this.index!.style as Record<string, number>)[xml];
     if (index === undefined) {
-      index = this.index.style[xml] = this.model.styles.length;
-      this.model.styles.push(xml);
+      index = (this.index!.style as Record<string, number>)[xml] = this.model!.styles.length;
+      this.model!.styles.push(xml);
     }
     return index;
   }
@@ -402,23 +411,23 @@ class StylesXform extends BaseXform {
     if (index !== undefined) return index;
 
     // check if already in
-    index = this.index.numFmt[formatCode];
+    index = (this.index!.numFmt as Record<string, number>)[formatCode];
     if (index !== undefined) return index;
 
-    index = this.index.numFmt[formatCode] = NUMFMT_BASE + this.model.numFmts.length;
-    const xml = this.map.numFmt.toXml({id: index, formatCode});
-    this.model.numFmts.push(xml);
+    index = (this.index!.numFmt as Record<string, number>)[formatCode] = NUMFMT_BASE + this.model!.numFmts.length;
+    const xml = (this.map!.numFmt as BaseXform).toXml({id: index, formatCode});
+    this.model!.numFmts.push(xml);
     return index;
   }
 
   // =========================================================================
   // Fonts
   _addFont(font: unknown): number {
-    const xml = this.map.font.toXml(font);
-    let index = this.index.font[xml];
+    const xml = (this.map!.font as BaseXform).toXml(font);
+    let index = (this.index!.font as Record<string, number>)[xml];
     if (index === undefined) {
-      index = this.index.font[xml] = this.model.fonts.length;
-      this.model.fonts.push(xml);
+      index = (this.index!.font as Record<string, number>)[xml] = this.model!.fonts.length;
+      this.model!.fonts.push(xml);
     }
     return index;
   }
@@ -426,11 +435,11 @@ class StylesXform extends BaseXform {
   // =========================================================================
   // Borders
   _addBorder(border: unknown): number {
-    const xml = this.map.border.toXml(border);
-    let index = this.index.border[xml];
+    const xml = (this.map!.border as BaseXform).toXml(border);
+    let index = (this.index!.border as Record<string, number>)[xml];
     if (index === undefined) {
-      index = this.index.border[xml] = this.model.borders.length;
-      this.model.borders.push(xml);
+      index = (this.index!.border as Record<string, number>)[xml] = this.model!.borders.length;
+      this.model!.borders.push(xml);
     }
     return index;
   }
@@ -438,11 +447,11 @@ class StylesXform extends BaseXform {
   // =========================================================================
   // Fills
   _addFill(fill: unknown): number {
-    const xml = this.map.fill.toXml(fill);
-    let index = this.index.fill[xml];
+    const xml = (this.map!.fill as BaseXform).toXml(fill);
+    let index = (this.index!.fill as Record<string, number>)[xml];
     if (index === undefined) {
-      index = this.index.fill[xml] = this.model.fills.length;
-      this.model.fills.push(xml);
+      index = (this.index!.fill as Record<string, number>)[xml] = this.model!.fills.length;
+      this.model!.fills.push(xml);
     }
     return index;
   }
@@ -493,7 +502,7 @@ StylesXform.STATIC_XFORMS = {
 
 // the stylemanager mock acts like StyleManager except that it always returns 0 or {}
 class StylesXformMock extends StylesXform {
-  constructor() {
+  constructor(_initialise?: boolean) {
     super();
 
     this.model = {
@@ -505,6 +514,7 @@ class StylesXformMock extends StylesXform {
         {type: 'pattern', pattern: 'none'},
         {type: 'pattern', pattern: 'gray125'},
       ],
+      dxfs: [],
     };
   }
 
@@ -512,15 +522,15 @@ class StylesXformMock extends StylesXform {
   // Style Manager Interface
 
   // override normal behaviour - consume and dispose
-  parseStream(stream) {
-    stream.autodrain();
+  parseStream(stream: unknown): Promise<void> {
+    (stream as any).autodrain();
     return Promise.resolve();
   }
 
   // add a cell's style model to the collection
   // each style property is processed and cross-referenced, etc.
   // the styleId is returned. Note: cellType is used when numFmt not defined
-  addStyleModel(model, cellType) {
+  addStyleModel(_model: unknown, cellType?: unknown): number {
     switch (cellType) {
       case Enums.ValueType.Date:
         return this.dateStyleId;
@@ -529,20 +539,20 @@ class StylesXformMock extends StylesXform {
     }
   }
 
-  get dateStyleId() {
+  get dateStyleId(): number {
     if (!this._dateStyleId) {
       const dateStyle = {
         numFmtId: NumFmtXform.getDefaultFmtId('mm-dd-yy'),
       };
-      this._dateStyleId = this.model.styles.length;
-      this.model.styles.push(dateStyle);
+      this._dateStyleId = this.model!.styles.length;
+      this.model!.styles.push(dateStyle);
     }
     return this._dateStyleId;
   }
 
   // given a styleId (i.e. s="n"), get the cell's style model
   // objects are shared where possible.
-  getStyleModel(/* id */) {
+  getStyleModel(/* id */): Record<string, unknown> {
     return {};
   }
 }

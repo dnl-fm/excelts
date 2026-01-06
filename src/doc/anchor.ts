@@ -4,8 +4,33 @@
  */
 import colCache from '../utils/col-cache.ts';
 
+interface NativeAnchorAddress {
+  nativeCol?: number;
+  nativeColOff?: number;
+  nativeRow?: number;
+  nativeRowOff?: number;
+}
+
+interface ColRowAddress {
+  col?: number;
+  row?: number;
+}
+
+type AnchorAddress = string | NativeAnchorAddress | ColRowAddress;
+
+interface WorksheetLike {
+  getColumn(col: number): { width?: number; isCustomWidth?: boolean };
+  getRow(row: number): { height?: number };
+}
+
 class Anchor {
-  constructor(worksheet, address, offset = 0) {
+  worksheet: WorksheetLike | undefined;
+  nativeCol: number;
+  nativeColOff: number;
+  nativeRow: number;
+  nativeRowOff: number;
+
+  constructor(worksheet?: WorksheetLike, address?: AnchorAddress, offset = 0) {
     this.worksheet = worksheet;
 
     if (!address) {
@@ -19,14 +44,16 @@ class Anchor {
       this.nativeColOff = 0;
       this.nativeRow = decoded.row + offset;
       this.nativeRowOff = 0;
-    } else if (address.nativeCol !== undefined) {
-      this.nativeCol = address.nativeCol || 0;
-      this.nativeColOff = address.nativeColOff || 0;
-      this.nativeRow = address.nativeRow || 0;
-      this.nativeRowOff = address.nativeRowOff || 0;
-    } else if (address.col !== undefined) {
-      this.col = address.col + offset;
-      this.row = address.row + offset;
+    } else if ('nativeCol' in address && address.nativeCol !== undefined) {
+      const native = address as NativeAnchorAddress;
+      this.nativeCol = native.nativeCol || 0;
+      this.nativeColOff = native.nativeColOff || 0;
+      this.nativeRow = native.nativeRow || 0;
+      this.nativeRowOff = native.nativeRowOff || 0;
+    } else if ('col' in address && address.col !== undefined) {
+      const colRow = address as ColRowAddress;
+      this.col = (colRow.col || 0) + offset;
+      this.row = (colRow.row || 0) + offset;
     } else {
       this.nativeCol = 0;
       this.nativeColOff = 0;

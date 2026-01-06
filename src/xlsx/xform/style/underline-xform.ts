@@ -2,7 +2,7 @@
 import BaseXform from '../base-xform.ts';
 
 class UnderlineXform extends BaseXform {
-  constructor(model) {
+  constructor(model?) {
     super();
 
     this.model = model;

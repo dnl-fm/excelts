@@ -5,7 +5,9 @@ import utils from '../../../utils/utils.ts';
 import CellXform from './cell-xform.ts';
 
 class RowXform extends BaseXform {
-  constructor(options) {
+  maxItems?: number;
+
+  constructor(options?: { maxItems?: number }) {
     super();
 
     this.maxItems = options && options.maxItems;

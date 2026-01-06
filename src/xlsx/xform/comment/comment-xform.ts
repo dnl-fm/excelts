@@ -26,7 +26,7 @@ import RichTextXform from '../strings/rich-text-xform.ts';
 import BaseXform from '../base-xform.ts';
 
 class CommentXform extends BaseXform {
-  constructor(model) {
+  constructor(model?: unknown) {
     super();
     this.model = model;
     this._richTextXform = null;

@@ -5,7 +5,10 @@ import utils from '../../../utils/utils.ts';
 import ColorXform from './color-xform.ts';
 
 class EdgeXform extends BaseXform {
-  constructor(name) {
+  name: string;
+  defaultColor?: unknown;
+
+  constructor(name: string) {
     super();
 
     this.name = name;
@@ -186,7 +189,7 @@ class BorderXform extends BaseXform {
     }
     if (name === 'border') {
       const model = (this.model = {});
-      const add = function(key, edgeModel, extensions) {
+      const add = function(key, edgeModel, extensions?) {
         if (edgeModel) {
           if (extensions) {
             Object.assign(edgeModel, extensions);

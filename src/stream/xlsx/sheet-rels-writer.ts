@@ -4,7 +4,9 @@ import utils from '../../utils/utils.ts';
 import RelType from '../../xlsx/rel-type.ts';
 
 class HyperlinksProxy {
-  constructor(sheetRelsWriter) {
+  writer: SheetRelsWriter;
+
+  constructor(sheetRelsWriter: SheetRelsWriter) {
     this.writer = sheetRelsWriter;
   }
 
@@ -14,7 +16,14 @@ class HyperlinksProxy {
 }
 
 class SheetRelsWriter {
-  constructor(options) {
+  id: unknown;
+  count: number;
+  _hyperlinks: unknown[];
+  _workbook: Record<string, unknown>;
+  _stream?: unknown;
+  _hyperlinksProxy?: HyperlinksProxy;
+
+  constructor(options: Record<string, unknown>) {
     // in a workbook, each sheet will have a number
     this.id = options.id;
 
@@ -24,7 +33,7 @@ class SheetRelsWriter {
     // keep record of all hyperlinks
     this._hyperlinks = [];
 
-    this._workbook = options.workbook;
+    this._workbook = options.workbook as Record<string, unknown>;
   }
 
   get stream() {

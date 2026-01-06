@@ -1,8 +1,30 @@
 
 import BaseXform from './base-xform.ts';
 
+interface ListXformOptions {
+  tag: string;
+  always?: boolean;
+  count?: boolean;
+  empty?: boolean;
+  $count?: string;
+  $?: Record<string, unknown>;
+  childXform: BaseXform;
+  maxItems?: number;
+  length?: number | boolean;
+}
+
 class ListXform extends BaseXform {
-  constructor(options) {
+  tag: string;
+  always: boolean;
+  count?: boolean;
+  empty?: boolean;
+  $count: string;
+  $?: Record<string, unknown>;
+  childXform: BaseXform;
+  maxItems?: number;
+  length?: number | boolean;
+
+  constructor(options: ListXformOptions) {
     super();
 
     this.tag = options.tag;

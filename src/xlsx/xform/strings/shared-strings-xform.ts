@@ -4,7 +4,11 @@ import BaseXform from '../base-xform.ts';
 import SharedStringXform from './shared-string-xform.ts';
 
 class SharedStringsXform extends BaseXform {
-  constructor(model) {
+  hash: Record<string, unknown>;
+  rich: Record<string, unknown>;
+  _sharedStringXform?: SharedStringXform;
+
+  constructor(model?: Record<string, unknown>) {
     super();
 
     this.model = model || {

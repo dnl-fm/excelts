@@ -37,6 +37,14 @@ class Column {
   _worksheet: Worksheet;
   /** @internal */
   _number: number;
+  /** @internal */
+  _header?: unknown;
+  /** @internal */
+  _key?: string | number;
+  /** @internal */
+  _hidden?: boolean;
+  /** @internal */
+  _outlineLevel?: number;
 
   constructor(worksheet: Worksheet, number: number, defn?: Record<string, unknown>) {
     this._worksheet = worksheet;
@@ -77,7 +85,7 @@ class Column {
     };
   }
 
-  set defn(value: Record<string, unknown> | undefined): void {
+  set defn(value: Record<string, unknown> | undefined) {
     if (value) {
       this.key = value.key;
       this.width = value.width !== undefined ? (value.width as number) : DEFAULT_COLUMN_WIDTH;
@@ -119,7 +127,7 @@ class Column {
     return this._header;
   }
 
-  set header(value: unknown): void {
+  set header(value: unknown) {
     if (value !== undefined) {
       this._header = value;
       this.headers.forEach((text, index) => {
@@ -144,7 +152,7 @@ class Column {
     return this._key;
   }
 
-  set key(value: string | number | undefined): void {
+  set key(value: string | number | undefined) {
     const column = this._key && this._worksheet.getColumnKey(this._key);
     if (column === this) {
       this._worksheet.deleteColumnKey(this._key);
@@ -161,7 +169,7 @@ class Column {
     return !!this._hidden;
   }
 
-  set hidden(value: boolean): void {
+  set hidden(value: boolean) {
     this._hidden = value;
   }
 
@@ -170,7 +178,7 @@ class Column {
     return this._outlineLevel || 0;
   }
 
-  set outlineLevel(value: number): void {
+  set outlineLevel(value: number) {
     this._outlineLevel = value;
   }
 
@@ -274,7 +282,7 @@ class Column {
    * column.values = [, 'Row1', , 'Row3'];
    * ```
    */
-  set values(v: unknown[]): void {
+  set values(v: unknown[]) {
     if (!v) {
       return;
     }
@@ -388,25 +396,32 @@ class Column {
     return cols.length ? cols : undefined;
   }
 
-  static fromModel(worksheet: Worksheet, cols: unknown[] | undefined): Column[] | null {
+  static fromModel(worksheetOrCols: Worksheet | unknown[] | undefined, cols?: unknown[] | undefined): Column[] | null {
+    // Handle both (worksheet, cols) and (cols) call signatures
+    let worksheet: Worksheet | null = null;
+    if (Array.isArray(worksheetOrCols) || worksheetOrCols === undefined) {
+      cols = worksheetOrCols as unknown[] | undefined;
+    } else {
+      worksheet = worksheetOrCols as Worksheet;
+    }
     cols = cols || [];
-    const columns = [];
+    const columns: Column[] = [];
     let count = 1;
     let index = 0;
     /**
      * sort cols by min
      * If it is not sorted, the subsequent column configuration will be overwritten
      * */
-    cols = cols.sort(function(pre, next)  {
+    cols = cols.sort(function(pre: any, next: any)  {
       return pre.min - next.min;
     });
     while (index < cols.length) {
-      const col = cols[index++];
+      const col = cols[index++] as any;
       while (count < col.min) {
-        columns.push(new Column(worksheet, count++));
+        columns.push(new Column(worksheet as any, count++));
       }
       while (count <= col.max) {
-        columns.push(new Column(worksheet, count++, col));
+        columns.push(new Column(worksheet as any, count++, col));
       }
     }
     return columns.length ? columns : null;

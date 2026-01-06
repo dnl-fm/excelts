@@ -18,9 +18,9 @@ describe('github issues', () => {
               ref: 'A4:A19',
               result: 4,
             });
+            // explain: this fails, although the cells look the same in excel. Both cells are created by copying A3:B3 to A4:F19. The first row in the new block work as expected, the rest only has values (when seen through exceljs)
             expect(ws.getCell('A5').value).toEqual(
-              {sharedFormula: 'A4', result: 5},
-              explain
+              {sharedFormula: 'A4', result: 5}
             );
           });
       });

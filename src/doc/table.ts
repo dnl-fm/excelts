@@ -105,6 +105,7 @@ class Table {
   table?: TableModel;
   columns: Column[] = [];
   state?: string;
+  _cache?: { ref: string; width: number; tableHeight: number };
 
   constructor(worksheet?: Worksheet, table?: TableModel) {
     this.worksheet = worksheet;

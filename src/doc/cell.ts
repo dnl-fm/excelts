@@ -9,6 +9,26 @@ import type Column from './column.ts';
 import type Worksheet from './worksheet.ts';
 import type Workbook from './workbook.ts';
 
+/** @internal Interface for cell value types */
+interface CellValue {
+  model: Record<string, unknown>;
+  value: unknown;
+  type: number;
+  effectiveType: number;
+  address: string;
+  release(): void;
+  toCsvString(): string | number;
+  toString(): string;
+  formula?: string;
+  result?: unknown;
+  formulaType?: number;
+  isMergedTo?(master: Cell): boolean;
+  master?: Cell;
+  hyperlink?: string;
+  text?: string;
+  [key: string]: unknown;
+}
+
 /**
  * Represents a single cell in a worksheet.
  *
@@ -34,17 +54,21 @@ import type Workbook from './workbook.ts';
  */
 class Cell {
   /** @internal */
+  static Types: typeof Enums.ValueType;
+  /** @internal */
   _row: Row;
   /** @internal */
   _column: Column;
   /** @internal */
   _address: string;
   /** @internal */
-  _value: unknown;
+  _value: CellValue;
   /** @internal */
   style: Record<string, unknown>;
   /** @internal */
   _mergeCount: number;
+  /** @internal */
+  _comment: Note | undefined;
 
   constructor(row: Row, column: Column, address: string) {
     if (!row || !column) {
@@ -265,21 +289,21 @@ class Cell {
    * The cell's value type (Null, Number, String, Date, etc.).
    * See ValueType enum for all types.
    */
-  get type(): string {
+  get type(): number {
     return this._value.type;
   }
 
   /**
    * The effective value type (resolves formula results).
    */
-  get effectiveType(): string {
+  get effectiveType(): number {
     return this._value.effectiveType;
   }
 
   /**
    * Returns the cell value formatted for CSV export.
    */
-  toCsvString(): string {
+  toCsvString(): string | number {
     return this._value.toCsvString();
   }
 
@@ -451,7 +475,7 @@ class Cell {
   /**
    * The formula type: Master, Shared, or None.
    */
-  get formulaType(): string | undefined {
+  get formulaType(): number | undefined {
     return this._value.formulaType;
   }
 
@@ -502,7 +526,7 @@ class Cell {
   // =========================================================================
   // Data Validation stuff
   get _dataValidations(): unknown {
-    return (this.worksheet as Record<string, unknown>).dataValidations;
+    return (this.worksheet as any).dataValidations;
   }
 
   get dataValidation(): unknown {
@@ -528,12 +552,12 @@ class Cell {
   }
 
   set model(value: Record<string, unknown>) {
-    const oldValue = this._value as Record<string, unknown>;
+    const oldValue = this._value as any;
     oldValue.release?.();
     // Use Cell.Types.Null (0) as default when type is null/undefined
-    const cellType = value.type ?? Cell.Types.Null;
+    const cellType = (value.type as number) ?? Cell.Types.Null;
     this._value = Value.create(cellType, this);
-    const newValue = this._value as Record<string, unknown>;
+    const newValue = this._value as any;
     newValue.model = value;
 
     if (value.comment) {
@@ -546,7 +570,7 @@ class Cell {
     }
 
     if (value.style) {
-      this.style = value.style;
+      this.style = value.style as Record<string, unknown>;
     } else {
       this.style = {};
     }
@@ -558,7 +582,9 @@ Cell.Types = Enums.ValueType;
 // Internal Value Types
 
 class NullValue {
-  constructor(cell) {
+  model: Record<string, unknown>;
+
+  constructor(cell: Cell) {
     this.model = {
       address: cell.address,
       type: Cell.Types.Null,
@@ -601,7 +627,9 @@ class NullValue {
 }
 
 class NumberValue {
-  constructor(cell, value) {
+  model: Record<string, unknown>;
+
+  constructor(cell: Cell, value: unknown) {
     this.model = {
       address: cell.address,
       type: Cell.Types.Number,
@@ -645,7 +673,9 @@ class NumberValue {
 }
 
 class StringValue {
-  constructor(cell, value) {
+  model: Record<string, unknown>;
+
+  constructor(cell: Cell, value: unknown) {
     this.model = {
       address: cell.address,
       type: Cell.Types.String,
@@ -678,7 +708,7 @@ class StringValue {
   }
 
   toCsvString() {
-    return `"${this.model.value.replace(/"/g, '""')}"`;
+    return `"${(this.model.value as string).replace(/"/g, '""')}"`;
   }
 
   release() {}
@@ -689,7 +719,9 @@ class StringValue {
 }
 
 class RichTextValue {
-  constructor(cell, value) {
+  model: Record<string, unknown>;
+
+  constructor(cell: Cell, value: unknown) {
     this.model = {
       address: cell.address,
       type: Cell.Types.String,
@@ -706,7 +738,7 @@ class RichTextValue {
   }
 
   toString() {
-    return this.model.value.richText.map(t => t.text).join('');
+    return (this.model.value as any).richText.map((t: any) => t.text).join('');
   }
 
   get type() {
@@ -726,14 +758,16 @@ class RichTextValue {
   }
 
   toCsvString() {
-    return `"${this.text.replace(/"/g, '""')}"`;
+    return `"${this.toString().replace(/"/g, '""')}"`;
   }
 
   release() {}
 }
 
 class DateValue {
-  constructor(cell, value) {
+  model: Record<string, unknown>;
+
+  constructor(cell: Cell, value: unknown) {
     this.model = {
       address: cell.address,
       type: Cell.Types.Date,
@@ -766,7 +800,7 @@ class DateValue {
   }
 
   toCsvString() {
-    return this.model.value.toISOString();
+    return (this.model.value as Date).toISOString();
   }
 
   release() {}
@@ -777,20 +811,22 @@ class DateValue {
 }
 
 class HyperlinkValue {
-  constructor(cell, value) {
+  model: Record<string, unknown>;
+
+  constructor(cell: Cell, value: unknown) {
     this.model = {
       address: cell.address,
       type: Cell.Types.Hyperlink,
-      text: value ? value.text : undefined,
-      hyperlink: value ? value.hyperlink : undefined,
+      text: value ? (value as any).text : undefined,
+      hyperlink: value ? (value as any).hyperlink : undefined,
     };
-    if (value && value.tooltip) {
-      this.model.tooltip = value.tooltip;
+    if (value && (value as any).tooltip) {
+      this.model.tooltip = (value as any).tooltip;
     }
   }
 
   get value() {
-    const v = {
+    const v: any = {
       text: this.model.text,
       hyperlink: this.model.hyperlink,
     };
@@ -800,7 +836,7 @@ class HyperlinkValue {
     return v;
   }
 
-  set value(value) {
+  set value(value: any) {
     this.model = {
       text: value.text,
       hyperlink: value.hyperlink,
@@ -863,7 +899,10 @@ class HyperlinkValue {
 }
 
 class MergeValue {
-  constructor(cell, master) {
+  model: Record<string, unknown>;
+  _master: Cell | undefined;
+
+  constructor(cell: Cell, master: Cell | undefined) {
     this.model = {
       address: cell.address,
       type: Cell.Types.Merge,
@@ -929,17 +968,21 @@ class MergeValue {
 }
 
 class FormulaValue {
-  constructor(cell, value) {
+  model: Record<string, unknown>;
+  cell: Cell;
+  _translatedFormula: string | undefined;
+
+  constructor(cell: Cell, value: unknown) {
     this.cell = cell;
 
     this.model = {
       address: cell.address,
       type: Cell.Types.Formula,
-      shareType: value ? value.shareType : undefined,
-      ref: value ? value.ref : undefined,
-      formula: value ? value.formula : undefined,
-      sharedFormula: value ? value.sharedFormula : undefined,
-      result: value ? value.result : undefined,
+      shareType: value ? (value as any).shareType : undefined,
+      ref: value ? (value as any).ref : undefined,
+      formula: value ? (value as any).formula : undefined,
+      sharedFormula: value ? (value as any).sharedFormula : undefined,
+      result: value ? (value as any).result : undefined,
     };
   }
 
@@ -983,8 +1026,9 @@ class FormulaValue {
 
   get dependencies() {
     // find all the ranges and cells mentioned in the formula
-    const ranges = this.formula.match(/([a-zA-Z0-9]+!)?[A-Z]{1,3}\d{1,4}:[A-Z]{1,3}\d{1,4}/g);
-    const cells = this.formula
+    const formula = (this.formula as string) || '';
+    const ranges = formula.match(/([a-zA-Z0-9]+!)?[A-Z]{1,3}\d{1,4}:[A-Z]{1,3}\d{1,4}/g);
+    const cells = formula
       .replace(/([a-zA-Z0-9]+!)?[A-Z]{1,3}\d{1,4}:[A-Z]{1,3}\d{1,4}/g, '')
       .match(/([a-zA-Z0-9]+!)?[A-Z]{1,3}\d{1,4}/g);
     return {
@@ -1037,10 +1081,11 @@ class FormulaValue {
     if (v instanceof Date) {
       return Enums.ValueType.Date;
     }
-    if (v.text && v.hyperlink) {
+    const vObj = v as Record<string, unknown>;
+    if (vObj.text && vObj.hyperlink) {
       return Enums.ValueType.Hyperlink;
     }
-    if (v.formula) {
+    if (vObj.formula) {
       return Enums.ValueType.Formula;
     }
 
@@ -1058,7 +1103,7 @@ class FormulaValue {
   _getTranslatedFormula() {
     if (!this._translatedFormula && this.model.sharedFormula) {
       const {worksheet} = this.cell;
-      const master = worksheet.findCell(this.model.sharedFormula);
+      const master = worksheet.findCell(this.model.sharedFormula as string | number);
       this._translatedFormula =
         master && slideFormula(master.formula, master.address, this.model.address);
     }
@@ -1077,7 +1122,9 @@ class FormulaValue {
 }
 
 class SharedStringValue {
-  constructor(cell, value) {
+  model: Record<string, unknown>;
+
+  constructor(cell: Cell, value: unknown) {
     this.model = {
       address: cell.address,
       type: Cell.Types.SharedString,
@@ -1121,7 +1168,9 @@ class SharedStringValue {
 }
 
 class BooleanValue {
-  constructor(cell, value) {
+  model: Record<string, unknown>;
+
+  constructor(cell: Cell, value: unknown) {
     this.model = {
       address: cell.address,
       type: Cell.Types.Boolean,
@@ -1165,7 +1214,9 @@ class BooleanValue {
 }
 
 class ErrorValue {
-  constructor(cell, value) {
+  model: Record<string, unknown>;
+
+  constructor(cell: Cell, value: unknown) {
     this.model = {
       address: cell.address,
       type: Cell.Types.Error,
@@ -1204,12 +1255,14 @@ class ErrorValue {
   release() {}
 
   toString() {
-    return this.model.value.error.toString();
+    return (this.model.value as any).error.toString();
   }
 }
 
 class JSONValue {
-  constructor(cell, value) {
+  model: Record<string, unknown>;
+
+  constructor(cell: Cell, value: unknown) {
     this.model = {
       address: cell.address,
       type: Cell.Types.String,
@@ -1309,7 +1362,7 @@ const Value = {
     return p;
   }, []),
 
-  create(type, cell, value) {
+  create(type: number, cell: Cell, value?: unknown) {
     const T = this.types[type];
     if (!T) {
       throw new Error(`Could not create Value of type ${type}`);

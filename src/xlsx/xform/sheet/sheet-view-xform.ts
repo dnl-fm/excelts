@@ -8,12 +8,65 @@ const VIEW_STATES = {
   split: 'split',
 };
 
+interface SheetViewModel {
+  workbookViewId?: number;
+  rightToLeft?: boolean;
+  tabSelected?: boolean;
+  showRuler?: boolean;
+  showRowColHeaders?: boolean;
+  showGridLines?: boolean;
+  zoomScale?: number | string;
+  zoomScaleNormal?: number | string;
+  style?: string;
+  state?: string;
+  topLeftCell?: string;
+  xSplit?: number;
+  ySplit?: number;
+  activePane?: string;
+  activeCell?: string;
+  pane?: Record<string, unknown>;
+  selection?: unknown[];
+  [key: string]: unknown;
+}
+
+interface PaneModel {
+  xSplit?: number;
+  ySplit?: number;
+  topLeftCell?: string;
+  activePane?: string;
+  state?: string;
+}
+
+interface SelectionModel {
+  pane?: string;
+  activeCell?: string;
+  [key: string]: unknown;
+}
+
+interface SheetViewData {
+  workbookViewId?: number;
+  rightToLeft?: boolean;
+  tabSelected?: boolean;
+  showRuler?: boolean;
+  showRowColHeaders?: boolean;
+  showGridLines?: boolean;
+  zoomScale?: number;
+  zoomScaleNormal?: number;
+  style?: string;
+}
+
 class SheetViewXform extends BaseXform {
+  declare model: SheetViewModel | undefined;
+  sheetView?: SheetViewData;
+  pane?: PaneModel;
+  selections: Record<string, SelectionModel> = {};
+
   get tag() {
     return 'sheetView';
   }
 
-  prepare(model) {
+  prepare(model?: SheetViewModel): void {
+    if (!model) return;
     switch (model.state) {
       case 'frozen':
       case 'split':
@@ -24,11 +77,12 @@ class SheetViewXform extends BaseXform {
     }
   }
 
-  render(xmlStream, model) {
+  render(xmlStream: any, model?: SheetViewModel): void {
+    if (!model) return;
     xmlStream.openNode('sheetView', {
       workbookViewId: model.workbookViewId || 0,
     });
-    const add = function(name, value, included) {
+    const add = function(name: string, value: unknown, included: boolean) {
       if (included) {
         xmlStream.addAttribute(name, value);
       }
@@ -38,9 +92,9 @@ class SheetViewXform extends BaseXform {
     add('showRuler', '0', model.showRuler === false);
     add('showRowColHeaders', '0', model.showRowColHeaders === false);
     add('showGridLines', '0', model.showGridLines === false);
-    add('zoomScale', model.zoomScale, model.zoomScale);
-    add('zoomScaleNormal', model.zoomScaleNormal, model.zoomScaleNormal);
-    add('view', model.style, model.style);
+    add('zoomScale', model.zoomScale, !!model.zoomScale);
+    add('zoomScaleNormal', model.zoomScaleNormal, !!model.zoomScaleNormal);
+    add('view', model.style, !!model.style);
 
     let topLeftCell;
     let xSplit;
@@ -99,7 +153,7 @@ class SheetViewXform extends BaseXform {
     xmlStream.closeNode();
   }
 
-  parseOpen(node) {
+  parseOpen(node: any): boolean {
     switch (node.name) {
       case 'sheetView':
         this.sheetView = {
@@ -141,11 +195,11 @@ class SheetViewXform extends BaseXform {
     }
   }
 
-  parseText() {}
+  parseText(): void {}
 
-  parseClose(name) {
-    let model;
-    let selection;
+  parseClose(name: string): boolean {
+    let model: any;
+    let selection: any;
     switch (name) {
       case 'sheetView':
         if (this.sheetView && this.pane) {

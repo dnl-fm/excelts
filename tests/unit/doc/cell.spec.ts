@@ -141,24 +141,31 @@ describe('Cell', () => {
     const column = sheetMock.getColumn(1);
 
     expect(() => {
+      // @ts-expect-error - testing runtime validation
       new Cell();
     }).toThrow(Error);
     expect(() => {
+      // @ts-expect-error - testing runtime validation
       new Cell(row);
     }).toThrow(Error);
     expect(() => {
+      // @ts-expect-error - testing runtime validation
       new Cell(row, 'A');
     }).toThrow(Error);
     expect(() => {
+      // @ts-expect-error - testing runtime validation
       new Cell(row, 'Hello, World!');
     }).toThrow(Error);
     expect(() => {
+      // @ts-expect-error - testing runtime validation
       new Cell(null, null, 'A1');
     }).toThrow(Error);
     expect(() => {
+      // @ts-expect-error - testing runtime validation
       new Cell(row, null, 'A1');
     }).toThrow(Error);
     expect(() => {
+      // @ts-expect-error - testing runtime validation
       new Cell(null, column, 'A1');
     }).toThrow(Error);
   });

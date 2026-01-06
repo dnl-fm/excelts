@@ -234,10 +234,10 @@ class Row {
    * @param lft - Left column boundary
    * @param rght - Right column boundary
    */
-  addPageBreak(lft: number, rght: number): void {
+  addPageBreak(lft?: number, rght?: number): void {
     const ws = this._worksheet;
-    const left = Math.max(0, lft - 1) || 0;
-    const right = Math.max(0, rght - 1) || 16838;
+    const left = Math.max(0, (lft || 0) - 1) || 0;
+    const right = Math.max(0, (rght || 0) - 1) || 16838;
     const pb: Record<string, number> = {
       id: this._number,
       max: right,

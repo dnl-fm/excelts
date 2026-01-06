@@ -43,7 +43,7 @@ describe('under-dash', () => {
           const assertion = `${showVal(a)} ${i === j ? '==' : '!='} ${showVal(
             b
           )}`;
-          expect(_.isEqual(a, b)).toBe(i === j, `expected ${assertion}`);
+          expect(_.isEqual(a, b)).toBe(i === j);
         }
       }
     });
@@ -57,7 +57,7 @@ describe('under-dash', () => {
           const assertion = `${showVal(a)} ${i === j ? '==' : '!='} ${showVal(
             b
           )}`;
-          expect(_.isEqual(a, b)).toBe(i === j, `expected ${assertion}`);
+          expect(_.isEqual(a, b)).toBe(i === j);
         }
       }
     });
@@ -71,7 +71,7 @@ describe('under-dash', () => {
           const assertion = `${showVal(a)} ${i === j ? '==' : '!='} ${showVal(
             b
           )}`;
-          expect(_.isEqual(a, b)).toBe(i === j, `expected ${assertion}`);
+          expect(_.isEqual(a, b)).toBe(i === j);
         }
       }
     });

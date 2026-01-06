@@ -13,7 +13,7 @@ import PhoneticTextXform from './phonetic-text-xform.ts';
 import BaseXform from '../base-xform.ts';
 
 class SharedStringXform extends BaseXform {
-  constructor(model) {
+  constructor(model?) {
     super();
 
     this.model = model;

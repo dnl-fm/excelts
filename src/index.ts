@@ -5,7 +5,7 @@ import _Workbook from './doc/workbook.ts';
 import _ModelContainer from './doc/modelcontainer.ts';
 import _WorkbookWriter from './stream/xlsx/workbook-writer.ts';
 import _WorkbookReader from './stream/xlsx/workbook-reader.ts';
-import * as _enums from './doc/enums.ts';
+import { ValueType, FormulaType, RelationshipType, DocumentType, ReadingOrder, ErrorValue } from './doc/enums.ts';
 
 const ExcelTS = {
   Workbook: _Workbook,
@@ -16,8 +16,13 @@ const ExcelTS = {
       WorkbookReader: _WorkbookReader,
     },
   },
+  // Enums
+  ValueType,
+  FormulaType,
+  RelationshipType,
+  DocumentType,
+  ReadingOrder,
+  ErrorValue,
 };
-
-Object.assign(ExcelTS, _enums);
 
 export default ExcelTS;

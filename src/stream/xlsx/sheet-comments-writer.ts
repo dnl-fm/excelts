@@ -6,7 +6,16 @@ import CommentXform from '../../xlsx/xform/comment/comment-xform.ts';
 import VmlShapeXform from '../../xlsx/xform/comment/vml-shape-xform.ts';
 
 class SheetCommentsWriter {
-  constructor(worksheet, sheetRelsWriter, options) {
+  id: unknown;
+  count: number;
+  _worksheet: unknown;
+  _workbook: Record<string, unknown>;
+  _sheetRelsWriter: unknown;
+  _commentsStream?: unknown;
+  _vmlStream?: unknown;
+  vmlRelId?: unknown;
+
+  constructor(worksheet: unknown, sheetRelsWriter: unknown, options: Record<string, unknown>) {
     // in a workbook, each sheet will have a number
     this.id = options.id;
     this.count = 0;

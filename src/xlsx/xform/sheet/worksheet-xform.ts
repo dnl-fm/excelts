@@ -87,7 +87,7 @@ const mergeConditionalFormattings = (model, extModel) => {
 };
 
 class WorkSheetXform extends BaseXform {
-  constructor(options) {
+  constructor(options?) {
     super();
 
     const {maxRows, maxCols, ignoreNodes} = options || {};

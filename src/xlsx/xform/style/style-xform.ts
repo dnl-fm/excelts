@@ -11,7 +11,9 @@ import AlignmentXform from './alignment-xform.ts';
 import ProtectionXform from './protection-xform.ts';
 
 class StyleXform extends BaseXform {
-  constructor(options) {
+  xfId: boolean;
+
+  constructor(options?: { xfId?: boolean }) {
     super();
 
     this.xfId = !!(options && options.xfId);
