@@ -45,6 +45,28 @@ import _WorkbookWriter from './stream/xlsx/workbook-writer.ts';
 import _WorkbookReader from './stream/xlsx/workbook-reader.ts';
 import { ValueType, FormulaType, RelationshipType, DocumentType, ReadingOrder, ErrorValue } from './doc/enums.ts';
 
+// Re-export classes for named imports
+/** Main Workbook class for creating and manipulating Excel files. */
+export const Workbook = _Workbook;
+/** Container for workbook model data. */
+export const ModelContainer = _ModelContainer;
+/** Streaming writer for large XLSX files. */
+export const WorkbookWriter = _WorkbookWriter;
+/** Streaming reader for large XLSX files. */
+export const WorkbookReader = _WorkbookReader;
+
+// Re-export enums
+export { ValueType, FormulaType, RelationshipType, DocumentType, ReadingOrder, ErrorValue };
+
+/**
+ * ExcelTS namespace object for convenient access to all APIs.
+ *
+ * @example
+ * ```ts
+ * import ExcelTS from '@dnl-fm/excelts';
+ * const workbook = new ExcelTS.Workbook();
+ * ```
+ */
 const ExcelTS = {
   Workbook: _Workbook,
   ModelContainer: _ModelContainer,
@@ -54,7 +76,6 @@ const ExcelTS = {
       WorkbookReader: _WorkbookReader,
     },
   },
-  // Enums
   ValueType,
   FormulaType,
   RelationshipType,
