@@ -12,7 +12,7 @@ class Note {
     this.note = note;
   }
 
-  get model() {
+  get model(): Record<string, unknown> {
     let value = null;
     switch (typeof this.note) {
       case 'string':

@@ -791,7 +791,7 @@ class Worksheet {
    * });
    * ```
    */
-  eachRow(options, iteratee?) {
+  eachRow(options: unknown, iteratee?: unknown): void {
     if (!iteratee) {
       iteratee = options;
       options = undefined;
@@ -890,12 +890,12 @@ class Worksheet {
    *
    * @param cells - Range specification (same as mergeCells)
    */
-  mergeCellsWithoutStyle(...cells) {
+  mergeCellsWithoutStyle(...cells: unknown[]): void {
     const dimensions = new Range(cells);
     this._mergeCellsInternal(dimensions, true);
   }
 
-  _mergeCellsInternal(dimensions, ignoreStyle?) {
+  _mergeCellsInternal(dimensions: Range, ignoreStyle?: boolean): void {
     // check cells aren't already merged
     _.each(this._merges, merge => {
       if (merge.intersects(dimensions)) {
@@ -918,7 +918,7 @@ class Worksheet {
     this._merges[master.address] = dimensions;
   }
 
-  _unMergeMaster(master) {
+  _unMergeMaster(master: { address: string }): void {
     // master is always top left of a rectangle
     const merge = this._merges[master.address];
     if (merge) {
@@ -1041,7 +1041,7 @@ class Worksheet {
    * });
    * ```
    */
-  addImage(imageId, range) {
+  addImage(imageId: unknown, range: unknown): void {
     const model = {
       type: 'image',
       imageId,
@@ -1249,7 +1249,7 @@ Please leave feedback at https://github.com/exceljs/exceljs/discussions/2575`
    * });
    * ```
    */
-  addConditionalFormatting(cf) {
+  addConditionalFormatting(cf: unknown): void {
     this.conditionalFormattings.push(cf);
   }
 
@@ -1258,7 +1258,7 @@ Please leave feedback at https://github.com/exceljs/exceljs/discussions/2575`
    *
    * @param filter - Index to remove, filter function, or undefined to remove all
    */
-  removeConditionalFormatting(filter) {
+  removeConditionalFormatting(filter: unknown): void {
     if (typeof filter === 'number') {
       this.conditionalFormattings.splice(filter, 1);
     } else if (filter instanceof Function) {

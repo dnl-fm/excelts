@@ -53,19 +53,19 @@ class SheetRelsWriter {
     return this._stream;
   }
 
-  get length() {
+  get length(): number {
     return this._hyperlinks.length;
   }
 
-  each(fn: (item: { rId: string; address: string }) => void) {
-    return this._hyperlinks.forEach(fn);
+  each(fn: (item: { rId: string; address: string }) => void): void {
+    this._hyperlinks.forEach(fn);
   }
 
-  get hyperlinksProxy() {
+  get hyperlinksProxy(): HyperlinksProxy {
     return this._hyperlinksProxy || (this._hyperlinksProxy = new HyperlinksProxy(this));
   }
 
-  addHyperlink(hyperlink: { target: string; address: string }) {
+  addHyperlink(hyperlink: { target: string; address: string }): void {
     // Write to stream
     const relationship = {
       Target: hyperlink.target,
@@ -81,15 +81,15 @@ class SheetRelsWriter {
     });
   }
 
-  addMedia(media: { Type: string; Target: string; TargetMode?: string }) {
+  addMedia(media: { Type: string; Target: string; TargetMode?: string }): string {
     return this._writeRelationship(media);
   }
 
-  addRelationship(rel: { Type: string; Target: string; TargetMode?: string }) {
+  addRelationship(rel: { Type: string; Target: string; TargetMode?: string }): string {
     return this._writeRelationship(rel);
   }
 
-  commit() {
+  commit(): void {
     if (this.count) {
       // write xml utro
       this._writeClose();
@@ -106,7 +106,7 @@ class SheetRelsWriter {
     );
   }
 
-  _writeRelationship(relationship: { Type: string; Target: string; TargetMode?: string }) {
+  _writeRelationship(relationship: { Type: string; Target: string; TargetMode?: string }): string {
     if (!this.count) {
       this._writeOpen();
     }

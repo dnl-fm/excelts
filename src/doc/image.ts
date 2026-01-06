@@ -19,7 +19,17 @@ class Image {
     this.model = model;
   }
 
-  get model() {
+  get model(): {
+    type: string;
+    imageId: unknown;
+    hyperlinks?: unknown;
+    range?: {
+      tl: unknown;
+      br: unknown;
+      ext: unknown;
+      editAs: unknown;
+    };
+  } {
     switch (this.type) {
       case 'background':
         return {
