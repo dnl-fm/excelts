@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write
       id-token: write
 
     steps:
@@ -30,5 +30,23 @@ jobs:
           bun test tests/unit --timeout 20000
           bun test tests/integration --timeout 20000
 
+      - name: Build browser bundles
+        run: bun run build
+
       - name: Publish to JSR
         run: bunx jsr publish --allow-slow-types
+
+      - name: Create release with assets
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/excelts.js
+            dist/excelts.js.map
+            dist/excelts.min.js
+            dist/excelts.min.js.map
+            dist/excelts.bare.js
+            dist/excelts.bare.js.map
+            dist/excelts.bare.min.js
+            dist/excelts.bare.min.js.map
+          generate_release_notes: true
