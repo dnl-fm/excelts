@@ -55,6 +55,50 @@ function createSimpleWorkbook() {
   return wb;
 }
 
+// Version with fixed dates for deterministic model comparison
+function createSimpleWorkbookWithFixedDates() {
+  const fixedDate = new Date('2016-02-16T22:03:24.454Z');
+  const fixedDate2 = new Date('2016-02-16T22:03:24.455Z');
+  const fixedDateFormula = new Date('2016-01-01T00:00:00.000Z');
+
+  const wb = new Excel.Workbook();
+  wb.creator = 'Unknown';
+  wb.lastModifiedBy = 'Unknown';
+  wb.created = new Date('2016-02-16T22:03:24.451Z');
+  wb.modified = new Date('2016-02-16T22:03:24.451Z');
+
+  const ws = wb.addWorksheet('blort');
+
+  ws.getCell('A1').value = 7;
+  ws.getCell('A1').name = 'Seven';
+  ws.getCell('B1').value = 'Hello, World!';
+  ws.getCell('B1').name = 'Hello';
+  ws.getCell('C1').value = 3.14;
+  ws.getCell('D1').value = fixedDate;
+  ws.getCell('D1').dataValidation = {
+    type: 'date',
+    operator: 'greaterThan',
+    showErrorMessage: true,
+    allowBlank: true,
+    formulae: [fixedDateFormula],
+  };
+  ws.getCell('E1').value = {
+    text: 'www.google.com',
+    hyperlink: 'http://www.google.com',
+  };
+  ws.getCell('A2').value = {formula: 'A1', result: 7};
+  ws.getCell('A2').name = 'TheFormula';
+  ws.getCell('B2').value = {
+    formula: 'CONCATENATE("Hello", ", ", "World!")',
+    result: 'Hello, World!',
+  };
+  ws.getCell('B2').name = 'TheFormula';
+  ws.getCell('C2').value = {formula: 'D1', result: fixedDate2};
+  ws.getCell('C3').value = {formula: 'D1'};
+
+  return wb;
+}
+
 // =============================================================================
 // Tests
 
@@ -189,11 +233,11 @@ describe('Workbook', () => {
     expect(ws.getCell('A1').type).toBe(Excel.ValueType.RichText);
   });
 
-  // Skipped: Model structure has evolved, test data needs complete rewrite
-  it.skip('serialises to model', () => {
-    const wb = createSimpleWorkbook();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(wb.model as any).toEqual(simpleWorkbookModel as any);
+  it('serialises to model', () => {
+    const wb = createSimpleWorkbookWithFixedDates();
+    // Roundtrip through JSON to normalize Date objects and remove undefined values
+    const actualModel = JSON.parse(JSON.stringify(wb.model));
+    expect(actualModel).toEqual(simpleWorkbookModel);
   });
 
   it('returns undefined for non-existant sheet', () => {
